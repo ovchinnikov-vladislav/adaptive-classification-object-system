@@ -197,8 +197,7 @@ import utils
 
 model, eval_model, manipulate_model = models.CapsNet(input_shape=x_train.shape[1:],
                                                      n_class=len(np.unique(np.argmax(y_train, 1))),
-                                                     routings=args.routings,
-                                                     batch_size=args.batch_size)
+                                                     routings=args.routings)
 model.summary()
 
 model.compile(optimizer=optimizers.Adam(lr=args.lr),

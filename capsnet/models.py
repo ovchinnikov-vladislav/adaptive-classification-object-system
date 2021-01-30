@@ -3,7 +3,7 @@ import capsnet.layers as capslayers
 import numpy as np
 
 
-def CapsNet(input_shape, batch_size, n_class, routings):
+def CapsNet(input_shape, n_class, routings):
     """
     A Capsule Network on MNIST.
     :param input_shape: data shape, 3d, [width, height, channels]
