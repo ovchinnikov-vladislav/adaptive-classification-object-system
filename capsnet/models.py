@@ -1,19 +1,19 @@
 from tensorflow.keras import layers, models
-import capsnet.capsule_layers as capslayers
+import capsnet.layers as capslayers
 import numpy as np
 
 
-def CapsNet(input_shape, n_class, routings, batch_size):
+def CapsNet(input_shape, batch_size, n_class, routings):
     """
     A Capsule Network on MNIST.
     :param input_shape: data shape, 3d, [width, height, channels]
     :param n_class: number of classes
     :param routings: number of routing iterations
-    :param batch_size: size of batch
+    :param batch_size
     :return: Two Keras Models, the first one used for training, and the second one for evaluation.
             `eval_model` can also be used for training.
     """
-    x = layers.Input(shape=input_shape, batch_size=batch_size)
+    x = layers.Input(shape=input_shape)
 
     # Layer 1: Just a conventional Conv2D layer
     conv1 = layers.Conv2D(filters=256,
@@ -32,9 +32,7 @@ def CapsNet(input_shape, n_class, routings, batch_size):
                                          padding='valid')
 
     # Layer 3: Capsule layer. Routing algorithm works here.
-    digitcaps = capslayers.CapsuleLayer(num_capsule=n_class,
-                                        dim_capsule=16,
-                                        routings=routings,
+    digitcaps = capslayers.CapsuleLayer(num_capsule=n_class, dim_capsule=16, routings=routings,
                                         name='digitcaps')(primarycaps)
 
     # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.

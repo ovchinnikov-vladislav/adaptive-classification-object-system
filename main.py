@@ -11,7 +11,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.utils import to_categorical
 import matplotlib.pyplot as plt
 from PIL import Image
-from capsnet import capsnets
+from capsnet import models
 
 
 def plot_log(filename, show=True):
@@ -169,18 +169,6 @@ def manipulate_latent(model, data, args):
     print('-' * 30 + 'End: manipulate' + '-' * 30)
 
 
-def load_mnist():
-    # the data, shuffled and split between train and test sets
-    from tensorflow.keras.datasets import mnist
-    (x_train, y_train), (x_test, y_test) = mnist.load_data()
-
-    x_train = x_train.reshape(-1, 28, 28, 1).astype('float32') / 255.
-    x_test = x_test.reshape(-1, 28, 28, 1).astype('float32') / 255.
-    y_train = to_categorical(y_train.astype('float32'))
-    y_test = to_categorical(y_test.astype('float32'))
-    return (x_train, y_train), (x_test, y_test)
-
-
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import callbacks
 
@@ -188,7 +176,7 @@ from tensorflow.keras import callbacks
 class Args:
     def __init__(self):
         self.epochs = 25
-        self.batch_size = 64
+        self.batch_size = 100
         self.lr = 0.001
         self.lr_decay = 0.9
         self.lam_recon = 0.392
@@ -199,15 +187,26 @@ class Args:
 
 args = Args()
 
+
+import utils
+
+
 # load data
-(x_train, y_train), (x_test, y_test) = load_mnist()
+(x_train, y_train), (x_test, y_test) = utils.load_mnist()
 # define model
 
-model, eval_model, manipulate_model = capsnets.CapsNet(input_shape=x_train.shape[1:],
-                                              n_class=len(np.unique(np.argmax(y_train, 1))),
-                                              routings=args.routings,
-                                              batch_size=args.batch_size)
+model, eval_model, manipulate_model = models.CapsNet(input_shape=x_train.shape[1:],
+                                                     n_class=len(np.unique(np.argmax(y_train, 1))),
+                                                     routings=args.routings,
+                                                     batch_size=args.batch_size)
 model.summary()
 
-train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
+model.compile(optimizer=optimizers.Adam(lr=args.lr),
+              loss='mse',
+              metrics='accuracy')
+
+model.fit([x_train, y_train], [y_train, x_train], epochs=args.epochs, batch_size=args.batch_size,
+          validation_data=[[x_test, y_test], [y_test, x_test]])
+
+#train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
 test(model=eval_model, data=(x_test, y_test), args=args)
