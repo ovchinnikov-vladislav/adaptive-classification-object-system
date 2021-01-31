@@ -1,14 +1,13 @@
 from setuptools import setup, find_packages
 
 setup(name='hexcapsnet',
-      version='0.1',
+      version='0.0.5-alpha',
       description='Libs capsnets',
       long_description='Libs capsnets',
       classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 3.6',
-        'Topic :: Capsnet Processing :: Classification Models',
+        'Programming Language :: Python :: 3.6'
       ],
       keywords='capsnet ai classification',
       url='',
@@ -17,7 +16,7 @@ setup(name='hexcapsnet',
       license='MIT',
       packages=find_packages(),
       install_requires=[
-          'tensorflow==2.3.0',
+          'tensorflow==2.4.1',
           'keras'
       ],
       include_package_data=True,

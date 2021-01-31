@@ -132,6 +132,7 @@ def test(model, data, args):
     x_test, y_test = data
     y_pred, x_recon = model.predict(x_test, batch_size=100)
     print('-' * 30 + 'Begin: test' + '-' * 30)
+    print('y_test.shape[0]', y_test.shape[0])
     print('Test acc:', np.sum(np.argmax(y_pred, 1) == np.argmax(y_test, 1)) / y_test.shape[0])
 
     img = combine_images(np.concatenate([x_test[:50], x_recon[:50]]))
@@ -175,8 +176,8 @@ from tensorflow.keras import callbacks
 
 class Args:
     def __init__(self):
-        self.epochs = 25
-        self.batch_size = 100
+        self.epochs = 2
+        self.batch_size = 112
         self.lr = 0.001
         self.lr_decay = 0.9
         self.lam_recon = 0.392
@@ -198,10 +199,11 @@ import utils
 model, eval_model, manipulate_model = models.CapsNet(input_shape=x_train.shape[1:],
                                                      n_class=len(np.unique(np.argmax(y_train, 1))),
                                                      routings=args.routings)
+
 model.summary()
 
 model.compile(optimizer=optimizers.Adam(lr=args.lr),
-              loss='mse',
+              loss=[margin_loss, 'mse'],
               metrics='accuracy')
 
 model.fit([x_train, y_train], [y_train, x_train], epochs=args.epochs, batch_size=args.batch_size,

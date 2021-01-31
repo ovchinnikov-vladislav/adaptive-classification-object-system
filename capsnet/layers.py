@@ -1,7 +1,10 @@
 import tensorflow as tf
 import tensorflow.keras.backend as keras_backend
+from keras.utils.conv_utils import conv_output_length, deconv_length
 from tensorflow.keras import initializers, layers
+import numpy as np
 from capsnet import utils as capsnet_utils
+import tf_slim as slim
 
 
 class Length(layers.Layer):
@@ -13,6 +16,7 @@ class Length(layers.Layer):
     Вход слоя (inputs): shape=[None, num_vectors, dim_vector]
     Выход слоя: shape=[None, num_vectors]
     """
+
     def __init__(self, num_classes=None, seg=False, **kwargs):
         super(Length, self).__init__(**kwargs)
         if num_classes == 2:
@@ -25,7 +29,7 @@ class Length(layers.Layer):
         if inputs.shape.ndims == 5:
             assert inputs.get_shape()[-2].value == 1, 'Error: Must have num_capsules = 1 going into Length'
             inputs = keras_backend.squeeze(inputs, axis=-2)
-        return keras_backend.expand_dims(tf.norm(inputs, axis=-1), axis=-1)
+        return tf.sqrt(tf.reduce_sum(tf.square(inputs), -1) + keras_backend.epsilon())
 
     def compute_output_shape(self, input_shape):
         if len(input_shape) == 5:
@@ -57,6 +61,7 @@ class Mask(layers.Layer):
         out2 = Mask()([x, y])  # out2.shape=[8,6]. Masked with true labels y. Of course y can also be manipulated.
         ```
     """
+
     def __init__(self, resize_masks=False, **kwargs):
         super(Mask, self).__init__(**kwargs)
         self.resize_masks = resize_masks
@@ -77,10 +82,10 @@ class Mask(layers.Layer):
         else:  # if no true label, mask by the max length of capsules. Mainly used for prediction
             # compute lengths of capsules
             if inputs.shape.ndims == 3:
-                x = keras_backend.sqrt(keras_backend.sum(keras_backend.square(inputs), -1))
+                x = tf.sqrt(tf.reduce_sum(tf.square(inputs), -1))
                 # generate the mask which is a one-hot code.
                 # mask.shape=[None, n_classes]=[None, num_capsule]
-                mask = keras_backend.one_hot(indices=keras_backend.argmax(x, 1), num_classes=x.shape[1])
+                mask = tf.one_hot(indices=tf.argmax(x, 1), depth=x.shape[1])
 
                 # inputs.shape=[None, num_capsule, dim_capsule]
                 # mask.shape=[None, num_capsule]
@@ -116,6 +121,7 @@ class CapsuleLayer(layers.Layer):
     :param dim_capsule: размер выходных векторов капсул в этом слое
     :param routings: количество итераций алгоритма маршрутизации между капсулами
     """
+
     def __init__(self, num_capsule, dim_capsule, routings=3,
                  kernel_initializer='glorot_uniform',
                  **kwargs):
@@ -164,8 +170,8 @@ class CapsuleLayer(layers.Layer):
 
         # Begin: Routing algorithm ----------------------------------------------#
         # The prior for coupling coefficient, initialized as zeros.
-        #  bias.shape = [None, self.num_capsule, self.input_num_capsule, 1, 1].
-        bias = tf.zeros(shape=[tf.shape(inputs_hat)[0], self.num_capsule,
+        #  b.shape = [None, self.num_capsule, self.input_num_capsule, 1, 1].
+        b = tf.zeros(shape=[tf.shape(inputs_hat)[0], self.num_capsule,
                             self.input_num_capsule, 1, 1])
 
         assert self.routings > 0, 'The routings should be > 0.'
@@ -173,7 +179,7 @@ class CapsuleLayer(layers.Layer):
         for i in range(self.routings):
             # Apply softmax to the axis with `num_capsule`
             #  c.shape=[batch_size, num_capsule, input_num_capsule, 1, 1]
-            c = tf.nn.softmax(bias, axis=1)
+            c = tf.nn.softmax(b, axis=1)
 
             # Compute the weighted sum of all the predicted output vectors.
             #  c.shape =  [batch_size, num_capsule, input_num_capsule, 1, 1]
@@ -195,7 +201,7 @@ class CapsuleLayer(layers.Layer):
                 # it to the prior b.
                 outputs_tiled = tf.tile(outputs, [1, 1, self.input_num_capsule, 1, 1])
                 agreement = tf.matmul(inputs_hat, outputs_tiled, transpose_a=True)
-                bias = tf.add(bias, agreement)
+                b = tf.add(b, agreement)
 
         # End: Routing algorithm ------------------------------------------------#
         # Squeeze the outputs to remove useless axis:
@@ -216,9 +222,11 @@ class CapsuleLayer(layers.Layer):
         return config
 
 
-def PrimaryCaps(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
+def PrimaryCaps(inputs, dim_capsule, kernel_size, strides, padding, name, n_channels=None, pose_shape=None):
     """
     Слой первичных капсул, который применяет Conv2D `n_channels` раз и соединяет все капсулы
+    :param name:
+    :param pose_shape:
     :param inputs: 4-х мерный тензор, shape=[None, width, height, channels]
     :param dim_capsule: размерность выходного вектора капсулы
     :param n_channels: количество типов капсул
@@ -229,7 +237,528 @@ def PrimaryCaps(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
     сверху / снизу. Добавление отступов приводит к тому, что ввод и вывод имеют одинаковую высоту и ширину
     :return: выходом является тензор формы shape=[None, num_capsule, dim_capsule]
     """
-    output = layers.Conv2D(filters=dim_capsule*n_channels, kernel_size=kernel_size, strides=strides, padding=padding,
-                           name='primarycaps_conv2d')(inputs)
-    outputs = layers.Reshape(target_shape=[-1, dim_capsule], name='primarycaps_reshape')(output)
-    return layers.Lambda(capsnet_utils.squash, name='primarycaps_squash')(outputs)
+    if pose_shape is None and n_channels is not None:
+        outputs = layers.Conv2D(filters=dim_capsule * n_channels, kernel_size=kernel_size, strides=strides,
+                               padding=padding, name=name + '_conv2d')(inputs)
+        outputs = layers.Reshape(target_shape=[-1, dim_capsule], name=name + '_reshape')(outputs)
+        return layers.Lambda(capsnet_utils.squash, name=name + '_squash')(outputs)
+    elif pose_shape is not None and n_channels is None:
+        poses = layers.Conv2D(filters=dim_capsule * pose_shape[0] * pose_shape[1], kernel_size=kernel_size,
+                              strides=strides, padding=padding, name='pose_stacked')(inputs)
+
+        input_shape = inputs.shape
+        poses = tf.reshape(poses, shape=[-1, input_shape[-3], input_shape[-2], dim_capsule,
+                           pose_shape[0], pose_shape[1]], name='poses')
+
+        activations = layers.Conv2D(filters=dim_capsule, kernel_size=kernel_size, strides=strides,
+                                    padding=padding, activation='sigmoid', name='activation')(inputs)
+
+        return poses, activations
+    else:
+        raise Exception(f'Invalid args: n_channels={n_channels} and pose_shape={pose_shape}')
+
+
+def ConvCapsuleLayer(inputs, shape, strides, routings, batch_size):
+    stride = strides[1]
+    i_size = shape[-2]
+    o_size = shape[-1]
+
+    inputs_poses, inputs_activations = inputs
+    pose_size = inputs_poses.shape[-1]
+
+    inputs_poses = CapsuleUtils.kernel_tile(inputs_poses, 3, stride)
+    inputs_activations = CapsuleUtils.kernel_tile(inputs_activations, 3, stride)
+    spatial_size = int(inputs_activations.shape[1])
+
+    inputs_poses = tf.reshape(inputs_poses, shape=[-1, 3 * 3 * i_size, 16])
+    inputs_activations = tf.reshape(inputs_activations, shape=[-1, spatial_size, spatial_size, 3 * 3 * i_size])
+
+    votes = CapsuleUtils.mat_transform(inputs_poses, o_size, size=batch_size * spatial_size * spatial_size)
+
+    votes_shape = votes.shape
+    votes = tf.reshape(votes, shape=[batch_size, spatial_size, spatial_size, votes_shape[-3],
+                                    votes_shape[-2], votes_shape[-1]])
+
+    initializer = tf.initializers.GlorotUniform()
+    beta_v = tf.Variable(lambda: initializer(shape=[1, 1, 1, o_size], dtype=tf.float32), name='beta_v')
+    beta_a = tf.Variable(lambda: initializer(shape=[1, 1, 1, o_size], dtype=tf.float32), name='beta_a')
+
+    poses, activations = CapsuleUtils.matrix_capsules_em_routing(votes, inputs_activations, beta_v, beta_a, routings)
+    poses_shape = poses.shape
+    poses = tf.reshape(poses, [poses_shape[0], poses_shape[1], poses_shape[2],
+                               poses_shape[3], pose_size, pose_size])
+
+    return poses, activations
+
+
+
+class ClassCapsuleLayer(layers.Layer):
+    def __init__(self, num_classes, batch_size, routings, **kwargs):
+        super(ClassCapsuleLayer, self).__init__(**kwargs)
+        self.routings = routings
+        self.batch_size = batch_size
+        self.num_classes = num_classes
+
+    def build(self, input_shape):
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        inputs_poses, inputs_activations = inputs
+        inputs_shape = inputs_poses.shape
+        spatial_size = int(inputs_shape[1])
+        pose_size = int(inputs_shape[-1])
+        i_size = int(inputs_shape[3])
+
+        inputs_poses = tf.reshape(inputs_poses, shape=[self.batch_size * spatial_size * spatial_size, inputs_shape[-3],
+                                                       inputs_shape[-2] * inputs_shape[-2]])
+
+        votes = CapsuleUtils.mat_transform(inputs_poses, self.num_classes,
+                                           size=self.batch_size * spatial_size * spatial_size)
+        votes = tf.reshape(votes, shape=[self.batch_size, spatial_size, spatial_size,
+                                         i_size, self.num_classes, pose_size * pose_size])
+        votes = CapsuleUtils.coord_addition(votes, spatial_size, spatial_size)
+
+        initializer = tf.initializers.GlorotUniform()
+        beta_v = tf.Variable(lambda: initializer(shape=[1, self.num_classes], dtype=tf.float32), name='beta_v')
+        beta_a = tf.Variable(lambda: initializer(shape=[1, self.num_classes], dtype=tf.float32), name='beta_a')
+
+        votes_shape = votes.get_shape()
+        votes = tf.reshape(votes, shape=[self.batch_size, votes_shape[1] * votes_shape[2] *
+                                         votes_shape[3], votes_shape[4], votes_shape[5]])
+
+        inputs_activations = tf.reshape(inputs_activations, shape=[self.batch_size,
+                                                                   votes_shape[1] * votes_shape[2] * votes_shape[3]])
+        poses, activations = CapsuleUtils.matrix_capsules_em_routing(votes, inputs_activations,
+                                                                     beta_v, beta_a, self.routings)
+        poses = tf.reshape(poses, shape=[self.batch_size, self.num_classes, pose_size, pose_size])
+        self.pose_size = pose_size
+
+        return poses, activations
+
+    def compute_output_shape(self, input_shape):
+        return [(self.batch_size, self.num_classes, self.pose_size, self.pose_size),
+                (self.batch_size, self.num_classes)]
+
+# class ConvCapsuleLayer(layers.Layer):
+#     def __init__(self, kernel_size, num_capsule, num_atoms, strides=1, padding='same', routings=3,
+#                  kernel_initializer='he_normal', **kwargs):
+#         super(ConvCapsuleLayer, self).__init__(**kwargs)
+#         self.kernel_size = kernel_size
+#         self.num_capsule = num_capsule
+#         self.num_atoms = num_atoms
+#         self.strides = strides
+#         self.padding = padding
+#         self.routings = routings
+#         self.kernel_initializer = initializers.get(kernel_initializer)
+#
+#     def build(self, input_shape):
+#         assert len(input_shape) == 5, "The input Tensor should have shape=[None, input_height, input_width," \
+#                                       " input_num_capsule, input_num_atoms]"
+#         self.input_height = input_shape[1]
+#         self.input_width = input_shape[2]
+#         self.input_num_capsule = input_shape[3]
+#         self.input_num_atoms = input_shape[4]
+#
+#         # Transform matrix
+#         self.W = self.add_weight(shape=[self.kernel_size, self.kernel_size,
+#                                         self.input_num_atoms, self.num_capsule * self.num_atoms],
+#                                  initializer=self.kernel_initializer,
+#                                  name='W')
+#
+#         self.b = self.add_weight(shape=[1, 1, self.num_capsule, self.num_atoms],
+#                                  initializer=initializers.constant(0.1),
+#                                  name='b')
+#
+#         self.built = True
+#
+#     def call(self, input_tensor, training=None):
+#         input_transposed = tf.transpose(input_tensor, [3, 0, 1, 2, 4])
+#         input_shape = keras_backend.shape(input_transposed)
+#         input_tensor_reshaped = keras_backend.reshape(input_transposed, [
+#             input_shape[0] * input_shape[1], self.input_height, self.input_width, self.input_num_atoms])
+#         input_tensor_reshaped.set_shape((None, self.input_height, self.input_width, self.input_num_atoms))
+#
+#         conv = keras_backend.conv2d(input_tensor_reshaped, self.W, (self.strides, self.strides),
+#                                     padding=self.padding, data_format='channels_last')
+#
+#         votes_shape = keras_backend.shape(conv)
+#         _, conv_height, conv_width, _ = conv.get_shape()
+#
+#         votes = keras_backend.reshape(conv, [input_shape[1], input_shape[0], votes_shape[1], votes_shape[2],
+#                                              self.num_capsule, self.num_atoms])
+#         votes.set_shape((None, self.input_num_capsule, conv_height.value, conv_width.value,
+#                          self.num_capsule, self.num_atoms))
+#
+#         logit_shape = keras_backend.stack([
+#             input_shape[1], input_shape[0], votes_shape[1], votes_shape[2], self.num_capsule])
+#         biases_replicated = keras_backend.tile(self.b, [conv_height.value, conv_width.value, 1, 1])
+#
+#         activations = update_routing(
+#             votes=votes,
+#             biases=biases_replicated,
+#             logit_shape=logit_shape,
+#             num_dims=6,
+#             input_dim=self.input_num_capsule,
+#             output_dim=self.num_capsule,
+#             num_routing=self.routings)
+#
+#         return activations
+#
+#     def compute_output_shape(self, input_shape):
+#         space = input_shape[1:-2]
+#         new_space = []
+#         for i in range(len(space)):
+#             new_dim = conv_output_length(
+#                 space[i],
+#                 self.kernel_size,
+#                 padding=self.padding,
+#                 stride=self.strides,
+#                 dilation=1)
+#             new_space.append(new_dim)
+#
+#         return (input_shape[0],) + tuple(new_space) + (self.num_capsule, self.num_atoms)
+#
+#     def get_config(self):
+#         config = {
+#             'kernel_size': self.kernel_size,
+#             'num_capsule': self.num_capsule,
+#             'num_atoms': self.num_atoms,
+#             'strides': self.strides,
+#             'padding': self.padding,
+#             'routings': self.routings,
+#             'kernel_initializer': initializers.serialize(self.kernel_initializer)
+#         }
+#         base_config = super(ConvCapsuleLayer, self).get_config()
+#         return dict(list(base_config.items()) + list(config.items()))
+#
+#
+# class DeconvCapsuleLayer(layers.Layer):
+#     def __init__(self, kernel_size, num_capsule, num_atoms, scaling=2, upsamp_type='deconv', padding='same', routings=3,
+#                  kernel_initializer='he_normal', **kwargs):
+#         super(DeconvCapsuleLayer, self).__init__(**kwargs)
+#         self.kernel_size = kernel_size
+#         self.num_capsule = num_capsule
+#         self.num_atoms = num_atoms
+#         self.scaling = scaling
+#         self.upsamp_type = upsamp_type
+#         self.padding = padding
+#         self.routings = routings
+#         self.kernel_initializer = initializers.get(kernel_initializer)
+#
+#     def build(self, input_shape):
+#         assert len(input_shape) == 5, "The input Tensor should have shape=[None, input_height, input_width," \
+#                                       " input_num_capsule, input_num_atoms]"
+#         self.input_height = input_shape[1]
+#         self.input_width = input_shape[2]
+#         self.input_num_capsule = input_shape[3]
+#         self.input_num_atoms = input_shape[4]
+#
+#         # Transform matrix
+#         if self.upsamp_type == 'subpix':
+#             self.W = self.add_weight(shape=[self.kernel_size, self.kernel_size,
+#                                             self.input_num_atoms,
+#                                             self.num_capsule * self.num_atoms * self.scaling * self.scaling],
+#                                      initializer=self.kernel_initializer,
+#                                      name='W')
+#         elif self.upsamp_type == 'resize':
+#             self.W = self.add_weight(shape=[self.kernel_size, self.kernel_size,
+#                                             self.input_num_atoms, self.num_capsule * self.num_atoms],
+#                                      initializer=self.kernel_initializer, name='W')
+#         elif self.upsamp_type == 'deconv':
+#             self.W = self.add_weight(shape=[self.kernel_size, self.kernel_size,
+#                                             self.num_capsule * self.num_atoms, self.input_num_atoms],
+#                                      initializer=self.kernel_initializer, name='W')
+#         else:
+#             raise NotImplementedError('Upsampling must be one of: "deconv", "resize", or "subpix"')
+#
+#         self.b = self.add_weight(shape=[1, 1, self.num_capsule, self.num_atoms],
+#                                  initializer=initializers.constant(0.1),
+#                                  name='b')
+#
+#         self.built = True
+#
+#     def call(self, input_tensor, training=None):
+#         input_transposed = tf.transpose(input_tensor, [3, 0, 1, 2, 4])
+#         input_shape = keras_backend.shape(input_transposed)
+#         input_tensor_reshaped = keras_backend.reshape(input_transposed, [
+#             input_shape[1] * input_shape[0], self.input_height, self.input_width, self.input_num_atoms])
+#         input_tensor_reshaped.set_shape((None, self.input_height, self.input_width, self.input_num_atoms))
+#
+#         if self.upsamp_type == 'resize':
+#             upsamp = keras_backend.resize_images(input_tensor_reshaped, self.scaling, self.scaling, 'channels_last')
+#             outputs = keras_backend.conv2d(upsamp, kernel=self.W, strides=(1, 1), padding=self.padding,
+#                                            data_format='channels_last')
+#         elif self.upsamp_type == 'subpix':
+#             conv = keras_backend.conv2d(input_tensor_reshaped, kernel=self.W, strides=(1, 1), padding='same',
+#                                         data_format='channels_last')
+#             outputs = tf.nn.depth_to_space(conv, self.scaling)
+#         else:
+#             batch_size = input_shape[1] * input_shape[0]
+#
+#             # Infer the dynamic output shape:
+#             out_height = deconv_length(self.input_height, self.scaling, self.kernel_size, self.padding)
+#             out_width = deconv_length(self.input_width, self.scaling, self.kernel_size, self.padding)
+#             output_shape = (batch_size, out_height, out_width, self.num_capsule * self.num_atoms)
+#
+#             outputs = keras_backend.conv2d_transpose(input_tensor_reshaped, self.W, output_shape,
+#                                                      (self.scaling, self.scaling),
+#                                                      padding=self.padding, data_format='channels_last')
+#
+#         votes_shape = keras_backend.shape(outputs)
+#         _, conv_height, conv_width, _ = outputs.get_shape()
+#
+#         votes = keras_backend.reshape(outputs, [input_shape[1], input_shape[0], votes_shape[1], votes_shape[2],
+#                                     self.num_capsule, self.num_atoms])
+#         votes.set_shape((None, self.input_num_capsule, conv_height.value, conv_width.value,
+#                          self.num_capsule, self.num_atoms))
+#
+#         logit_shape = keras_backend.stack([
+#             input_shape[1], input_shape[0], votes_shape[1], votes_shape[2], self.num_capsule])
+#         biases_replicated = keras_backend.tile(self.b, [votes_shape[1], votes_shape[2], 1, 1])
+#
+#         activations = update_routing(
+#             votes=votes,
+#             biases=biases_replicated,
+#             logit_shape=logit_shape,
+#             num_dims=6,
+#             input_dim=self.input_num_capsule,
+#             output_dim=self.num_capsule,
+#             num_routing=self.routings)
+#
+#         return activations
+#
+#     def compute_output_shape(self, input_shape):
+#         output_shape = list(input_shape)
+#
+#         output_shape[1] = deconv_length(output_shape[1], self.scaling, self.kernel_size, self.padding)
+#         output_shape[2] = deconv_length(output_shape[2], self.scaling, self.kernel_size, self.padding)
+#         output_shape[3] = self.num_capsule
+#         output_shape[4] = self.num_atoms
+#
+#         return tuple(output_shape)
+#
+#     def get_config(self):
+#         config = {
+#             'kernel_size': self.kernel_size,
+#             'num_capsule': self.num_capsule,
+#             'num_atoms': self.num_atoms,
+#             'scaling': self.scaling,
+#             'padding': self.padding,
+#             'upsamp_type': self.upsamp_type,
+#             'routings': self.routings,
+#             'kernel_initializer': initializers.serialize(self.kernel_initializer)
+#         }
+#         base_config = super(DeconvCapsuleLayer, self).get_config()
+#         return dict(list(base_config.items()) + list(config.items()))
+#
+#
+# def update_routing(votes, biases, logit_shape, num_dims, input_dim, output_dim,
+#                    num_routing):
+#     if num_dims == 6:
+#         votes_t_shape = [5, 0, 1, 2, 3, 4]
+#         r_t_shape = [1, 2, 3, 4, 5, 0]
+#     elif num_dims == 4:
+#         votes_t_shape = [3, 0, 1, 2]
+#         r_t_shape = [1, 2, 3, 0]
+#     else:
+#         raise NotImplementedError('Not implemented')
+#
+#     votes_trans = tf.transpose(votes, votes_t_shape)
+#     _, _, _, height, width, caps = votes_trans.get_shape()
+#
+#     def _body(i, logits, activations):
+#         """Routing while loop."""
+#         # route: [batch, input_dim, output_dim, ...]
+#         route = tf.nn.softmax(logits, dim=-1)
+#         preactivate_unrolled = route * votes_trans
+#         preact_trans = tf.transpose(preactivate_unrolled, r_t_shape)
+#         preactivate = tf.reduce_sum(preact_trans, axis=1) + biases
+#         activation = capsnet_utils.squash(preactivate)
+#         activations = activations.write(i, activation)
+#         act_3d = keras_backend.expand_dims(activation, 1)
+#         tile_shape = np.ones(num_dims, dtype=np.int32)
+#         tile_shape[1] = input_dim
+#         act_replicated = tf.tile(act_3d, tile_shape)
+#         distances = tf.reduce_sum(votes * act_replicated, axis=-1)
+#         logits += distances
+#         return (i + 1, logits, activations)
+#
+#     activations = tf.TensorArray(
+#         dtype=tf.float32, size=num_routing, clear_after_read=False)
+#     logits = tf.fill(logit_shape, 0.0)
+#
+#     i = tf.constant(0, dtype=tf.int32)
+#     _, logits, activations = tf.while_loop(
+#         lambda i, logits, activations: i < num_routing,
+#         _body,
+#         loop_vars=[i, logits, activations],
+#         swap_memory=True)
+#
+#     return keras_backend.cast(activations.read(num_routing - 1), dtype='float32')
+
+class CapsuleUtils:
+    @staticmethod
+    def matrix_capsules_em_routing(votes, i_activations, beta_v, beta_a, routings):
+        votes_shape = votes.shape
+
+        rr = tf.constant(1.0 / votes_shape[-2], shape=votes_shape[-3:-1] + [1], dtype=tf.float32)
+        i_activations = i_activations[..., tf.newaxis, tf.newaxis]
+        beta_v = beta_v[..., tf.newaxis, :, tf.newaxis]
+        beta_a = beta_a[..., tf.newaxis, :, tf.newaxis]
+
+        it_min = 1.0
+        it_max = min(routings, 3.0)
+        o_mean = o_activations = None
+        for it in range(routings):
+            inverse_temperature = it_min + (it_max - it_min) * it / max(1.0, routings - 1.0)
+            o_mean, o_stdv, o_activations = CapsuleUtils.m_step(rr, votes, i_activations, beta_v, beta_a,
+                                                                inverse_temperature=inverse_temperature)
+
+            if it < routings - 1:
+                rr = CapsuleUtils.e_step(o_mean, o_stdv, o_activations, votes)
+
+        poses = tf.squeeze(o_mean, axis=-3)
+        activations = tf.squeeze(o_activations, axis=[-3, -1])
+
+        return poses, activations
+
+    @staticmethod
+    def m_step(rr, votes, i_activations, beta_v, beta_a, inverse_temperature):
+        rr_prime = rr * i_activations
+        rr_prime_sum = tf.reduce_sum(rr_prime, axis=-3, keepdims=True, name='rr_prime_sum')
+
+        o_mean = tf.reduce_sum(rr_prime * votes, axis=-3, keepdims=True) / rr_prime_sum
+        o_stdv = tf.sqrt(tf.reduce_sum(rr_prime * tf.square(votes - o_mean), axis=-3, keepdims=True) / rr_prime_sum)
+
+        o_cost_h = (beta_v + keras_backend.log(o_stdv + keras_backend.epsilon())) * rr_prime_sum
+
+        o_cost = tf.reduce_sum(o_cost_h, axis=-1, keepdims=True)
+        o_cost_mean = tf.reduce_mean(o_cost, axis=-2, keepdims=True)
+        o_cost_stdv = tf.sqrt(tf.reduce_sum(tf.square(o_cost - o_cost_mean), axis=-2, keepdims=True) /
+                              o_cost.get_shape().as_list()[-2])
+        o_activations_cost = beta_a + (o_cost_mean - o_cost) / (o_cost_stdv + keras_backend.epsilon())
+
+        o_activations = tf.sigmoid(inverse_temperature * o_activations_cost)
+
+        return o_mean, o_stdv, o_activations
+
+    @staticmethod
+    def e_step(o_mean, o_stdv, o_activations, votes):
+        o_p_unit0 = - tf.reduce_sum(tf.square(votes - o_mean) / (2 * tf.square(o_stdv)), axis=-1, keepdims=True)
+        o_p_unit2 = - tf.reduce_sum(keras_backend.log(o_stdv + keras_backend.epsilon()), axis=-1, keepdims=True)
+        o_p = o_p_unit0 + o_p_unit2
+        zz = keras_backend.log(o_activations + keras_backend.epsilon()) + o_p
+        rr = tf.nn.softmax(zz, axis=len(zz.get_shape().as_list()) - 2)
+
+        return rr
+
+    @staticmethod
+    def kernel_tile(inputs, kernel_size, stride):
+        inputs_shape = inputs.shape
+        size = inputs_shape[4] * inputs_shape[5] if len(inputs_shape) > 5 else 1
+        inputs = tf.reshape(inputs, shape=[-1, inputs_shape[1], inputs_shape[2], inputs_shape[3] * size])
+
+        inputs_shape = inputs.shape
+        tile_filter = np.zeros(shape=[kernel_size, kernel_size, inputs_shape[3],
+                                      kernel_size * kernel_size], dtype=np.float32)
+
+        for i in range(kernel_size):
+            for j in range(kernel_size):
+                tile_filter[i, j, :, i * kernel_size + j] = 1.0
+
+        tile_filter_op = tf.constant(tile_filter, dtype=tf.float32)
+
+        outputs = tf.nn.depthwise_conv2d(inputs, tile_filter_op,
+                                         strides=[1, stride, stride, 1], padding='VALID')
+        outputs_shape = outputs.shape
+        outputs = tf.reshape(outputs, shape=[-1, outputs_shape[1], outputs_shape[2],
+                                             inputs_shape[3], kernel_size * kernel_size])
+        outputs = tf.transpose(outputs, perm=[0, 1, 2, 4, 3])
+
+        return outputs
+
+    @staticmethod
+    def mat_transform(inputs, outputs_cap_size, size):
+        caps_num_i = int(inputs.shape[1])
+        outputs = tf.reshape(inputs, shape=[size, caps_num_i, 1, 4, 4])
+
+        initializer = tf.initializers.truncated_normal(mean=0.0, stddev=1.0)
+        w = tf.Variable(lambda: initializer(shape=[1, caps_num_i, outputs_cap_size, 4, 4], dtype=tf.float32),
+                        name='w')
+        w = tf.tile(w, [size, 1, 1, 1, 1])
+
+        outputs = tf.tile(outputs, [1, 1, outputs_cap_size, 1, 1])
+
+        votes = tf.matmul(outputs, w)
+        votes = tf.reshape(votes, shape=[size, caps_num_i, outputs_cap_size, 16])
+
+        return votes
+
+    @staticmethod
+    def coord_addition(votes, H, W):
+        coordinate_offset_hh = tf.reshape((tf.range(H, dtype=tf.float32) + 0.50) / H, [1, H, 1, 1, 1])
+        coordinate_offset_h0 = tf.constant(0.0, shape=[1, H, 1, 1, 1], dtype=tf.float32)
+        coordinate_offset_h = tf.stack([coordinate_offset_hh, coordinate_offset_h0] +
+                                       [coordinate_offset_h0 for _ in range(14)], axis=-1)  # (1, 4, 1, 1, 1, 16)
+
+        coordinate_offset_ww = tf.reshape((tf.range(W, dtype=tf.float32) + 0.50) / W, [1, 1, W, 1, 1])
+        coordinate_offset_w0 = tf.constant(0.0, shape=[1, 1, W, 1, 1], dtype=tf.float32)
+        coordinate_offset_w = tf.stack([coordinate_offset_w0, coordinate_offset_ww] +
+                                       [coordinate_offset_w0 for _ in range(14)], axis=-1)
+
+        votes = votes + coordinate_offset_h + coordinate_offset_w
+
+        return votes
+
+
+def margin_loss(y_true, y_pred):
+    """
+    Margin loss for Eq.(4). When y_true[i, :] contains not just one `1`, this loss should work too. Not test it.
+    :param y_true: [None, n_classes]
+    :param y_pred: [None, num_capsule]
+    :return: a scalar loss value.
+    """
+    # return tf.reduce_mean(tf.square(y_pred))
+    L = y_true * tf.square(tf.maximum(0., 0.9 - y_pred)) + \
+        0.5 * (1 - y_true) * tf.square(tf.maximum(0., y_pred - 0.1))
+
+    return tf.reduce_mean(tf.reduce_sum(L, 1))
+
+
+def spread_loss(labels, activations, iterations_per_epoch, global_step, name):
+    """Spread loss
+    :param labels: (24, 10] in one-hot vector
+    :param activations: [24, 10], activation for each class
+    :param margin: increment from 0.2 to 0.9 during training
+
+    :return: spread loss
+    """
+
+    # Margin schedule
+    # Margin increase from 0.2 to 0.9 by an increment of 0.1 for every epoch
+    margin = tf.compat.v1.train.piecewise_constant(tf.cast(global_step, dtype=tf.int32),
+                                                   boundaries=[
+                                                       (iterations_per_epoch * x) for x in range(1, 8)
+                                                   ],
+                                                   values=[
+                                                       x / 10.0 for x in range(2, 10)
+                                                   ]
+                                                   )
+
+    activations_shape = activations.shape
+
+    # mask_t, mask_f Tensor (?, 10)
+    mask_t = tf.equal(labels, 1)  # Mask for the true label
+    mask_i = tf.equal(labels, 0)  # Mask for the non-true label
+
+    # Activation for the true label
+    # activations_t (?, 1)
+    activations_t = tf.reshape(tf.boolean_mask(activations, mask_t), shape=(tf.shape(activations)[0], 1))
+
+    # Activation for the other classes
+    # activations_i (?, 9)
+    activations_i = tf.reshape(tf.boolean_mask(activations, mask_i),
+                               [tf.shape(activations)[0], activations_shape[1] - 1])
+    l = tf.reduce_sum(tf.square(tf.maximum(0.0, margin - (activations_t - activations_i))))
+
+    return l

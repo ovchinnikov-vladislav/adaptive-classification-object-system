@@ -1,6 +1,12 @@
 import tensorflow.keras.backend as keras_backend
 import tensorflow as tf
+from keras import layers
 import numpy as np
+
+
+def keras_squeeze(inputs):
+    newdim = tuple([x for x in inputs.shape.as_list() if x != 1 and x is not None])
+    return layers.Reshape(newdim)(inputs)
 
 
 def update_locally_constrained_routing(votes, biases, logit_shape, num_dims, input_dim, output_dim, num_routing):
