@@ -11,14 +11,13 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.utils import to_categorical
 import matplotlib.pyplot as plt
 from PIL import Image
-from capsnet import models
+from capsnet import models, losses
 
 
 def plot_log(filename, show=True):
-
     data = pandas.read_csv(filename)
 
-    fig = plt.figure(figsize=(4,6))
+    fig = plt.figure(figsize=(4, 6))
     fig.subplots_adjust(top=0.95, bottom=0.05, right=0.95)
     fig.add_subplot(211)
     for key in data.keys():
@@ -43,35 +42,21 @@ def combine_images(generated_images, height=None, width=None):
     num = generated_images.shape[0]
     if width is None and height is None:
         width = int(math.sqrt(num))
-        height = int(math.ceil(float(num)/width))
+        height = int(math.ceil(float(num) / width))
     elif width is not None and height is None:  # height not given
-        height = int(math.ceil(float(num)/width))
+        height = int(math.ceil(float(num) / width))
     elif height is not None and width is None:  # width not given
-        width = int(math.ceil(float(num)/height))
+        width = int(math.ceil(float(num) / height))
 
     shape = generated_images.shape[1:3]
-    image = np.zeros((height*shape[0], width*shape[1]),
+    image = np.zeros((height * shape[0], width * shape[1]),
                      dtype=generated_images.dtype)
     for index, img in enumerate(generated_images):
-        i = int(index/width)
+        i = int(index / width)
         j = index % width
-        image[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = \
+        image[i * shape[0]:(i + 1) * shape[0], j * shape[1]:(j + 1) * shape[1]] = \
             img[:, :, 0]
     return image
-
-
-def margin_loss(y_true, y_pred):
-    """
-    Margin loss for Eq.(4). When y_true[i, :] contains not just one `1`, this loss should work too. Not test it.
-    :param y_true: [None, n_classes]
-    :param y_pred: [None, num_capsule]
-    :return: a scalar loss value.
-    """
-    # return tf.reduce_mean(tf.square(y_pred))
-    L = y_true * tf.square(tf.maximum(0., 0.9 - y_pred)) + \
-        0.5 * (1 - y_true) * tf.square(tf.maximum(0., y_pred - 0.1))
-
-    return tf.reduce_mean(tf.reduce_sum(L, 1))
 
 
 def train(model,  # type: models.Model
@@ -94,7 +79,7 @@ def train(model,  # type: models.Model
 
     # compile the model
     model.compile(optimizer=optimizers.Adam(lr=args.lr),
-                  loss=[margin_loss, 'mse'],
+                  loss=[losses.margin_loss, 'mse'],
                   loss_weights=[1., args.lam_recon],
                   metrics='accuracy')
 
@@ -186,11 +171,10 @@ class Args:
         self.save_dir = '.'
         self.digit = 5
 
+
 args = Args()
 
-
 import utils
-
 
 # load data
 (x_train, y_train), (x_test, y_test) = utils.load_mnist()
@@ -202,12 +186,12 @@ model, eval_model, manipulate_model = models.CapsNet(input_shape=x_train.shape[1
 
 model.summary()
 
-model.compile(optimizer=optimizers.Adam(lr=args.lr),
-              loss=[margin_loss, 'mse'],
-              metrics='accuracy')
-
-model.fit([x_train, y_train], [y_train, x_train], epochs=args.epochs, batch_size=args.batch_size,
-          validation_data=[[x_test, y_test], [y_test, x_test]])
-
-#train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
-test(model=eval_model, data=(x_test, y_test), args=args)
+# model.compile(optimizer=optimizers.Adam(lr=args.lr),
+#               loss=[losses.margin_loss, 'mse'],
+#               metrics='accuracy')
+#
+# model.fit([x_train, y_train], [y_train, x_train], epochs=args.epochs, batch_size=args.batch_size,
+#           validation_data=[[x_test, y_test], [y_test, x_test]])
+#
+# # train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
+# test(model=eval_model, data=(x_test, y_test), args=args)

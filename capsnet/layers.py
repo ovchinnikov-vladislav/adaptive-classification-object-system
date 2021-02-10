@@ -107,6 +107,113 @@ class Mask(layers.Layer):
         return config
 
 
+class PrimaryCaps(layers.Layer):
+    """
+    Слой первичных капсул, который применяет Conv2D `n_channels` раз и соединяет все капсулы
+    :param name:
+    :param pose_shape:
+    :param inputs: 4-х мерный тензор, shape=[None, width, height, channels]
+    :param dim_capsule: размерность выходного вектора капсулы
+    :param n_channels: количество типов капсул
+    :param kernel_size: целое число или кортеж / список из 2 целых чисел,
+    определяющих высоту и ширину окна двумерной свертки
+    :param strides: целое число или кортеж / список из 2 целых чисел, определяющих шаги свертки по высоте и ширине
+    :param padding: `valid` - отсутствие отступов или `same` - равномерное добавление отступов слева / справа
+    сверху / снизу. Добавление отступов приводит к тому, что ввод и вывод имеют одинаковую высоту и ширину
+    :return: выходом является тензор формы shape=[None, num_capsule, dim_capsule]
+    """
+
+    def __init__(self, dim_capsule, kernel_size, strides, padding, n_channels=None, pose_shape=None, **kwargs):
+        super(PrimaryCaps, self).__init__(**kwargs)
+        self.dim_capsule = dim_capsule
+        self.kernel_size = kernel_size
+        self.strides = strides
+        self.padding = padding
+        self.n_channels = n_channels
+        self.pose_shape = pose_shape
+        self.conv2d = self.poses_conv2d = self.activations_conv2d = None
+        self.conv2d_output_shape = None
+
+    def build(self, input_shape):
+        if self.pose_shape is None and self.n_channels is not None:
+            self.conv2d = layers.Conv2D(filters=self.dim_capsule * self.n_channels, kernel_size=self.kernel_size,
+                                        strides=self.strides, padding=self.padding)
+        elif self.pose_shape is not None and self.n_channels is None:
+            self.poses_conv2d = layers.Conv2D(filters=self.dim_capsule * self.pose_shape[0] * self.pose_shape[1],
+                                              kernel_size=self.kernel_size, strides=self.strides, padding=self.padding)
+
+            self.activations_conv2d = layers.Conv2D(filters=self.dim_capsule, kernel_size=self.kernel_size,
+                                                    strides=self.strides, padding=self.padding, activation='sigmoid')
+        else:
+            raise Exception(f'Invalid args: n_channels={self.n_channels} and pose_shape={self.pose_shape}')
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        if self.pose_shape is None and self.n_channels is not None:
+            outputs = self.conv2d(inputs)
+            self.conv2d_output_shape = outputs.shape
+            outputs = layers.Reshape(target_shape=[-1, self.dim_capsule])(outputs)
+            return layers.Lambda(capsnet_utils.squash)(outputs)
+        elif self.pose_shape is not None and self.n_channels is None:
+            poses = self.poses_conv2d(inputs)
+
+            input_shape = inputs.shape
+            poses = tf.reshape(poses, shape=[-1, input_shape[-3], input_shape[-2], self.dim_capsule,
+                                             self.pose_shape[0], self.pose_shape[1]])
+
+            activations = self.activations_conv2d(inputs)
+
+            return poses, activations
+
+    def compute_output_shape(self, input_shape):
+        return tuple([None, self.conv2d_output_shape[1] * self.conv2d_output_shape[2]
+                      * self.conv2d_output_shape[3] / self.dim_capsule, self.dim_capsule])
+
+
+class TimePrimaryCaps(layers.Layer):
+    """
+    Слой первичных капсул, который применяет Conv2D `n_channels` раз и соединяет все капсулы
+    :param name:
+    :param pose_shape:
+    :param inputs: 4-х мерный тензор, shape=[None, width, height, channels]
+    :param dim_capsule: размерность выходного вектора капсулы
+    :param n_channels: количество типов капсул
+    :param kernel_size: целое число или кортеж / список из 2 целых чисел,
+    определяющих высоту и ширину окна двумерной свертки
+    :param strides: целое число или кортеж / список из 2 целых чисел, определяющих шаги свертки по высоте и ширине
+    :param padding: `valid` - отсутствие отступов или `same` - равномерное добавление отступов слева / справа
+    сверху / снизу. Добавление отступов приводит к тому, что ввод и вывод имеют одинаковую высоту и ширину
+    :return: выходом является тензор формы shape=[None, num_capsule, dim_capsule]
+    """
+
+    def __init__(self, dim_capsule, kernel_size, strides, padding, n_channels, **kwargs):
+        super(TimePrimaryCaps, self).__init__(**kwargs)
+        self.dim_capsule = dim_capsule
+        self.kernel_size = kernel_size
+        self.strides = strides
+        self.padding = padding
+        self.n_channels = n_channels
+        self.conv2d = self.poses_conv2d = self.activations_conv2d = None
+        self.conv2d_output_shape = None
+
+    def build(self, input_shape):
+        self.conv2d = layers.TimeDistributed(layers.Conv2D(filters=self.dim_capsule * self.n_channels,
+                                                           kernel_size=self.kernel_size,
+                                                           strides=self.strides,
+                                                           padding=self.padding))
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        outputs = self.conv2d(inputs)
+        self.conv2d_output_shape = outputs.shape
+        outputs = layers.TimeDistributed(layers.Reshape(target_shape=[-1, self.dim_capsule]))(outputs)
+        return layers.TimeDistributed(layers.Lambda(capsnet_utils.squash))(outputs)
+
+    def compute_output_shape(self, input_shape):
+        return tuple([None, self.conv2d_output_shape[1] * self.conv2d_output_shape[2]
+                      * self.conv2d_output_shape[3] / self.dim_capsule, self.dim_capsule])
+
+
 class CapsuleLayer(layers.Layer):
     """
     Слой капсул. Данный слой похож на полносвязный (Dense). Полносвязный слой имеет `in_num` входов, каждый из которых
@@ -222,42 +329,6 @@ class CapsuleLayer(layers.Layer):
         return config
 
 
-def PrimaryCaps(inputs, dim_capsule, kernel_size, strides, padding, name, n_channels=None, pose_shape=None):
-    """
-    Слой первичных капсул, который применяет Conv2D `n_channels` раз и соединяет все капсулы
-    :param name:
-    :param pose_shape:
-    :param inputs: 4-х мерный тензор, shape=[None, width, height, channels]
-    :param dim_capsule: размерность выходного вектора капсулы
-    :param n_channels: количество типов капсул
-    :param kernel_size: целое число или кортеж / список из 2 целых чисел,
-    определяющих высоту и ширину окна двумерной свертки
-    :param strides: целое число или кортеж / список из 2 целых чисел, определяющих шаги свертки по высоте и ширине
-    :param padding: `valid` - отсутствие отступов или `same` - равномерное добавление отступов слева / справа
-    сверху / снизу. Добавление отступов приводит к тому, что ввод и вывод имеют одинаковую высоту и ширину
-    :return: выходом является тензор формы shape=[None, num_capsule, dim_capsule]
-    """
-    if pose_shape is None and n_channels is not None:
-        outputs = layers.Conv2D(filters=dim_capsule * n_channels, kernel_size=kernel_size, strides=strides,
-                               padding=padding, name=name + '_conv2d')(inputs)
-        outputs = layers.Reshape(target_shape=[-1, dim_capsule], name=name + '_reshape')(outputs)
-        return layers.Lambda(capsnet_utils.squash, name=name + '_squash')(outputs)
-    elif pose_shape is not None and n_channels is None:
-        poses = layers.Conv2D(filters=dim_capsule * pose_shape[0] * pose_shape[1], kernel_size=kernel_size,
-                              strides=strides, padding=padding, name='pose_stacked')(inputs)
-
-        input_shape = inputs.shape
-        poses = tf.reshape(poses, shape=[-1, input_shape[-3], input_shape[-2], dim_capsule,
-                           pose_shape[0], pose_shape[1]], name='poses')
-
-        activations = layers.Conv2D(filters=dim_capsule, kernel_size=kernel_size, strides=strides,
-                                    padding=padding, activation='sigmoid', name='activation')(inputs)
-
-        return poses, activations
-    else:
-        raise Exception(f'Invalid args: n_channels={n_channels} and pose_shape={pose_shape}')
-
-
 def ConvCapsuleLayer(inputs, shape, strides, routings, batch_size):
     stride = strides[1]
     i_size = shape[-2]
@@ -277,7 +348,7 @@ def ConvCapsuleLayer(inputs, shape, strides, routings, batch_size):
 
     votes_shape = votes.shape
     votes = tf.reshape(votes, shape=[batch_size, spatial_size, spatial_size, votes_shape[-3],
-                                    votes_shape[-2], votes_shape[-1]])
+                                     votes_shape[-2], votes_shape[-1]])
 
     initializer = tf.initializers.GlorotUniform()
     beta_v = tf.Variable(lambda: initializer(shape=[1, 1, 1, o_size], dtype=tf.float32), name='beta_v')
@@ -289,7 +360,6 @@ def ConvCapsuleLayer(inputs, shape, strides, routings, batch_size):
                                poses_shape[3], pose_size, pose_size])
 
     return poses, activations
-
 
 
 class ClassCapsuleLayer(layers.Layer):
@@ -338,6 +408,7 @@ class ClassCapsuleLayer(layers.Layer):
     def compute_output_shape(self, input_shape):
         return [(self.batch_size, self.num_classes, self.pose_size, self.pose_size),
                 (self.batch_size, self.num_classes)]
+
 
 # class ConvCapsuleLayer(layers.Layer):
 #     def __init__(self, kernel_size, num_capsule, num_atoms, strides=1, padding='same', routings=3,
@@ -709,56 +780,3 @@ class CapsuleUtils:
         votes = votes + coordinate_offset_h + coordinate_offset_w
 
         return votes
-
-
-def margin_loss(y_true, y_pred):
-    """
-    Margin loss for Eq.(4). When y_true[i, :] contains not just one `1`, this loss should work too. Not test it.
-    :param y_true: [None, n_classes]
-    :param y_pred: [None, num_capsule]
-    :return: a scalar loss value.
-    """
-    # return tf.reduce_mean(tf.square(y_pred))
-    L = y_true * tf.square(tf.maximum(0., 0.9 - y_pred)) + \
-        0.5 * (1 - y_true) * tf.square(tf.maximum(0., y_pred - 0.1))
-
-    return tf.reduce_mean(tf.reduce_sum(L, 1))
-
-
-def spread_loss(labels, activations, iterations_per_epoch, global_step, name):
-    """Spread loss
-    :param labels: (24, 10] in one-hot vector
-    :param activations: [24, 10], activation for each class
-    :param margin: increment from 0.2 to 0.9 during training
-
-    :return: spread loss
-    """
-
-    # Margin schedule
-    # Margin increase from 0.2 to 0.9 by an increment of 0.1 for every epoch
-    margin = tf.compat.v1.train.piecewise_constant(tf.cast(global_step, dtype=tf.int32),
-                                                   boundaries=[
-                                                       (iterations_per_epoch * x) for x in range(1, 8)
-                                                   ],
-                                                   values=[
-                                                       x / 10.0 for x in range(2, 10)
-                                                   ]
-                                                   )
-
-    activations_shape = activations.shape
-
-    # mask_t, mask_f Tensor (?, 10)
-    mask_t = tf.equal(labels, 1)  # Mask for the true label
-    mask_i = tf.equal(labels, 0)  # Mask for the non-true label
-
-    # Activation for the true label
-    # activations_t (?, 1)
-    activations_t = tf.reshape(tf.boolean_mask(activations, mask_t), shape=(tf.shape(activations)[0], 1))
-
-    # Activation for the other classes
-    # activations_i (?, 9)
-    activations_i = tf.reshape(tf.boolean_mask(activations, mask_i),
-                               [tf.shape(activations)[0], activations_shape[1] - 1])
-    l = tf.reduce_sum(tf.square(tf.maximum(0.0, margin - (activations_t - activations_i))))
-
-    return l
