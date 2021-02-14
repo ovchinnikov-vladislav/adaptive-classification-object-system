@@ -1,0 +1,5 @@
+patool
+pandas
+Pillow
+opencv-python
+numpy

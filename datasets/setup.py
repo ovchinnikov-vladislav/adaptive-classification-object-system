@@ -1,24 +1,26 @@
 from setuptools import setup, find_packages
 
-setup(name='hexcapsnet',
-      version='0.0.7-alpha',
-      description='Libs capsnets',
-      long_description='Libs capsnets',
+setup(name='hexucf',
+      version='0.0.6-alpha',
+      description='UCF Dataset',
+      long_description='UCF',
       classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6'
       ],
-      keywords='capsnet ai classification',
+      keywords='ucf ai datasets',
       url='',
       author='Vladislav Ovchinnikov',
       author_email='vladovchinnikov950@gmail.com',
       license='MIT',
       packages=find_packages(),
       install_requires=[
-          'tensorflow==2.4.1',
-          'keras',
-          'tf-slim'
+          'patool',
+          'pandas',
+          'Pillow',
+          'opencv-python',
+          'numpy'
       ],
       include_package_data=True,
       zip_safe=False)

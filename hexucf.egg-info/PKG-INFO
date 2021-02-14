@@ -1,0 +1,14 @@
+Metadata-Version: 1.1
+Name: hexucf
+Version: 0.0.6a0
+Summary: UCF Dataset
+Home-page: UNKNOWN
+Author: Vladislav Ovchinnikov
+Author-email: vladovchinnikov950@gmail.com
+License: MIT
+Description: UCF
+Keywords: ucf ai datasets
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3.6
