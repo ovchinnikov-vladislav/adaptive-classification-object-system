@@ -1,5 +1,5 @@
 from tensorflow.keras import layers, models
-import capsnet.layers as capslayers
+import capsnet_tf1.layers as capslayers
 import numpy as np
 
 
@@ -36,7 +36,7 @@ def CapsNet(input_shape, n_class, routings):
 
     # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
     # If using tensorflow, this will not be necessary. :)
-    out_caps = capslayers.Length(name='capsnet')(digitcaps)
+    out_caps = capslayers.Length(name='capsnet_tf2')(digitcaps)
 
     # Decoder network.
     y = layers.Input(shape=(n_class,))
@@ -87,7 +87,7 @@ def VideoCapsLSTM():
                                              padding='valid', name='time_primary_caps')(conv2d)
     digitcaps = TimeDistributed(capslayers.CapsuleLayer(num_capsule=10, dim_capsule=16, routings=3,
                                                         name='digitcaps'), name='time_digit_caps')(primarycaps)
-    out_caps = TimeDistributed(capslayers.Length(name='capsnet'), name='time_length')(digitcaps)
+    out_caps = TimeDistributed(capslayers.Length(name='capsnet_tf2'), name='time_length')(digitcaps)
     mask = TimeDistributed(capslayers.Mask(), name='mask')(digitcaps)
     dense = TimeDistributed(layers.Dense(512, activation='relu', input_dim=16 * 10))(mask)
     dense = TimeDistributed(layers.Dense(1024, activation='relu'))(dense)

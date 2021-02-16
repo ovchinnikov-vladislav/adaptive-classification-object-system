@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
-setup(name='hexcapsnet',
-      version='0.0.7-alpha',
+setup(name='capsnet_tf1',
+      version='0.0.1-alpha',
       description='Libs capsnets',
       long_description='Libs capsnets',
       classifiers=[

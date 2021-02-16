@@ -58,8 +58,8 @@ def __scan_ucf101_with_labels(data_dir_path, labels):
 
 
 def load_data(data_dist_path, frame_size=10, image_width=250, image_height=250):
-    UFC101_data_dir_path = data_dist_path + "/UCF-101"
-    if not os.path.exists(UFC101_data_dir_path):
+    ucf101_data_dir_path = data_dist_path + "/UCF-101"
+    if not os.path.exists(ucf101_data_dir_path):
         __download_ucf101(data_dist_path)
 
     videos = []
@@ -67,8 +67,8 @@ def load_data(data_dist_path, frame_size=10, image_width=250, image_height=250):
     name_class_labels = dict()
 
     dir_count = 0
-    for f in os.listdir(UFC101_data_dir_path):
-        file_path = UFC101_data_dir_path + os.path.sep + f
+    for f in os.listdir(ucf101_data_dir_path):
+        file_path = ucf101_data_dir_path + os.path.sep + f
         print(file_path)
         if not os.path.isfile(file_path):
             dir_count += 1
@@ -99,8 +99,11 @@ def load_data(data_dist_path, frame_size=10, image_width=250, image_height=250):
     train_set = train_set.reset_index().drop("index", axis=1)
     test_set = test_set.reset_index().drop("index", axis=1)
 
-    train_videos_dir = os.path.join(UFC101_data_dir_path, "Train_Videos")
-    test_videos_dir = os.path.join(UFC101_data_dir_path, "Test_Videos")
+    os.rmdir(os.path.join(ucf101_data_dir_path, "Train_Videos"))
+    os.rmdir(os.path.join(ucf101_data_dir_path, "Test_Videos"))
+
+    train_videos_dir = os.path.join(ucf101_data_dir_path, "Train_Videos")
+    test_videos_dir = os.path.join(ucf101_data_dir_path, "Test_Videos")
     try:
         os.mkdir(train_videos_dir)
     except FileExistsError as ae:
@@ -110,11 +113,11 @@ def load_data(data_dist_path, frame_size=10, image_width=250, image_height=250):
     except FileExistsError as ae:
         print("Folder Already Created")
 
-    utils.video_capturing_function(UFC101_data_dir_path, train_set, "Train_Videos")
-    utils.video_capturing_function(UFC101_data_dir_path, test_set, "Test_Videos")
+    utils.video_capturing_function(ucf101_data_dir_path, train_set, "Train_Videos")
+    utils.video_capturing_function(ucf101_data_dir_path, test_set, "Test_Videos")
 
-    train_dir_path = UFC101_data_dir_path + os.path.sep + 'Train_Videos'
-    test_dir_path = UFC101_data_dir_path + os.path.sep + 'Test_Videos'
+    train_dir_path = ucf101_data_dir_path + os.path.sep + 'Train_Videos'
+    test_dir_path = ucf101_data_dir_path + os.path.sep + 'Test_Videos'
 
     train_frames = []
     for i in np.arange(len(train_set.video_name)):

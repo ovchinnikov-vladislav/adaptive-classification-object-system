@@ -11,7 +11,7 @@ from tensorflow.keras import backend as K
 from tensorflow.keras.utils import to_categorical
 import matplotlib.pyplot as plt
 from PIL import Image
-from capsnet import models, losses
+from capsnet_tf2 import models, losses
 
 
 def plot_log(filename, show=True):

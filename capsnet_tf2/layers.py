@@ -3,7 +3,7 @@ import tensorflow.keras.backend as keras_backend
 from keras.utils.conv_utils import conv_output_length, deconv_length
 from tensorflow.keras import initializers, layers
 import numpy as np
-from capsnet import utils as capsnet_utils
+from capsnet_tf2 import utils as capsnet_utils
 import tf_slim as slim
 
 

@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='hexucf',
-      version='0.0.6-alpha',
+      version='0.0.9-alpha',
       description='UCF Dataset',
       long_description='UCF',
       classifiers=[
@@ -20,7 +20,8 @@ setup(name='hexucf',
           'pandas',
           'Pillow',
           'opencv-python',
-          'numpy'
+          'numpy',
+          'hex_dynamic_images'
       ],
       include_package_data=True,
       zip_safe=False)
