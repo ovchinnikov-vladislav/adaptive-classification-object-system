@@ -4,7 +4,7 @@ import patoolib
 import pandas as pd
 import numpy as np
 import math
-from capsnet import datasets as utils
+import datasets as utils
 
 
 def __download_ucf101(data_dir_path):

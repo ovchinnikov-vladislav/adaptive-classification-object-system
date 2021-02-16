@@ -4,8 +4,8 @@ import patoolib
 import pandas as pd
 import numpy as np
 import math
-from capsnet import datasets as utils
-import capsnet.dynamic_images.utils as du
+import datasets as utils
+import dynamic_images.utils as du
 import cv2
 import shutil
 

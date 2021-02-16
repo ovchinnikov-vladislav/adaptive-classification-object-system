@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
-setup(name='capsnet_all',
+setup(name='capsnet-classification-libs',
       version='0.0.1-alpha',
-      description='capsnets',
-      long_description='capsnets',
+      description='Libs capsnets',
+      long_description='Libs capsnets',
       classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
@@ -16,8 +16,10 @@ setup(name='capsnet_all',
       license='MIT',
       packages=find_packages(),
       install_requires=[
-          'tensorflow==1.15',
-          'keras==2.1.5'
+          'opencv-python',
+          'patool',
+          'pandas',
+          'Pillow'
       ],
       include_package_data=True,
       zip_safe=False)

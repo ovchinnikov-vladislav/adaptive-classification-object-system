@@ -1,12 +1,13 @@
-import math
 import pandas
 
 import numpy as np
 from tensorflow.keras import models, optimizers
 import matplotlib.pyplot as plt
 from PIL import Image
-from capsnet.capsnet_tf2 import losses
-from capsnet.capsnet_tf2 import models
+from ml.tf2.capsnet import models, losses
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import callbacks
+import ml.utils as utils
 
 
 def plot_log(filename, show=True):
@@ -31,27 +32,6 @@ def plot_log(filename, show=True):
     # fig.savefig('result/log.png')
     if show:
         plt.show()
-
-
-def combine_images(generated_images, height=None, width=None):
-    num = generated_images.shape[0]
-    if width is None and height is None:
-        width = int(math.sqrt(num))
-        height = int(math.ceil(float(num) / width))
-    elif width is not None and height is None:  # height not given
-        height = int(math.ceil(float(num) / width))
-    elif height is not None and width is None:  # width not given
-        width = int(math.ceil(float(num) / height))
-
-    shape = generated_images.shape[1:3]
-    image = np.zeros((height * shape[0], width * shape[1]),
-                     dtype=generated_images.dtype)
-    for index, img in enumerate(generated_images):
-        i = int(index / width)
-        j = index % width
-        image[i * shape[0]:(i + 1) * shape[0], j * shape[1]:(j + 1) * shape[1]] = \
-            img[:, :, 0]
-    return image
 
 
 def train(model,  # type: models.Model
@@ -115,7 +95,7 @@ def test(model, data, args):
     print('y_test.shape[0]', y_test.shape[0])
     print('Test acc:', np.sum(np.argmax(y_pred, 1) == np.argmax(y_test, 1)) / y_test.shape[0])
 
-    img = combine_images(np.concatenate([x_test[:50], x_recon[:50]]))
+    img = utils.combine_images(np.concatenate([x_test[:50], x_recon[:50]]))
     image = img * 255
     Image.fromarray(image.astype(np.uint8)).save(args.save_dir + "/real_and_recon.png")
     print()
@@ -143,15 +123,11 @@ def manipulate_latent(model, data, args):
 
     x_recons = np.concatenate(x_recons)
 
-    img = combine_images(x_recons, height=16)
+    img = utils.combine_images(x_recons, height=16)
     image = img * 255
     Image.fromarray(image.astype(np.uint8)).save(args.save_dir + '/manipulate-%d.png' % args.digit)
     print('manipulated result saved to %s/manipulate-%d.png' % (args.save_dir, args.digit))
     print('-' * 30 + 'End: manipulate' + '-' * 30)
-
-
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras import callbacks
 
 
 class Args:
@@ -168,8 +144,6 @@ class Args:
 
 
 args = Args()
-
-import utils
 
 # load data
 (x_train, y_train), (x_test, y_test) = utils.load_mnist()
