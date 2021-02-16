@@ -1,17 +1,12 @@
-import csv
 import math
 import pandas
 
-from tensorflow.keras import initializers, layers
-
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras import layers, models, optimizers
-from tensorflow.keras import backend as K
-from tensorflow.keras.utils import to_categorical
+from tensorflow.keras import models, optimizers
 import matplotlib.pyplot as plt
 from PIL import Image
-from capsnet_tf2 import models, losses
+from capsnet.capsnet_tf2 import losses
+from capsnet.capsnet_tf2 import models
 
 
 def plot_log(filename, show=True):

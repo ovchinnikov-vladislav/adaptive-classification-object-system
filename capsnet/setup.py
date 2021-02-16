@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
-setup(name='capsnet_tf2',
-      version='0.0.7-alpha',
-      description='Libs capsnets',
-      long_description='Libs capsnets',
+setup(name='capsnet_all',
+      version='0.0.1-alpha',
+      description='capsnets',
+      long_description='capsnets',
       classifiers=[
         'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
@@ -16,9 +16,8 @@ setup(name='capsnet_tf2',
       license='MIT',
       packages=find_packages(),
       install_requires=[
-          'tensorflow==2.4.1',
-          'keras',
-          'tf-slim'
+          'tensorflow==1.15',
+          'keras==2.1.5'
       ],
       include_package_data=True,
       zip_safe=False)

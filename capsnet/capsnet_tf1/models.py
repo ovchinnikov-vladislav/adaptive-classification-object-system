@@ -1,5 +1,5 @@
 from tensorflow.keras import layers, models
-import capsnet_tf2.layers as capslayers
+from capsnet import capsnet_tf1 as capslayers
 import numpy as np
 
 
@@ -75,7 +75,7 @@ def FastCapsNet3D(input_shape, n_class, routings):
 
 
 def VideoCapsLSTM():
-    from keras.layers import TimeDistributed, Conv2D, Dense, MaxPooling2D, Flatten, LSTM, Dropout, BatchNormalization
+    from keras.layers import TimeDistributed, Conv2D, Dense, LSTM, Dropout
     input_shape = (10, 50, 50, 1)
     x = layers.Input(shape=input_shape)
 
