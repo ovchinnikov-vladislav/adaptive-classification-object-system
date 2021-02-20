@@ -7,7 +7,7 @@ from PIL import Image
 from ml.tf2.capsnet import models, losses
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import callbacks
-import ml.utils as utils
+import ml.utl as utils
 
 
 def plot_log(filename, show=True):
@@ -95,7 +95,7 @@ def test(model, data, args):
     print('y_test.shape[0]', y_test.shape[0])
     print('Test acc:', np.sum(np.argmax(y_pred, 1) == np.argmax(y_test, 1)) / y_test.shape[0])
 
-    img = utils.combine_images(np.concatenate([x_test[:50], x_recon[:50]]))
+    img = utl.combine_images(np.concatenate([x_test[:50], x_recon[:50]]))
     image = img * 255
     Image.fromarray(image.astype(np.uint8)).save(args.save_dir + "/real_and_recon.png")
     print()
@@ -123,7 +123,7 @@ def manipulate_latent(model, data, args):
 
     x_recons = np.concatenate(x_recons)
 
-    img = utils.combine_images(x_recons, height=16)
+    img = utl.combine_images(x_recons, height=16)
     image = img * 255
     Image.fromarray(image.astype(np.uint8)).save(args.save_dir + '/manipulate-%d.png' % args.digit)
     print('manipulated result saved to %s/manipulate-%d.png' % (args.save_dir, args.digit))
@@ -146,7 +146,7 @@ class Args:
 args = Args()
 
 # load data
-(x_train, y_train), (x_test, y_test) = utils.load_mnist()
+(x_train, y_train), (x_test, y_test) = utl.load_mnist()
 # define model
 
 model, eval_model, manipulate_model = models.CapsNet(input_shape=x_train.shape[1:],
@@ -155,12 +155,12 @@ model, eval_model, manipulate_model = models.CapsNet(input_shape=x_train.shape[1
 
 model.summary()
 
-# model.compile(optimizer=optimizers.Adam(lr=args.lr),
-#               loss=[losses.margin_loss, 'mse'],
-#               metrics='accuracy')
-#
-# model.fit([x_train, y_train], [y_train, x_train], epochs=args.epochs, batch_size=args.batch_size,
-#           validation_data=[[x_test, y_test], [y_test, x_test]])
+model.compile(optimizer=optimizers.Adam(lr=args.lr),
+              loss=[losses.margin_loss, 'mse'],
+              metrics='accuracy')
+
+model.fit([x_train, y_train], [y_train, x_train], epochs=args.epochs, batch_size=args.batch_size,
+          validation_data=[[x_test, y_test], [y_test, x_test]])
 #
 # # train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
 # test(model=eval_model, data=(x_test, y_test), args=args)

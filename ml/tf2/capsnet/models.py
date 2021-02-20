@@ -62,3 +62,7 @@ def CapsNet(input_shape, n_class, routings):
     manipulate_model = models.Model([x, y, noise], decoder(masked_noised_y))
     return train_model, eval_model, manipulate_model
 
+
+if __name__ == '__main__':
+    model, _, _ = CapsNet([28, 28, 1], 10, 3)
+    model.summary()

@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow.keras.backend as keras_backend
 from tensorflow.keras import initializers, layers
 import numpy as np
-import ml.tf2.capsnet.utils as capsnet_utils
+import ml.tf2.capsnet.utl as capsnet_utils
 
 
 class Length(layers.Layer):
@@ -148,9 +148,12 @@ class PrimaryCaps(layers.Layer):
 
     def call(self, inputs, **kwargs):
         if self.pose_shape is None and self.n_channels is not None:
+            print(inputs.shape)
             outputs = self.conv2d(inputs)
             self.conv2d_output_shape = outputs.shape
+            print(outputs.shape)
             outputs = layers.Reshape(target_shape=[-1, self.dim_capsule])(outputs)
+            print(outputs.shape)
             return layers.Lambda(capsnet_utils.squash)(outputs)
         elif self.pose_shape is not None and self.n_channels is None:
             poses = self.poses_conv2d(inputs)
@@ -203,6 +206,7 @@ class CapsuleLayer(layers.Layer):
                                         self.dim_capsule, self.input_dim_capsule],
                                  initializer=self.kernel_initializer,
                                  name='W')
+        print(self.W.shape)
 
         self.built = True
 

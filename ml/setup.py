@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='capsnet-classification-libs',
-      version='0.0.1-alpha',
+      version='0.0.2-alpha',
       description='Libs capsnets',
       long_description='Libs capsnets',
       classifiers=[

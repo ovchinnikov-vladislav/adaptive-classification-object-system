@@ -23,12 +23,12 @@ def CapsNet(input_shape, n_class, routings):
                           name='conv1')(x)
 
     # Layer 2: Conv2D layer with `squash` activation, then reshape to [None, num_capsule, dim_capsule]
-    primarycaps = capslayers.PrimaryCaps(dim_capsule=8,
+    primarycaps = capslayers.PrimaryCaps(conv1,
+                                         dim_capsule=8,
                                          n_channels=32,
                                          kernel_size=9,
                                          strides=2,
-                                         padding='valid',
-                                         name='primarycaps')(conv1)
+                                         padding='valid')
 
     # Layer 3: Capsule layer. Routing algorithm works here.
     digitcaps = capslayers.CapsuleLayer(num_capsule=n_class, dim_capsule=16, routings=routings,
@@ -36,7 +36,7 @@ def CapsNet(input_shape, n_class, routings):
 
     # Layer 4: This is an auxiliary layer to replace each capsule with its length. Just to match the true label's shape.
     # If using tensorflow, this will not be necessary. :)
-    out_caps = capslayers.Length(name='capsnet_tf2')(digitcaps)
+    out_caps = capslayers.Length(name='output_caps')(digitcaps)
 
     # Decoder network.
     y = layers.Input(shape=(n_class,))
@@ -61,3 +61,4 @@ def CapsNet(input_shape, n_class, routings):
     masked_noised_y = capslayers.Mask()([noised_digitcaps, y])
     manipulate_model = models.Model([x, y, noise], decoder(masked_noised_y))
     return train_model, eval_model, manipulate_model
+
