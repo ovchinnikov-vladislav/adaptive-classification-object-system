@@ -3,15 +3,14 @@ import bmstu.capsnet.layers.basic as basic_layers
 
 
 class CapsNet:
-    def __init__(self, shape, classes, name=''):
-        super(CapsNet, self).__init__(name)
+    def __init__(self, shape, classes, routings):
         self.shape = shape
         self.classes = classes
 
         self.input_capsnet = tf.keras.layers.Input(shape=shape)
         self.conv1 = tf.keras.layers.Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)
         self.primaryCaps = basic_layers.PrimaryCapsule(capsules=32, dim_capsules=8, kernel_size=9, strides=2)
-        self.capsules = basic_layers.Capsule(capsules=classes, dim_capsules=16, routings=3)
+        self.capsules = basic_layers.Capsule(capsules=classes, dim_capsules=16, routings=routings)
         self.output = basic_layers.Length()
 
         self.input_decoder = tf.keras.layers.Input(shape=(classes,))
