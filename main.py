@@ -7,7 +7,6 @@ from PIL import Image
 from ml.tf2.capsnet import models, losses
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import callbacks
-import ml.utl as utils
 
 
 def plot_log(filename, show=True):
