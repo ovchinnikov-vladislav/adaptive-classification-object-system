@@ -3,9 +3,9 @@ from abc import ABC
 import tensorflow as tf
 
 
-class PrimaryCapsule(tf.keras.Model, ABC):
+class PrimaryCapsule2D(tf.keras.Model, ABC):
     def __init__(self, capsules, kernel_size, strides, name=''):
-        super(PrimaryCapsule, self).__init__(name)
+        super(PrimaryCapsule2D, self).__init__(name)
         self.capsules = capsules
         self.kernel_size = kernel_size
         self.strides = strides

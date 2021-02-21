@@ -12,7 +12,7 @@ class CapsNet:
 
         self.input_capsnet = tf.keras.layers.Input(shape=shape)
         self.conv1 = tf.keras.layers.Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)
-        self.primaryCaps = basic_layers.PrimaryCapsule(capsules=32, dim_capsules=8, kernel_size=9, strides=2)
+        self.primaryCaps = basic_layers.PrimaryCapsule2D(capsules=32, dim_capsules=8, kernel_size=9, strides=2)
         self.capsules = basic_layers.Capsule(capsules=classes, dim_capsules=16, routings=routings)
         self.output = basic_layers.Length()
 
@@ -48,7 +48,7 @@ class GammaCapsNet:
         super(GammaCapsNet, self).__init__()
         self.input_capsnet = tf.keras.layers.Input(shape=shape)
         self.conv1 = tf.keras.layers.Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)
-        self.primaryCaps = basic_layers.PrimaryCapsule(capsules=32, dim_capsules=8, kernel_size=9, strides=2)
+        self.primaryCaps = basic_layers.PrimaryCapsule2D(capsules=32, dim_capsules=8, kernel_size=9, strides=2)
         self.gammaCaps1 = gamma_layers.GammaCapsule(capsules=32, dim_capsules=8, routings=routings)
         self.gammaCaps2 = gamma_layers.GammaCapsule(capsules=10, dim_capsules=16, routings=routings)
         self.decoder = gamma_layers.GammaDecoder(dim=28)
@@ -83,7 +83,7 @@ class MatrixCapsNet:
 
         self.input_capsnet = tf.keras.layers.Input(shape=shape)
         self.conv1 = tf.keras.layers.Conv2D(32, (5, 5), padding='valid', activation=tf.nn.relu)
-        self.primaryCaps = matrix_layers.PrimaryCapsule(capsules=8, kernel_size=1, strides=1)
+        self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=8, kernel_size=1, strides=1)
 
     def build(self):
         self.conv1 = self.conv1(self.input_capsnet)

@@ -8,7 +8,7 @@ import numpy as np
 from bmstu.capsnet.utls import squash
 
 
-class PrimaryCapsule(tf.keras.Model, ABC):
+class PrimaryCapsule2D(tf.keras.Model, ABC):
     """
     :param capsules: количество первичных капсул
     :param dim_capsules: размер капсул
@@ -18,7 +18,7 @@ class PrimaryCapsule(tf.keras.Model, ABC):
     """
 
     def __init__(self, capsules, dim_capsules, kernel_size, strides, name=''):
-        super(PrimaryCapsule, self).__init__(name)
+        super(PrimaryCapsule2D, self).__init__(name)
         assert capsules % dim_capsules == 0, "Invalid size of capsules and dim_capsules"
 
         num_filters = capsules * dim_capsules
