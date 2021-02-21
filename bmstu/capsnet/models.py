@@ -55,6 +55,8 @@ class GammaCapsNet:
 
         self.input_decoder = tf.keras.layers.Input(shape=(classes,))
 
+        self.model = None
+
     def build(self):
         x = self.conv1(self.input_capsnet)
         x = self.primaryCaps(x)
@@ -64,8 +66,10 @@ class GammaCapsNet:
         r = self.decoder(v_2)
         out = self.norm(v_2)
 
-        return tf.keras.models.Model(self.input_capsnet, [out, r])
+        self.model = tf.keras.models.Model(self.input_capsnet, [out, r])
+        return self.model
 
-
-if __name__ == '__main__':
-    GammaCapsNet(shape=[28, 28, 1], classes=10, routings=3).build().summary()
+    def fit(self, train_data, validation_data):
+        assert self.model is None, 'GammaCapsNet model should be building'
+        # TODO: дописать кастомное обучение модели
+        pass
