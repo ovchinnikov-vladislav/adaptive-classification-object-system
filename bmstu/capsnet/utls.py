@@ -12,8 +12,7 @@ def squash(vectors, axis=-1):
     return additional_squashing * unit_scaling
 
 
-def em_routing(v, a_i, beta_v, beta_a, routings):
-    # TODO: Написать стандартный роутинг
+def em_routing(votes, activation, routings):
     pass
 
 
