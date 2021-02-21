@@ -47,36 +47,37 @@ def cross_entropy_loss(y_true, y_pred, x):
     return loss_all, reconstruction_loss, y_pred
 
 
-def spread_loss(y_true, y_pred, pose_out, x, m):
-    num_classes = int(y_pred.shape[-1])
-    data_size = int(x.shape[1])
+def spread_loss(labels, activations, iterations_per_epoch):
+    """Spread loss
+    :param iterations_per_epoch: количество итераций в одну эпоху
+    :param labels: (24, 10] in one-hot vector
+    :param activations: [24, 10], activation for each class
+    :return: spread loss
 
-    y_true = tf.one_hot(y_true, num_classes, dtype=tf.float32)
+    margin: increment from 0.2 to 0.9 during training
+    """
 
-    output = tf.reshape(y_pred, shape=[1, num_classes])
-    y_true = tf.expand_dims(y_true, axis=2)
-    at = tf.matmul(output, y_true)
+    # Margin schedule
+    # Margin increase from 0.2 to 0.9 by an increment of 0.1 for every epoch
+    margin = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=[
+        (iterations_per_epoch * x) for x in range(1, 8)],
+        values=[x / 10.0 for x in range(2, 10)])
 
-    loss = tf.square(tf.maximum(0., m - (at - output)))
-    loss = tf.matmul(loss, 1. - y_true)
-    loss = tf.reduce_mean(loss)
+    activations_shape = activations.shape
 
-    pose_out = tf.reshape(tf.multiply(pose_out, y_true), shape=[-1])
+    # mask_t, mask_f Tensor (?, 10)
+    mask_t = tf.equal(labels, 1)  # Mask for the true label
+    mask_i = tf.equal(labels, 0)  # Mask for the non-true label
 
-    pose_out = tf.keras.layers.Dense(512, trainable=True,
-                                     kernel_regularizer=tf.keras.regularizers.L2(5e-04),
-                                     activity_regularizer=tf.keras.regularizers.L2(5e-04))(pose_out)
-    pose_out = tf.keras.layers.Dense(1024, trainable=True,
-                                     kernel_regularizer=tf.keras.regularizers.L2(5e-04),
-                                     activity_regularizer=tf.keras.regularizers.L2(5e-04))(pose_out)
-    pose_out = tf.keras.layers.Dense(data_size * data_size, trainable=True, activation=tf.sigmoid,
-                                     kernel_regularizer=tf.keras.regularizers.L2(5e-04),
-                                     activity_regularizer=tf.keras.regularizers.L2(5e-04))(pose_out)
+    # Activation for the true label
+    # activations_t (?, 1)
+    activations_t = tf.reshape(tf.boolean_mask(activations, mask_t), shape=(tf.shape(activations)[0], 1))
 
-    x = tf.reshape(x, shape=[-1])
-    reconstruction_loss = tf.reduce_mean(tf.square(pose_out - x))
+    # Activation for the other classes
+    # activations_i (?, 9)
+    activations_i = tf.reshape(tf.boolean_mask(activations, mask_i),
+                               [tf.shape(activations)[0], activations_shape[1] - 1])
 
-    loss_all = tf.add_n([loss] + [0.0005 * data_size * data_size * reconstruction_loss])
+    loss = tf.reduce_sum(tf.square(tf.maximum(0.0, margin - (activations_t - activations_i))))
 
-    return loss_all, loss, reconstruction_loss, pose_out
-
+    return loss
