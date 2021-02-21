@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 from tensorflow.keras.backend import epsilon
 
 
@@ -12,11 +13,7 @@ def squash(vectors, axis=-1):
     return additional_squashing * unit_scaling
 
 
-def em_routing(votes, activation, routings):
-    pass
-
-
-def attention_em_routing(v_v1, v_v2, v_f, a_i_f, beta_v_v, beta_a_v, beta_v_f, beta_a_f, routings):
+def attention_em_routing(votes_v1, votes_v2, votes_f, activations_i_f, beta_v_v, beta_a_v, beta_v_f, beta_a_f,
+                         routings):
     # TODO: написать роутинг для attention
     pass
-

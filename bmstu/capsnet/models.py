@@ -130,23 +130,28 @@ class GammaCapsNet(tf.keras.Model, ABC):
 
 
 class MatrixCapsNet:
-    def __init__(self, shape, classes):
+    def __init__(self, shape, classes, routings, batch_size):
         self.shape = shape
         self.classes = classes
+        self.routings = routings
 
-        self.input_capsnet = tf.keras.layers.Input(shape=shape)
-        self.conv1 = tf.keras.layers.Conv2D(32, (5, 5), padding='valid', activation=tf.nn.relu)
-        self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=8, kernel_size=1, strides=1)
+        self.input_capsnet = tf.keras.layers.Input(shape=shape, batch_size=batch_size)
+        self.conv1 = tf.keras.layers.Conv2D(filters=32, kernel_size=5, strides=2, padding='same', activation=tf.nn.relu)
+        self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=32, kernel_size=1, strides=1, padding='valid',
+                                                          pose_shape=[4, 4])
+        self.convCaps1 = matrix_layers.ConvolutionalCapsule(shape=[3, 3, 32, 32], strides=[1, 2, 2, 1],
+                                                            routings=routings)
 
     def build(self):
         self.conv1 = self.conv1(self.input_capsnet)
         self.primaryCaps = self.primaryCaps(self.conv1)
+        self.convCaps1 = self.convCaps1(self.primaryCaps)
 
-        model = tf.keras.models.Model(self.input_capsnet, self.primaryCaps)
+        model = tf.keras.models.Model(self.input_capsnet, self.convCaps1)
 
         return model
 
 
 if __name__ == '__main__':
-    train_model = MatrixCapsNet(shape=[28, 28, 1], classes=10).build()
+    train_model = MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=3, batch_size=100).build()
     train_model.summary()
