@@ -1,5 +1,7 @@
 import tensorflow as tf
 import bmstu.capsnet.layers.basic as basic_layers
+import bmstu.layers as common_layers
+import bmstu.capsnet.layers.gamma as gamma_layers
 
 
 class CapsNet:
@@ -37,3 +39,33 @@ class CapsNet:
             basic_layers.Decoder(classes=self.classes, output_shape=self.shape)([noised_digitcaps, self.input_decoder]))
 
         return train_model, eval_model, manipulate_model
+
+
+class GammaCapsNet:
+
+    def __init__(self, shape, classes, routings):
+        super(GammaCapsNet, self).__init__()
+        self.input_capsnet = tf.keras.layers.Input(shape=shape)
+        self.conv1 = tf.keras.layers.Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)
+        self.primaryCaps = basic_layers.PrimaryCapsule(capsules=32, dim_capsules=8, kernel_size=9, strides=2)
+        self.gammaCaps1 = gamma_layers.GammaCapsule(capsules=32, dim_capsules=8, routings=routings)
+        self.gammaCaps2 = gamma_layers.GammaCapsule(capsules=10, dim_capsules=16, routings=routings)
+        self.decoder = gamma_layers.GammaDecoder(dim=28)
+        self.norm = common_layers.Norm()
+
+        self.input_decoder = tf.keras.layers.Input(shape=(classes,))
+
+    def build(self):
+        x = self.conv1(self.input_capsnet)
+        x = self.primaryCaps(x)
+        v_1, c_1 = self.gammaCaps1(x)
+        v_2, c_2 = self.gammaCaps2(v_1)
+
+        r = self.decoder(v_2)
+        out = self.norm(v_2)
+
+        return tf.keras.models.Model(self.input_capsnet, [out, r])
+
+
+if __name__ == '__main__':
+    GammaCapsNet(shape=[28, 28, 1], classes=10, routings=3).build().summary()
