@@ -2,6 +2,7 @@ import tensorflow as tf
 import bmstu.capsnet.layers.basic as basic_layers
 import bmstu.layers as common_layers
 import bmstu.capsnet.layers.gamma as gamma_layers
+import bmstu.capsnet.layers.matrix as matrix_layers
 
 
 class CapsNet:
@@ -73,3 +74,26 @@ class GammaCapsNet:
         assert self.model is None, 'GammaCapsNet model should be building'
         # TODO: дописать кастомное обучение модели
         pass
+
+
+class MatrixCapsNet:
+    def __init__(self, shape, classes):
+        self.shape = shape
+        self.classes = classes
+
+        self.input_capsnet = tf.keras.layers.Input(shape=shape)
+        self.conv1 = tf.keras.layers.Conv2D(32, (5, 5), padding='valid', activation=tf.nn.relu)
+        self.primaryCaps = matrix_layers.PrimaryCapsule(capsules=8, kernel_size=1, strides=1)
+
+    def build(self):
+        self.conv1 = self.conv1(self.input_capsnet)
+        self.primaryCaps = self.primaryCaps(self.conv1)
+
+        model = tf.keras.models.Model(self.input_capsnet, self.primaryCaps)
+
+        return model
+
+
+if __name__ == '__main__':
+    train_model = MatrixCapsNet(shape=[28, 28, 1], classes=10).build()
+    train_model.summary()
