@@ -11,12 +11,11 @@ def kernel_tile(inputs, kernel, stride):
     :return output: (50, 5, 5, 3x3=9, 136)
     """
 
+    size = inputs.shape[4] * inputs.shape[5] if len(inputs.shape) > 5 else 1
     # (?, 14, 14, 32x(16)=512)
-    input_shape = inputs.shape
-    size = input_shape[4] * input_shape[5] if len(input_shape) > 5 else 1
-    inputs = tf.reshape(inputs, shape=[-1, input_shape[1], input_shape[2], input_shape[3] * size])
+    inputs = tf.reshape(inputs, shape=[-1, inputs.shape[1], inputs.shape[2], inputs.shape[3] * size])
 
-    tile_filter = np.zeros(shape=[kernel, kernel, input_shape[3], kernel * kernel], dtype=np.float32)
+    tile_filter = np.zeros(shape=[kernel, kernel, inputs.shape[3], kernel * kernel], dtype=np.float32)
     for i in range(kernel):
         for j in range(kernel):
             # (3, 3, 512, 9)
@@ -26,11 +25,10 @@ def kernel_tile(inputs, kernel, stride):
     tile_filter_op = tf.constant(tile_filter, dtype=tf.float32)
 
     # (?, 6, 6, 4608)
-    output = tf.nn.depthwise_conv2d(inputs, tile_filter_op, strides=[
-        1, stride, stride, 1], padding='VALID')
+    output = tf.nn.depthwise_conv2d(inputs, tile_filter_op, strides=[1, stride, stride, 1], padding='VALID')
 
     output_shape = output.get_shape()
-    output = tf.reshape(output, shape=[-1, output_shape[1], output_shape[2], input_shape[3], kernel * kernel])
+    output = tf.reshape(output, shape=[-1, output_shape[1], output_shape[2], inputs.shape[3], kernel * kernel])
     output = tf.transpose(output, perm=[0, 1, 2, 4, 3])
 
     # (?, 6, 6, 9, 512)
@@ -52,8 +50,8 @@ def mat_transform(inputs, output_cap_size, size):
 
     truncated_normal_initializer = tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0)
     # (1, 288, 32, 4, 4)
-    w = tf.Variable(initial_value=truncated_normal_initializer(shape=[1, caps_num_i, output_cap_size, 4, 4],
-                                                               dtype=tf.float32), name='w')
+    w = tf.Variable(lambda: truncated_normal_initializer(shape=[1, caps_num_i, output_cap_size, 4, 4],
+                                                         dtype=tf.float32), name='w')
     # (24, 288, 32, 4, 4)
     w = tf.tile(w, [size, 1, 1, 1, 1])
     # (size, 288, 32, 4, 4)
@@ -155,24 +153,24 @@ def m_step(rr, votes, activations, beta_v, beta_a, inverse_temperature):
     rr_prime = rr * activations
 
     # rr_prime_sum: sum over all input capsule i
-    rr_prime_sum = tf.reduce_sum(rr_prime, axis=-3, keep_dims=True, name='rr_prime_sum')
+    rr_prime_sum = tf.reduce_sum(rr_prime, axis=-3, keepdims=True, name='rr_prime_sum')
 
     # Mean of the output capsules: o_mean(24, 6, 6, 1, 32, 16)
-    o_mean = tf.reduce_sum(rr_prime * votes, axis=-3, keep_dims=True) / rr_prime_sum
+    o_mean = tf.reduce_sum(rr_prime * votes, axis=-3, keepdims=True) / rr_prime_sum
 
     # Standard deviation of the output capsule:  o_stdv (24, 6, 6, 1, 32, 16)
-    o_stdv = tf.sqrt(tf.reduce_sum(rr_prime * tf.square(votes - o_mean), axis=-3, keep_dims=True) / rr_prime_sum)
+    o_stdv = tf.sqrt(tf.reduce_sum(rr_prime * tf.square(votes - o_mean), axis=-3, keepdims=True) / rr_prime_sum)
 
     # o_cost_h: (24, 6, 6, 1, 32, 16)
-    o_cost_h = (beta_v + tf.math.log(o_stdv + epsilon)) * rr_prime_sum
+    o_cost_h = (beta_v + tf.math.log(o_stdv + epsilon())) * rr_prime_sum
 
     # o_cost: (24, 6, 6, 1, 32, 1)
     # o_activations_cost = (24, 6, 6, 1, 32, 1)
     # For numeric stability.
-    o_cost = tf.reduce_sum(o_cost_h, axis=-1, keep_dims=True)
-    o_cost_mean = tf.reduce_mean(o_cost, axis=-2, keep_dims=True)
-    o_cost_stdv = tf.sqrt(tf.reduce_sum(tf.square(o_cost - o_cost_mean), axis=-2, keep_dims=True) / o_cost.shape[-2])
-    o_activations_cost = beta_a + (o_cost_mean - o_cost) / (o_cost_stdv + epsilon)
+    o_cost = tf.reduce_sum(o_cost_h, axis=-1, keepdims=True)
+    o_cost_mean = tf.reduce_mean(o_cost, axis=-2, keepdims=True)
+    o_cost_stdv = tf.sqrt(tf.reduce_sum(tf.square(o_cost - o_cost_mean), axis=-2, keepdims=True) / o_cost.shape[-2])
+    o_activations_cost = beta_a + (o_cost_mean - o_cost) / (o_cost_stdv + epsilon())
 
     # (24, 6, 6, 1, 32, 1)
     o_activations = tf.nn.sigmoid(inverse_temperature * o_activations_cost)
@@ -189,16 +187,16 @@ def e_step(o_mean, o_stdv, o_activations, votes):
     :return: rr
     """
 
-    o_p_unit0 = - tf.reduce_sum(tf.square(votes - o_mean) / (2 * tf.square(o_stdv)), axis=-1, keep_dims=True)
+    o_p_unit0 = - tf.reduce_sum(tf.square(votes - o_mean) / (2 * tf.square(o_stdv)), axis=-1, keepdims=True)
 
-    o_p_unit2 = - tf.reduce_sum(tf.math.log(o_stdv + epsilon), axis=-1, keep_dims=True)
+    o_p_unit2 = - tf.reduce_sum(tf.math.log(o_stdv + epsilon()), axis=-1, keepdims=True)
 
     # o_p is the probability density of the h-th component of the vote from i to j
     # (24, 6, 6, 1, 32, 16)
     o_p = o_p_unit0 + o_p_unit2
 
     # rr: (24, 6, 6, 288, 32, 1)
-    zz = tf.math.log(o_activations + epsilon) + o_p
-    rr = tf.nn.softmax(zz, dim=len(zz.get_shape().as_list()) - 2)
+    zz = tf.math.log(o_activations + epsilon()) + o_p
+    rr = tf.nn.softmax(zz, axis=len(zz.shape) - 2)
 
     return rr

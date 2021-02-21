@@ -153,5 +153,5 @@ class MatrixCapsNet:
 
 
 if __name__ == '__main__':
-    train_model = MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=3, batch_size=100).build()
+    train_model = MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=3, batch_size=24).build()
     train_model.summary()
