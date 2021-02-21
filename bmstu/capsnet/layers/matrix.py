@@ -37,7 +37,6 @@ class ConvolutionalCapsule(tf.keras.Model, ABC):
         self.routings = routings
 
     def build(self, input_shape):
-        # TODO: Сделать сверточно-капсульный слой для матричной капсульной сети
         pass
 
     def call(self, inputs, training=None, mask=None):
