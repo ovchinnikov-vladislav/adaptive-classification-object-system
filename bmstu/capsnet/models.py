@@ -1,8 +1,11 @@
+from abc import ABC
+
 import tensorflow as tf
 import bmstu.capsnet.layers.basic as basic_layers
 import bmstu.layers as common_layers
 import bmstu.capsnet.layers.gamma as gamma_layers
 import bmstu.capsnet.layers.matrix as matrix_layers
+import bmstu.capsnet.metrics.gamma as gamma_metrics
 
 
 class CapsNet:
@@ -42,7 +45,7 @@ class CapsNet:
         return train_model, eval_model, manipulate_model
 
 
-class GammaCapsNet:
+class GammaCapsNet(tf.keras.Model, ABC):
 
     def __init__(self, shape, classes, routings):
         super(GammaCapsNet, self).__init__()
@@ -58,7 +61,7 @@ class GammaCapsNet:
 
         self.model = None
 
-    def build(self):
+    def call(self, inputs, training=None, mask=None):
         x = self.conv1(self.input_capsnet)
         x = self.primaryCaps(x)
         v_1, c_1 = self.gammaCaps1(x)
@@ -67,8 +70,13 @@ class GammaCapsNet:
         r = self.decoder(v_2)
         out = self.norm(v_2)
 
-        self.model = tf.keras.models.Model(self.input_capsnet, [out, r])
-        return self.model
+        t_score = (gamma_metrics.t_score(c_1) + gamma_metrics.t_score(c_2)) / 2.0
+        d_score = gamma_metrics.d_score(v_1)
+
+        return out, r, [v_1, v_2], t_score, d_score
+
+    def train_step(self, data):
+        pass
 
     def fit(self, train_data, validation_data):
         assert self.model is None, 'GammaCapsNet model should be building'

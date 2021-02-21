@@ -20,3 +20,4 @@ def em_routing(v, a_i, beta_v, beta_a, routings):
 def attention_em_routing(v_v1, v_v2, v_f, a_i_f, beta_v_v, beta_a_v, beta_v_f, beta_a_f, routings):
     # TODO: написать роутинг для attention
     pass
+
