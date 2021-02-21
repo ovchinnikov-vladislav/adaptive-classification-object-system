@@ -6,6 +6,8 @@ import bmstu.layers as common_layers
 import bmstu.capsnet.layers.gamma as gamma_layers
 import bmstu.capsnet.layers.matrix as matrix_layers
 import bmstu.capsnet.metrics.gamma as gamma_metrics
+from bmstu.capsnet import losses
+from bmstu.utls import pgd
 
 
 class CapsNet:
@@ -46,9 +48,11 @@ class CapsNet:
 
 
 class GammaCapsNet(tf.keras.Model, ABC):
-
-    def __init__(self, shape, classes, routings):
+    # TODO: добить обучение Gamma СapsNet
+    def __init__(self, shape, classes, routings, gamma_robust=True):
         super(GammaCapsNet, self).__init__()
+        self.gamma_robust = gamma_robust
+        self.classes = classes
         self.input_capsnet = tf.keras.layers.Input(shape=shape)
         self.conv1 = tf.keras.layers.Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)
         self.primaryCaps = basic_layers.PrimaryCapsule2D(capsules=32, dim_capsules=8, kernel_size=9, strides=2)
@@ -58,8 +62,28 @@ class GammaCapsNet(tf.keras.Model, ABC):
         self.norm = common_layers.Norm()
 
         self.input_decoder = tf.keras.layers.Input(shape=(classes,))
+        self.optimizer = self.train_accuracy = self.train_t_score = self.train_d_score = None
+        self.test_accuracy = self.test_loss = self.test_t_score = self.test_d_score = None
 
-        self.model = None
+    def compile(self,
+                optimizer='rmsprop',
+                loss=None,
+                metrics=None,
+                loss_weights=None,
+                weighted_metrics=None,
+                run_eagerly=None,
+                **kwargs):
+        super(GammaCapsNet, self).compile(optimizer, loss, metrics, loss_weights,
+                                          weighted_metrics, run_eagerly, **kwargs)
+        self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+        self.train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
+        self.train_t_score = tf.keras.metrics.Mean(name='train_t_score')
+        self.train_d_score = tf.keras.metrics.Mean(name='train_d_score')
+
+        self.test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
+        self.test_loss = tf.keras.metrics.Mean(name='test_loss')
+        self.test_t_score = tf.keras.metrics.Mean(name='test_t_score')
+        self.test_d_score = tf.keras.metrics.Mean(name='test_d_score')
 
     def call(self, inputs, training=None, mask=None):
         x = self.conv1(self.input_capsnet)
@@ -76,12 +100,33 @@ class GammaCapsNet(tf.keras.Model, ABC):
         return out, r, [v_1, v_2], t_score, d_score
 
     def train_step(self, data):
-        pass
+        x, y = data
+        x_adv = pgd(x, y, self, eps=0.1, a=0.01, k=40) if self.gamma_robust else x
+        with tf.GradientTape() as tape:
+            y_pred, reconstruction, _, t_score, d_score = self(x_adv, y)
+            loss, _ = losses.compute_loss(y, y_pred, reconstruction, x)
 
-    def fit(self, train_data, validation_data):
-        assert self.model is None, 'GammaCapsNet model should be building'
-        # TODO: дописать кастомное обучение модели
-        pass
+        grads = tape.gradient(loss, self.trainable_variables)
+        self.optimizer.apply_gradients(zip(grads, self.trainable_variables))
+        self.train_accuracy.update_state(y, y_pred)
+        self.train_t_score.update_state(t_score)
+        self.train_d_score.update_state(d_score)
+        return {m.name: m.result() for m in self.metrics}
+
+    def test_step(self, data):
+        x, y = data
+        y_pred, reconstruction, layers, t_score, d_score = self(x, y)
+        loss, _ = losses.compute_loss(y, y_pred, reconstruction, x)
+
+        self.test_accuracy.update_state(y, y_pred)
+        self.test_loss.update_state(loss)
+        self.test_t_score.update_state(t_score)
+        self.test_d_score.update_state(d_score)
+
+        pred = tf.argmax(y_pred, axis=1)
+        cm = tf.math.confusion_matrix(y, pred, num_classes=self.classes)
+
+        return {m.name: m.result() for m in self.metrics}
 
 
 class MatrixCapsNet:

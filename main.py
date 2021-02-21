@@ -122,18 +122,16 @@ args = Args()
 (x_train, y_train), (x_test, y_test) = utls.load('mnist')
 # define model
 
-model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
-                                                     classes=len(np.unique(np.argmax(y_train, 1))),
-                                                     routings=args.routings).build()
+# model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
+#                                                      classes=len(np.unique(np.argmax(y_train, 1))),
+#                                                      routings=args.routings).build()
+#
+# model.summary()
+#
+# model.compile(optimizer=optimizers.Adam(lr=args.lr),
+#               loss=[losses.margin_loss, 'mse'],
+#               metrics='accuracy')
 
-model.summary()
-
-model.compile(optimizer=optimizers.Adam(lr=args.lr),
-              loss=[losses.margin_loss, 'mse'],
-              metrics='accuracy')
-
-model.fit([x_train, y_train], [y_train, x_train], epochs=args.epochs, batch_size=args.batch_size,
-          validation_data=[[x_test, y_test], [y_test, x_test]])
 #
 # # train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
 # test(model=eval_model, data=(x_test, y_test), args=args)
