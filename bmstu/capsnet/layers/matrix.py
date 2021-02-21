@@ -1,7 +1,7 @@
 from abc import ABC
 
 import tensorflow as tf
-from bmstu.capsnet.em_utils import kernel_tile, mat_transform, matrix_capsules_em_routing
+from bmstu.capsnet.em_utils import kernel_tile, mat_transform, matrix_capsules_em_routing, coord_addition
 
 
 class PrimaryCapsule2D(tf.keras.Model, ABC):
@@ -63,5 +63,48 @@ class ConvolutionalCapsule(tf.keras.Model, ABC):
         pose, activation = matrix_capsules_em_routing(votes, inputs_activation, beta_v, beta_a, self.routings)
         pose = tf.reshape(pose, shape=[pose.shape[0], pose.shape[1], pose.shape[2],
                                        pose.shape[3], pose_size, pose_size])
+
+        return pose, activation
+
+
+class ClassCapsule(tf.keras.Model, ABC):
+    def __init__(self, classes, routings, name=''):
+        super(ClassCapsule, self).__init__(name)
+        self.classes = classes
+        self.routings = routings
+
+    def call(self, inputs, training=None, mask=None):
+        inputs_pose, inputs_activation = inputs
+
+        inputs_shape = inputs_pose.shape
+        spatial_size = int(inputs_shape[1])
+        pose_size = int(inputs_shape[-1])
+        i_size = int(inputs_shape[3])
+        batch_size = int(inputs_shape[0])
+
+        inputs_pose = tf.reshape(inputs_pose, shape=[batch_size * spatial_size * spatial_size, inputs_shape[-3],
+                                                     inputs_shape[-2] * inputs_shape[-2]])
+
+        votes = mat_transform(inputs_pose, self.classes, size=batch_size * spatial_size * spatial_size)
+
+        votes = tf.reshape(votes, shape=[batch_size, spatial_size, spatial_size, i_size,
+                                         self.classes, pose_size * pose_size])
+
+        votes = coord_addition(votes, spatial_size, spatial_size)
+
+        glorot_uniform_initializer = tf.keras.initializers.GlorotUniform()
+        beta_v = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32))
+        beta_a = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32))
+
+        votes_shape = votes.shape
+        votes = tf.reshape(votes, shape=[batch_size, votes_shape[1] * votes_shape[2] * votes_shape[3],
+                                         votes_shape[4], votes_shape[5]])
+
+        inputs_activation = tf.reshape(inputs_activation, shape=[batch_size,
+                                                                 votes_shape[1] * votes_shape[2] * votes_shape[3]])
+
+        pose, activation = matrix_capsules_em_routing(votes, inputs_activation, beta_v, beta_a, self.routings)
+
+        pose = tf.reshape(pose, shape=[batch_size, self.classes, pose_size, pose_size])
 
         return pose, activation

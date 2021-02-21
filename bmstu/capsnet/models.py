@@ -141,17 +141,22 @@ class MatrixCapsNet:
                                                           pose_shape=[4, 4])
         self.convCaps1 = matrix_layers.ConvolutionalCapsule(shape=[3, 3, 32, 32], strides=[1, 2, 2, 1],
                                                             routings=routings)
+        self.convCaps2 = matrix_layers.ConvolutionalCapsule(shape=[3, 3, 32, 32], strides=[1, 1, 1, 1],
+                                                            routings=routings)
+        self.classCaps = matrix_layers.ClassCapsule(classes=classes, routings=routings)
 
     def build(self):
         self.conv1 = self.conv1(self.input_capsnet)
         self.primaryCaps = self.primaryCaps(self.conv1)
         self.convCaps1 = self.convCaps1(self.primaryCaps)
+        self.convCaps2 = self.convCaps2(self.convCaps1)
+        self.classCaps = self.classCaps(self.convCaps2)
 
-        model = tf.keras.models.Model(self.input_capsnet, self.convCaps1)
+        model = tf.keras.models.Model(self.input_capsnet, self.classCaps)
 
         return model
 
 
 if __name__ == '__main__':
     train_model = MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=3, batch_size=24).build()
-    train_model.summary()
+    train_model.summary(line_length=200)
