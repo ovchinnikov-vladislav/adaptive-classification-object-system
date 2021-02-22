@@ -35,11 +35,12 @@ def kernel_tile(inputs, kernel, stride):
     return output
 
 
-def mat_transform(inputs, output_cap_size, size):
+def mat_transform(inputs, output_cap_size, size, w):
     """Compute the vote.
     :param inputs: shape (size, 288, 16)
     :param output_cap_size: 32
     :param size:
+    :param w:
     :return votes: (24, 5, 5, 3x3=9, 136)
     """
 
@@ -49,9 +50,6 @@ def mat_transform(inputs, output_cap_size, size):
     output = tf.reshape(inputs, shape=[size, caps_num_i, 1, 4, 4])
 
     truncated_normal_initializer = tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0)
-    # (1, 288, 32, 4, 4)
-    w = tf.Variable(lambda: truncated_normal_initializer(shape=[1, caps_num_i, output_cap_size, 4, 4],
-                                                         dtype=tf.float32), name='w')
     # (24, 288, 32, 4, 4)
     w = tf.tile(w, [size, 1, 1, 1, 1])
     # (size, 288, 32, 4, 4)

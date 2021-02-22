@@ -47,21 +47,15 @@ def cross_entropy_loss(y_true, y_pred, x):
     return loss_all, reconstruction_loss, y_pred
 
 
-def spread_loss(labels, activations, iterations_per_epoch):
+def spread_loss(labels, activations, learning_rate):
     """Spread loss
-    :param iterations_per_epoch: количество итераций в одну эпоху
+    :param learning_rate:
     :param labels: (24, 10] in one-hot vector
     :param activations: [24, 10], activation for each class
     :return: spread loss
 
     margin: increment from 0.2 to 0.9 during training
     """
-
-    # Margin schedule
-    # Margin increase from 0.2 to 0.9 by an increment of 0.1 for every epoch
-    margin = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries=[
-        (iterations_per_epoch * x) for x in range(1, 8)],
-        values=[x / 10.0 for x in range(2, 10)])
 
     activations_shape = activations.shape
 
@@ -78,6 +72,6 @@ def spread_loss(labels, activations, iterations_per_epoch):
     activations_i = tf.reshape(tf.boolean_mask(activations, mask_i),
                                [tf.shape(activations)[0], activations_shape[1] - 1])
 
-    loss = tf.reduce_sum(tf.square(tf.maximum(0.0, margin - (activations_t - activations_i))))
+    loss = tf.reduce_sum(tf.square(tf.maximum(0.0, learning_rate - (activations_t - activations_i))))
 
     return loss

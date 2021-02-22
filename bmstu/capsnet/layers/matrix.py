@@ -38,7 +38,17 @@ class ConvolutionalCapsule(tf.keras.Model, ABC):
         self.stride = strides[1]
         self.i_size = shape[-2]
         self.o_size = shape[-1]
-        self.batch_size = None
+        self.batch_size = self.w = self.beta_a = self.beta_v = None
+
+    def build(self, input_shape):
+        truncated_normal_initializer = tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0)
+        # (1, 288, 32, 4, 4)
+        self.w = tf.Variable(lambda: truncated_normal_initializer(shape=[1, 3 * 3 * self.i_size, self.o_size, 4, 4],
+                                                                  dtype=tf.float32), name='w')
+        glorot_uniform_initializer = tf.keras.initializers.GlorotUniform()
+        self.beta_v = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, 1, 1, self.o_size], dtype=tf.float32))
+        self.beta_a = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, 1, 1, self.o_size], dtype=tf.float32))
+        self.built = True
 
     def call(self, inputs, training=None, mask=None):
         inputs_pose, inputs_activation = inputs
@@ -52,15 +62,11 @@ class ConvolutionalCapsule(tf.keras.Model, ABC):
         inputs_pose = tf.reshape(inputs_pose, shape=[-1, 3 * 3 * self.i_size, 16])
         inputs_activation = tf.reshape(inputs_activation, shape=[-1, spatial_size, spatial_size, 3 * 3 * self.i_size])
 
-        votes = mat_transform(inputs_pose, self.o_size, size=batch_size * spatial_size * spatial_size)
+        votes = mat_transform(inputs_pose, self.o_size, size=batch_size * spatial_size * spatial_size, w=self.w)
         votes = tf.reshape(votes, shape=[batch_size, spatial_size, spatial_size, votes.shape[-3], votes.shape[-2],
                                          votes.shape[-1]])
 
-        glorot_uniform_initializer = tf.keras.initializers.GlorotUniform()
-        beta_v = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, 1, 1, self.o_size], dtype=tf.float32))
-        beta_a = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, 1, 1, self.o_size], dtype=tf.float32))
-
-        pose, activation = matrix_capsules_em_routing(votes, inputs_activation, beta_v, beta_a, self.routings)
+        pose, activation = matrix_capsules_em_routing(votes, inputs_activation, self.beta_v, self.beta_a, self.routings)
         pose = tf.reshape(pose, shape=[pose.shape[0], pose.shape[1], pose.shape[2],
                                        pose.shape[3], pose_size, pose_size])
 
@@ -72,6 +78,16 @@ class ClassCapsule(tf.keras.Model, ABC):
         super(ClassCapsule, self).__init__(name)
         self.classes = classes
         self.routings = routings
+        self.w = self.beta_v = self.beta_a = None
+
+    def build(self, input_shape):
+        truncated_normal_initializer = tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0)
+        self.w = tf.Variable(lambda: truncated_normal_initializer(shape=[1, input_shape[0][-3], self.classes, 4, 4],
+                                                                  dtype=tf.float32), name='w')
+        glorot_uniform_initializer = tf.keras.initializers.GlorotUniform()
+        self.beta_v = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32))
+        self.beta_a = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32))
+        self.built = True
 
     def call(self, inputs, training=None, mask=None):
         inputs_pose, inputs_activation = inputs
@@ -85,16 +101,12 @@ class ClassCapsule(tf.keras.Model, ABC):
         inputs_pose = tf.reshape(inputs_pose, shape=[batch_size * spatial_size * spatial_size, inputs_shape[-3],
                                                      inputs_shape[-2] * inputs_shape[-2]])
 
-        votes = mat_transform(inputs_pose, self.classes, size=batch_size * spatial_size * spatial_size)
+        votes = mat_transform(inputs_pose, self.classes, size=batch_size * spatial_size * spatial_size, w=self.w)
 
         votes = tf.reshape(votes, shape=[batch_size, spatial_size, spatial_size, i_size,
                                          self.classes, pose_size * pose_size])
 
         votes = coord_addition(votes, spatial_size, spatial_size)
-
-        glorot_uniform_initializer = tf.keras.initializers.GlorotUniform()
-        beta_v = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32))
-        beta_a = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32))
 
         votes_shape = votes.shape
         votes = tf.reshape(votes, shape=[batch_size, votes_shape[1] * votes_shape[2] * votes_shape[3],
@@ -103,7 +115,8 @@ class ClassCapsule(tf.keras.Model, ABC):
         inputs_activation = tf.reshape(inputs_activation, shape=[batch_size,
                                                                  votes_shape[1] * votes_shape[2] * votes_shape[3]])
 
-        pose, activation = matrix_capsules_em_routing(votes, inputs_activation, beta_v, beta_a, self.routings)
+        pose, activation = matrix_capsules_em_routing(votes, inputs_activation, self.beta_v,
+                                                      self.beta_a, self.routings)
 
         pose = tf.reshape(pose, shape=[batch_size, self.classes, pose_size, pose_size])
 
