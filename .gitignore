@@ -2,3 +2,5 @@
 bin
 build
 __pycache__
+dist
+bmstu_ovchinnikov_capsnet.egg-info

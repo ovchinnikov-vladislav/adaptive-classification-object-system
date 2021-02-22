@@ -1,10 +1,8 @@
-from abc import ABC
-
 import tensorflow as tf
 from bmstu.capsnet.em_utils import kernel_tile, mat_transform, matrix_capsules_em_routing, coord_addition
 
 
-class PrimaryCapsule2D(tf.keras.Model, ABC):
+class PrimaryCapsule2D(tf.keras.Model):
     def __init__(self, capsules, kernel_size, strides, padding, pose_shape, name=''):
         super(PrimaryCapsule2D, self).__init__(name)
         self.capsules = capsules
@@ -28,8 +26,11 @@ class PrimaryCapsule2D(tf.keras.Model, ABC):
 
         return pose, activation
 
+    def get_config(self):
+        return super(PrimaryCapsule2D, self).get_config()
 
-class ConvolutionalCapsule(tf.keras.Model, ABC):
+
+class ConvolutionalCapsule(tf.keras.Model):
     def __init__(self, shape, strides, routings, name=''):
         super(ConvolutionalCapsule, self).__init__(name)
         self.shape = shape
@@ -72,8 +73,11 @@ class ConvolutionalCapsule(tf.keras.Model, ABC):
 
         return pose, activation
 
+    def get_config(self):
+        return super(ConvolutionalCapsule, self).get_config()
 
-class ClassCapsule(tf.keras.Model, ABC):
+
+class ClassCapsule(tf.keras.Model):
     def __init__(self, classes, routings, name=''):
         super(ClassCapsule, self).__init__(name)
         self.classes = classes
@@ -121,3 +125,6 @@ class ClassCapsule(tf.keras.Model, ABC):
         pose = tf.reshape(pose, shape=[batch_size, self.classes, pose_size, pose_size])
 
         return pose, activation
+
+    def get_config(self):
+        return super(ClassCapsule, self).get_config()

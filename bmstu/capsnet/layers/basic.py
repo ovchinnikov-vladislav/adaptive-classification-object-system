@@ -1,5 +1,3 @@
-from abc import ABC
-
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras.backend import epsilon
@@ -8,7 +6,7 @@ import numpy as np
 from bmstu.capsnet.utls import squash
 
 
-class PrimaryCapsule2D(tf.keras.Model, ABC):
+class PrimaryCapsule2D(tf.keras.Model):
     """
     :param capsules: количество первичных капсул
     :param dim_capsules: размер капсул
@@ -35,8 +33,11 @@ class PrimaryCapsule2D(tf.keras.Model, ABC):
         x = squash(x)
         return x
 
+    def get_config(self):
+        return super(PrimaryCapsule2D, self).get_config()
 
-class Capsule(tf.keras.Model, ABC):
+
+class Capsule(tf.keras.Model):
     """
     :param capsules: количество капсул
     :param dim_capsules: размер капсул
@@ -82,8 +83,11 @@ class Capsule(tf.keras.Model, ABC):
 
         return tf.squeeze(outputs, [2, 4])
 
+    def get_config(self):
+        return super(Capsule, self).get_config()
 
-class Decoder(tf.keras.Model, ABC):
+
+class Decoder(tf.keras.Model):
     def __init__(self, classes, output_shape, name=''):
         super(Decoder, self).__init__(name=name)
         self.classes = classes
@@ -97,6 +101,9 @@ class Decoder(tf.keras.Model, ABC):
 
     def call(self, inputs, training=None, mask=None):
         return self.decoder(self.masked(inputs))
+
+    def get_config(self):
+        return super(Decoder, self).get_config()
 
 
 class Length(layers.Layer):

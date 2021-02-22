@@ -1,11 +1,9 @@
-from abc import ABC
-
 import tensorflow as tf
 from bmstu.capsnet.utls import squash
 import numpy as np
 
 
-class GammaCapsule(tf.keras.Model, ABC):
+class GammaCapsule(tf.keras.Model):
     def __init__(self, capsules, dim_capsules, routings, name=''):
         super(GammaCapsule, self).__init__(name=name)
         self.capsules = capsules
@@ -81,8 +79,11 @@ class GammaCapsule(tf.keras.Model, ABC):
 
         return v_j, c_ij
 
+    def get_config(self):
+        return super(GammaCapsule, self).get_config()
 
-class GammaDecoder(tf.keras.Model, ABC):
+
+class GammaDecoder(tf.keras.Model):
     def __init__(self, dim, name=''):
         super(GammaDecoder, self).__init__(name)
         self.dim = dim
@@ -95,3 +96,7 @@ class GammaDecoder(tf.keras.Model, ABC):
 
     def call(self, inputs, training=None, mask=None):
         return self.decoder(inputs)
+
+    def get_config(self):
+        return super(GammaDecoder, self).get_config()
+
