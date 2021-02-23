@@ -50,13 +50,13 @@ class Capsule(layers.Layer):
         self.capsules = capsules
         self.dim_capsules = dim_capsules
         self.routings = routings
-        self.W = None
+        self.w = None
 
     def build(self, input_shape):
-        w_init = tf.random_normal_initializer(stddev=0.1)
-        self.W = tf.Variable(
-            initial_value=w_init(shape=(self.capsules, input_shape[1], self.dim_capsules, input_shape[2]),
-                                 dtype='float32'), trainable=True)
+        self.w = self.add_weight(shape=[self.capsules, input_shape[1], self.dim_capsules, input_shape[2]],
+                                 dtype=tf.float32,
+                                 initializer=tf.random_normal_initializer(stddev=0.1),
+                                 trainable=True)
         self.built = True
 
     def call(self, inputs, **kwargs):
@@ -64,7 +64,7 @@ class Capsule(layers.Layer):
         inputs_tiled = tf.tile(inputs_expand, [1, self.capsules, 1, 1])
         inputs_tiled = tf.expand_dims(inputs_tiled, 4)
 
-        inputs_hat = tf.map_fn(lambda x: tf.matmul(self.W, x), elems=inputs_tiled)
+        inputs_hat = tf.map_fn(lambda x: tf.matmul(self.w, x), elems=inputs_tiled)
 
         b = tf.zeros(shape=[tf.shape(inputs_hat)[0], self.capsules, inputs.shape[1], 1, 1])
 
