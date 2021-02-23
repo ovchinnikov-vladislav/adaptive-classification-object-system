@@ -5,6 +5,7 @@ import bmstu.capsnet.layers.gamma as gamma_layers
 import bmstu.capsnet.layers.matrix as matrix_layers
 import bmstu.capsnet.metrics.gamma as gamma_metrics
 import bmstu.capsnet.metrics.matrix as matrix_metrics
+from tensorflow.keras import activations
 from bmstu.capsnet import losses
 from bmstu.utls import pgd
 from bmstu import utls
@@ -140,9 +141,10 @@ class MatrixCapsNet(tf.keras.Model):
         self.batch_size = batch_size
 
         self.reshape = tf.keras.layers.Reshape(target_shape=shape, input_shape=shape)
-        self.conv1 = tf.keras.layers.Conv2D(filters=256, kernel_size=5, strides=2, padding='same', activation=tf.nn.relu)
-        self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=32, kernel_size=1, strides=1, padding='valid',
-                                                          pose_shape=[4, 4])
+        self.conv1 = tf.keras.layers.Conv2D(filters=64, kernel_size=5, strides=2,
+                                            padding='same', activation=activations.relu)
+        self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=8, kernel_size=1, strides=1,
+                                                          padding='valid', pose_shape=[4, 4])
         self.convCaps1 = matrix_layers.ConvolutionalCapsule(shape=[3, 3, 32, 32], strides=[1, 2, 2, 1],
                                                             routings=routings)
         self.convCaps2 = matrix_layers.ConvolutionalCapsule(shape=[3, 3, 32, 32], strides=[1, 1, 1, 1],
