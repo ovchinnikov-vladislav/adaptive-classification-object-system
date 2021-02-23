@@ -4,6 +4,7 @@ import bmstu.layers as common_layers
 import bmstu.capsnet.layers.gamma as gamma_layers
 import bmstu.capsnet.layers.matrix as matrix_layers
 import bmstu.capsnet.metrics.gamma as gamma_metrics
+import bmstu.capsnet.metrics.matrix as matrix_metrics
 from bmstu.capsnet import losses
 from bmstu.utls import pgd
 from bmstu import utls
@@ -138,8 +139,8 @@ class MatrixCapsNet(tf.keras.Model):
         self.routings = routings
         self.batch_size = batch_size
 
-        self.reshape = tf.keras.layers.Reshape(target_shape=[28, 28, 1], input_shape=(28, 28,))
-        self.conv1 = tf.keras.layers.Conv2D(filters=32, kernel_size=5, strides=2, padding='same', activation=tf.nn.relu)
+        self.reshape = tf.keras.layers.Reshape(target_shape=shape, input_shape=shape)
+        self.conv1 = tf.keras.layers.Conv2D(filters=256, kernel_size=5, strides=2, padding='same', activation=tf.nn.relu)
         self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=32, kernel_size=1, strides=1, padding='valid',
                                                           pose_shape=[4, 4])
         self.convCaps1 = matrix_layers.ConvolutionalCapsule(shape=[3, 3, 32, 32], strides=[1, 2, 2, 1],
@@ -149,16 +150,9 @@ class MatrixCapsNet(tf.keras.Model):
         self.classCaps = matrix_layers.ClassCapsule(classes=classes, routings=routings)
 
     def call(self, inputs, training=None, mask=None):
-        if type(inputs) is tf.python.framework.ops.Tensor:
-            pose, activation = inputs, None
-            pose = self.reshape(pose)
-            pose = self.conv1(pose)
-            inputs = self.primaryCaps(pose)
-        else:
-            pose, activation = inputs
-            pose = self.reshape(pose)
-            pose = self.conv1(pose)
-            inputs = self.primaryCaps(pose)
+        inputs = self.reshape(inputs)
+        inputs = self.conv1(inputs)
+        inputs = self.primaryCaps(inputs)
         inputs = self.convCaps1(inputs)
         inputs = self.convCaps2(inputs)
         inputs = self.classCaps(inputs)
@@ -169,9 +163,8 @@ class MatrixCapsNet(tf.keras.Model):
 
     def train_step(self, data):
         x, y = data
-
         with tf.GradientTape() as tape:
-            pose, activation = self([x, y], training=True)
+            pose, activation = self(x, training=True)
             loss = losses.spread_loss(y, activation, self.optimizer.learning_rate(self.optimizer.iterations))
 
         trainable_vars = self.trainable_variables
@@ -199,7 +192,7 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
     epochs = 5
     batch_size = 10
-    model = MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=3, batch_size=batch_size)
+    model = MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=1, batch_size=batch_size)
     model.build(x_train.shape)
     model.summary()
 
@@ -207,6 +200,7 @@ if __name__ == '__main__':
         learning_rate=tf.keras.optimizers.schedules.PiecewiseConstantDecay(
             boundaries=[(len(x_train) // batch_size * x) for x in range(1, 8)],
             values=[x / 10.0 for x in range(2, 10)])),
-        metrics='accuracy')
+        metrics=matrix_metrics.matrix_accuracy)
 
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs)
+    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
+              validation_data=[x_test, y_test])

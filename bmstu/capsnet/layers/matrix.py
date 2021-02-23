@@ -1,10 +1,11 @@
 import tensorflow as tf
+from tensorflow.keras import layers
 from bmstu.capsnet.em_utils import kernel_tile, mat_transform, matrix_capsules_em_routing, coord_addition
 
 
-class PrimaryCapsule2D(tf.keras.Model):
-    def __init__(self, capsules, kernel_size, strides, padding, pose_shape, name=''):
-        super(PrimaryCapsule2D, self).__init__(name)
+class PrimaryCapsule2D(layers.Layer):
+    def __init__(self, capsules, kernel_size, strides, padding, pose_shape, **kwargs):
+        super(PrimaryCapsule2D, self).__init__(**kwargs)
         self.capsules = capsules
         self.kernel_size = kernel_size
         self.strides = strides
@@ -17,12 +18,15 @@ class PrimaryCapsule2D(tf.keras.Model):
         self.conv2d_activation = tf.keras.layers.Conv2D(filters=capsules, kernel_size=kernel_size,
                                                         strides=strides, padding=padding, activation=tf.nn.sigmoid)
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, **kwargs):
         pose = self.conv2d_pose(inputs)
         activation = self.conv2d_activation(inputs)
 
         pose = tf.reshape(pose, shape=[-1, inputs.shape[-3], inputs.shape[-2],
                                        self.capsules, self.pose_shape[0], self.pose_shape[1]])
+
+        # tf.print('PrimaryCaps2D activation', activation)
+        # tf.print('PrimaryCaps2D pose', pose)
 
         return pose, activation
 
@@ -30,9 +34,9 @@ class PrimaryCapsule2D(tf.keras.Model):
         return super(PrimaryCapsule2D, self).get_config()
 
 
-class ConvolutionalCapsule(tf.keras.Model):
-    def __init__(self, shape, strides, routings, name=''):
-        super(ConvolutionalCapsule, self).__init__(name)
+class ConvolutionalCapsule(layers.Layer):
+    def __init__(self, shape, strides, routings, **kwargs):
+        super(ConvolutionalCapsule, self).__init__(**kwargs)
         self.shape = shape
         self.strides = strides
         self.routings = routings
@@ -45,13 +49,15 @@ class ConvolutionalCapsule(tf.keras.Model):
         truncated_normal_initializer = tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0)
         # (1, 288, 32, 4, 4)
         self.w = tf.Variable(lambda: truncated_normal_initializer(shape=[1, 3 * 3 * self.i_size, self.o_size, 4, 4],
-                                                                  dtype=tf.float32), name='w')
+                                                                  dtype=tf.float32), name='w', trainable=True)
         glorot_uniform_initializer = tf.keras.initializers.GlorotUniform()
-        self.beta_v = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, 1, 1, self.o_size], dtype=tf.float32))
-        self.beta_a = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, 1, 1, self.o_size], dtype=tf.float32))
+        self.beta_v = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, 1, 1, self.o_size], dtype=tf.float32),
+                                  trainable=True)
+        self.beta_a = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, 1, 1, self.o_size], dtype=tf.float32),
+                                  trainable=True)
         self.built = True
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, **kwargs):
         inputs_pose, inputs_activation = inputs
         batch_size = inputs_pose.shape[0]
         pose_size = inputs_pose.shape[-1]
@@ -71,15 +77,17 @@ class ConvolutionalCapsule(tf.keras.Model):
         pose = tf.reshape(pose, shape=[pose.shape[0], pose.shape[1], pose.shape[2],
                                        pose.shape[3], pose_size, pose_size])
 
+        # tf.print('ConvCaps activation', activation)
+
         return pose, activation
 
     def get_config(self):
         return super(ConvolutionalCapsule, self).get_config()
 
 
-class ClassCapsule(tf.keras.Model):
-    def __init__(self, classes, routings, name=''):
-        super(ClassCapsule, self).__init__(name)
+class ClassCapsule(layers.Layer):
+    def __init__(self, classes, routings, **kwargs):
+        super(ClassCapsule, self).__init__(**kwargs)
         self.classes = classes
         self.routings = routings
         self.w = self.beta_v = self.beta_a = None
@@ -87,13 +95,16 @@ class ClassCapsule(tf.keras.Model):
     def build(self, input_shape):
         truncated_normal_initializer = tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0)
         self.w = tf.Variable(lambda: truncated_normal_initializer(shape=[1, input_shape[0][-3], self.classes, 4, 4],
-                                                                  dtype=tf.float32), name='w')
+                                                                  dtype=tf.float32), name='w',
+                             trainable=True)
         glorot_uniform_initializer = tf.keras.initializers.GlorotUniform()
-        self.beta_v = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32))
-        self.beta_a = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32))
+        self.beta_v = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32),
+                                  trainable=True)
+        self.beta_a = tf.Variable(lambda: glorot_uniform_initializer(shape=[1, self.classes], dtype=tf.float32),
+                                  trainable=True)
         self.built = True
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, **kwargs):
         inputs_pose, inputs_activation = inputs
 
         inputs_shape = inputs_pose.shape
@@ -123,6 +134,8 @@ class ClassCapsule(tf.keras.Model):
                                                       self.beta_a, self.routings)
 
         pose = tf.reshape(pose, shape=[batch_size, self.classes, pose_size, pose_size])
+
+        # tf.print('ClassCaps activation', activation)
 
         return pose, activation
 

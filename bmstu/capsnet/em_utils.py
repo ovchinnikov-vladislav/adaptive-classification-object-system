@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras.backend import epsilon
+
+epsilon = 1e-9
 
 
 def kernel_tile(inputs, kernel, stride):
@@ -160,7 +161,7 @@ def m_step(rr, votes, activations, beta_v, beta_a, inverse_temperature):
     o_stdv = tf.sqrt(tf.reduce_sum(rr_prime * tf.square(votes - o_mean), axis=-3, keepdims=True) / rr_prime_sum)
 
     # o_cost_h: (24, 6, 6, 1, 32, 16)
-    o_cost_h = (beta_v + tf.math.log(o_stdv + epsilon())) * rr_prime_sum
+    o_cost_h = (beta_v + tf.math.log(o_stdv + epsilon)) * rr_prime_sum
 
     # o_cost: (24, 6, 6, 1, 32, 1)
     # o_activations_cost = (24, 6, 6, 1, 32, 1)
@@ -168,7 +169,7 @@ def m_step(rr, votes, activations, beta_v, beta_a, inverse_temperature):
     o_cost = tf.reduce_sum(o_cost_h, axis=-1, keepdims=True)
     o_cost_mean = tf.reduce_mean(o_cost, axis=-2, keepdims=True)
     o_cost_stdv = tf.sqrt(tf.reduce_sum(tf.square(o_cost - o_cost_mean), axis=-2, keepdims=True) / o_cost.shape[-2])
-    o_activations_cost = beta_a + (o_cost_mean - o_cost) / (o_cost_stdv + epsilon())
+    o_activations_cost = beta_a + (o_cost_mean - o_cost) / (o_cost_stdv + epsilon)
 
     # (24, 6, 6, 1, 32, 1)
     o_activations = tf.nn.sigmoid(inverse_temperature * o_activations_cost)
@@ -187,14 +188,14 @@ def e_step(o_mean, o_stdv, o_activations, votes):
 
     o_p_unit0 = - tf.reduce_sum(tf.square(votes - o_mean) / (2 * tf.square(o_stdv)), axis=-1, keepdims=True)
 
-    o_p_unit2 = - tf.reduce_sum(tf.math.log(o_stdv + epsilon()), axis=-1, keepdims=True)
+    o_p_unit2 = - tf.reduce_sum(tf.math.log(o_stdv + epsilon), axis=-1, keepdims=True)
 
     # o_p is the probability density of the h-th component of the vote from i to j
     # (24, 6, 6, 1, 32, 16)
     o_p = o_p_unit0 + o_p_unit2
 
     # rr: (24, 6, 6, 288, 32, 1)
-    zz = tf.math.log(o_activations + epsilon()) + o_p
+    zz = tf.math.log(o_activations + epsilon) + o_p
     rr = tf.nn.softmax(zz, axis=len(zz.shape) - 2)
 
     return rr

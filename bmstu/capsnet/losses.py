@@ -47,9 +47,9 @@ def cross_entropy_loss(y_true, y_pred, x):
     return loss_all, reconstruction_loss, y_pred
 
 
-def spread_loss(labels, activations, learning_rate):
+def spread_loss(labels, activations, margin):
     """Spread loss
-    :param learning_rate:
+    :param margin:
     :param labels: (24, 10] in one-hot vector
     :param activations: [24, 10], activation for each class
     :return: spread loss
@@ -72,6 +72,6 @@ def spread_loss(labels, activations, learning_rate):
     activations_i = tf.reshape(tf.boolean_mask(activations, mask_i),
                                [tf.shape(activations)[0], activations_shape[1] - 1])
 
-    loss = tf.reduce_sum(tf.square(tf.maximum(0.0, learning_rate - (activations_t - activations_i))))
-
+    loss = tf.reduce_sum(tf.square(tf.maximum(0.0, margin - (activations_t - activations_i))))
+    tf.print(" spread_loss:", loss, "learning_rate:", margin)
     return loss

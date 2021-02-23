@@ -6,7 +6,7 @@ import numpy as np
 from bmstu.capsnet.utls import squash
 
 
-class PrimaryCapsule2D(tf.keras.Model):
+class PrimaryCapsule2D(layers.Layer):
     """
     :param capsules: количество первичных капсул
     :param dim_capsules: размер капсул
@@ -15,8 +15,8 @@ class PrimaryCapsule2D(tf.keras.Model):
     :param name: имя слоя
     """
 
-    def __init__(self, capsules, dim_capsules, kernel_size, strides, name=''):
-        super(PrimaryCapsule2D, self).__init__(name)
+    def __init__(self, capsules, dim_capsules, kernel_size, strides, **kwargs):
+        super(PrimaryCapsule2D, self).__init__(**kwargs)
         assert capsules % dim_capsules == 0, "Invalid size of capsules and dim_capsules"
 
         num_filters = capsules * dim_capsules
@@ -27,7 +27,7 @@ class PrimaryCapsule2D(tf.keras.Model):
                                     padding='valid')
         self.reshape = layers.Reshape(target_shape=(-1, dim_capsules))
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, **kwargs):
         x = self.conv2d(inputs)
         x = self.reshape(x)
         x = squash(x)
@@ -37,15 +37,16 @@ class PrimaryCapsule2D(tf.keras.Model):
         return super(PrimaryCapsule2D, self).get_config()
 
 
-class Capsule(tf.keras.Model):
+class Capsule(layers.Layer):
     """
     :param capsules: количество капсул
     :param dim_capsules: размер капсул
     :param routings: количество итераций маршрутизации
     :param name: имя слоя
     """
-    def __init__(self, capsules, dim_capsules, routings, name=''):
-        super(Capsule, self).__init__(name)
+
+    def __init__(self, capsules, dim_capsules, routings, **kwargs):
+        super(Capsule, self).__init__(**kwargs)
         self.capsules = capsules
         self.dim_capsules = dim_capsules
         self.routings = routings
@@ -58,7 +59,7 @@ class Capsule(tf.keras.Model):
                                  dtype='float32'), trainable=True)
         self.built = True
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, **kwargs):
         inputs_expand = tf.expand_dims(inputs, 1)
         inputs_tiled = tf.tile(inputs_expand, [1, self.capsules, 1, 1])
         inputs_tiled = tf.expand_dims(inputs_tiled, 4)
@@ -87,19 +88,19 @@ class Capsule(tf.keras.Model):
         return super(Capsule, self).get_config()
 
 
-class Decoder(tf.keras.Model):
-    def __init__(self, classes, output_shape, name=''):
-        super(Decoder, self).__init__(name=name)
+class Decoder(layers.Layer):
+    def __init__(self, classes, output_shape, **kwargs):
+        super(Decoder, self).__init__(**kwargs)
         self.classes = classes
         self.shape = output_shape
         self.masked = Mask()
         self.decoder = tf.keras.models.Sequential()
-        self.decoder.add(layers.Dense(512, activation='relu', input_dim=16*self.classes))
+        self.decoder.add(layers.Dense(512, activation='relu', input_dim=16 * self.classes))
         self.decoder.add(layers.Dense(1024, activation='relu'))
         self.decoder.add(layers.Dense(np.prod(self.shape), activation='sigmoid'))
         self.decoder.add(layers.Reshape(target_shape=self.shape))
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, **kwargs):
         return self.decoder(self.masked(inputs))
 
     def get_config(self):
