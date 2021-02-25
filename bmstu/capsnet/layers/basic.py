@@ -31,7 +31,6 @@ class PrimaryCapsule2D(layers.Layer):
         x = self.conv2d(inputs)
         x = self.reshape(x)
         x = squash(x)
-        tf.print(x)
         return x
 
     def get_config(self):

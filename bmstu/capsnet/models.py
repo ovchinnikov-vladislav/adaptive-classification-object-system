@@ -208,6 +208,3 @@ if __name__ == '__main__':
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
               validation_data=(x_test, y_test))
 
-    pose, activation = model.predict(x_test[15])
-
-    print(pose, activation)

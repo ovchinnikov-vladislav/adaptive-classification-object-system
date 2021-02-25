@@ -122,6 +122,11 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
     # define model
 
+    x_val = x_test[:1000]
+    x_test = x_test[1000:]
+    y_val = y_test[:1000]
+    y_test = y_test[1000:]
+
     model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
                                                          classes=len(np.unique(np.argmax(y_train, 1))),
                                                          routings=args.routings).build()
@@ -133,7 +138,11 @@ if __name__ == '__main__':
                   metrics='accuracy')
 
     model.fit([x_train, y_train], [y_train, x_train], batch_size=100, epochs=5,
-              validation_data=[[x_test, y_test], [y_test, x_test]])
+              validation_data=[[x_val, y_val], [y_val, x_val]])
+
+    predictions = model.predict(x_test)
+
+    print(predictions)
 
     # model.fit(x_train, y_train, validation_data=[x_test, y_test])
 
