@@ -219,3 +219,17 @@ class ConditionDenseCapsule(tf.keras.layers.Layer):
 
     def get_config(self):
         return super(ConditionDenseCapsule, self).get_config()
+
+
+class ConditionConvolutional3DCapsule(tf.keras.layers.Layer):
+    def __init__(self, **kwargs):
+        super(ConditionConvolutional3DCapsule, self).__init__(**kwargs)
+
+    def build(self, input_shape):
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        pass
+
+    def get_config(self):
+        return super(ConditionConvolutional3DCapsule, self).get_config
