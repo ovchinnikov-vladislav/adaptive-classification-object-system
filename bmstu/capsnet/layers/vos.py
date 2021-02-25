@@ -120,3 +120,88 @@ class DenseCapsule(tf.keras.layers.Layer):
 
     def get_config(self):
         return super(DenseCapsule, self).get_config()
+
+
+class Convolutional3DCapsule(tf.keras.layers.Layer):
+    def __init__(self, capsules, dim_capsules, kernel_size, strides, padding='valid',
+                 coord_add=False, rel_center=True, route_mean=True, ch_same_w=True, **kwargs):
+        super(Convolutional3DCapsule, self).__init__(**kwargs)
+        self.capsules = capsules
+        self.dim_capsules = dim_capsules
+        self.dim_capsules_2 = dim_capsules * dim_capsules
+        self.kernel_size = kernel_size
+        self.strides = strides
+        self.padding = padding
+        self.coord_add = coord_add
+        self.rel_center = rel_center
+        self.route_mean = route_mean
+        self.ch_same_w = ch_same_w
+        self.dense_caps = None
+
+    def build(self, input_shape):
+        if self.route_mean:
+            self.dense_caps = DenseCapsule(capsules=self.capsules, ch_same_w=self.ch_same_w,
+                                           dim_capsules=self.dim_capsules)
+        else:
+            self.dense_caps = DenseCapsule(capsules=self.capsules, coord_add=self.coord_add,
+                                           rel_center=self.rel_center, ch_same_w=self.ch_same_w,
+                                           dim_capsules=self.dim_capsules)
+
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        inputs = tf.concat(inputs, axis=-1)
+
+        if self.padding == 'same':
+            d_padding, h_padding, w_padding = int(float(self.kernel_size[0]) / 2), \
+                                              int(float(self.kernel_size[1]) / 2), \
+                                              int(float(self.kernel_size[2]) / 2)
+            u_padded = tf.pad(inputs,
+                              [[0, 0], [d_padding, d_padding], [h_padding, h_padding], [w_padding, w_padding], [0, 0],
+                               [0, 0]])
+        else:
+            u_padded = inputs
+
+        batch_size = tf.shape(u_padded)[0]
+        _, d, h, w, ch, _ = u_padded.shape
+        d, h, w, ch = map(int, [d, h, w, ch])
+
+        # gets indices for kernels
+        d_offsets = [[(d_ + k) for k in range(self.kernel_size[0])]
+                     for d_ in range(0, d + 1 - self.kernel_size[0], self.strides[0])]
+        h_offsets = [[(h_ + k) for k in range(self.kernel_size[1])]
+                     for h_ in range(0, h + 1 - self.kernel_size[1], self.strides[1])]
+        w_offsets = [[(w_ + k) for k in range(self.kernel_size[2])]
+                     for w_ in range(0, w + 1 - self.kernel_size[2], self.strides[2])]
+
+        # output dimensions
+        d_out, h_out, w_out = len(d_offsets), len(h_offsets), len(w_offsets)
+
+        # gathers the capsules into shape (N, D2, H2, W2, KD, KH, KW, Ch_in, 17)
+        d_gathered = tf.gather(u_padded, d_offsets, axis=1)
+        h_gathered = tf.gather(d_gathered, h_offsets, axis=3)
+        w_gathered = tf.gather(h_gathered, w_offsets, axis=5)
+        w_gathered = tf.transpose(w_gathered, [0, 1, 3, 5, 2, 4, 6, 7, 8])
+
+        if self.route_mean:
+            kernels_reshaped = tf.reshape(w_gathered,
+                                          [batch_size * d_out * h_out * w_out,
+                                           self.kernel_size[0] * self.kernel_size[1] * self.kernel_size[2],
+                                           ch, self.dim_capsules_2 + 1])
+            kernels_reshaped = tf.reduce_mean(kernels_reshaped, axis=1)
+            capsules = self.dense_caps([kernels_reshaped[:, :, :-1], kernels_reshaped[:, :, -1:]])
+        else:
+            kernels_reshaped = tf.reshape(w_gathered,
+                                          [batch_size * d_out * h_out * w_out,
+                                           self.kernel_size[0], self.kernel_size[1],
+                                           self.kernel_size[2], ch, self.dim_capsules_2 + 1])
+            capsules = self.dense_caps([kernels_reshaped[:, :, :, :, :, :-1], kernels_reshaped[:, :, :, :, :, -1:]])
+
+        poses = tf.reshape(capsules[0][:, :, :self.dim_capsules_2], (batch_size, d_out, h_out, w_out,
+                                                                     self.capsules, self.dim_capsules_2))
+        activs = tf.reshape(capsules[1], (batch_size, d_out, h_out, w_out, self.capsules, 1))
+
+        return poses, activs
+
+    def get_config(self):
+        return super(Convolutional3DCapsule, self).get_config()
