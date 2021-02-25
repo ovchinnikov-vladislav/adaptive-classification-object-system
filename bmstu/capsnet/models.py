@@ -5,7 +5,7 @@ import bmstu.capsnet.layers.gamma as gamma_layers
 import bmstu.capsnet.layers.matrix as matrix_layers
 import bmstu.capsnet.metrics.gamma as gamma_metrics
 import bmstu.capsnet.metrics.matrix as matrix_metrics
-from tensorflow.keras import activations
+from tensorflow.keras import activations, metrics
 from bmstu.capsnet import losses
 from bmstu.utls import pgd
 from bmstu import utls
@@ -130,16 +130,17 @@ class MatrixCapsNet(tf.keras.Model):
         self.routings = routings
         self.batch_size = batch_size
 
-        self.reshape = tf.keras.layers.Reshape(target_shape=shape, input_shape=shape)
+        self.reshape = tf.keras.layers.Reshape(target_shape=shape, input_shape=shape, batch_size=self.batch_size)
         self.conv1 = tf.keras.layers.Conv2D(filters=64, kernel_size=5, strides=2,
                                             padding='same', activation=activations.relu)
         self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=8, kernel_size=1, strides=1,
                                                           padding='valid', pose_shape=[4, 4])
-        self.convCaps1 = matrix_layers.ConvolutionalCapsule(shape=[3, 3, 32, 32], strides=[1, 2, 2, 1],
-                                                            routings=routings)
-        self.convCaps2 = matrix_layers.ConvolutionalCapsule(shape=[3, 3, 32, 32], strides=[1, 1, 1, 1],
-                                                            routings=routings)
-        self.classCaps = matrix_layers.ClassCapsule(classes=classes, routings=routings)
+        self.convCaps1 = matrix_layers.ConvolutionalCapsule(kernel_size=3, strides=2, capsules=16, routings=routings,
+                                                            weights_regularizer=tf.keras.regularizers.L2(0.0000002))
+        self.convCaps2 = matrix_layers.ConvolutionalCapsule(kernel_size=3, strides=1, capsules=16, routings=routings,
+                                                            weights_regularizer=tf.keras.regularizers.L2(0.0000002))
+        self.classCaps = matrix_layers.ClassCapsule(classes=classes, routings=routings,
+                                                    weights_regularizer=tf.keras.regularizers.L2(0.0000002))
 
     def call(self, inputs, training=None, mask=None):
         inputs = self.reshape(inputs)
@@ -192,7 +193,7 @@ class MatrixCapsNet(tf.keras.Model):
 
 if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
-    epochs = 5
+    epochs = 1
     batch_size = 10
     model = MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=1, batch_size=batch_size)
     model.build(x_train.shape)
@@ -202,7 +203,11 @@ if __name__ == '__main__':
         learning_rate=tf.keras.optimizers.schedules.PiecewiseConstantDecay(
             boundaries=[(len(x_train) // batch_size * x) for x in range(1, 8)],
             values=[x / 10.0 for x in range(2, 10)])),
-        metrics=matrix_metrics.matrix_accuracy)
+        metrics='accuracy')
 
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
-              validation_data=[x_test, y_test])
+              validation_data=(x_test, y_test))
+
+    pose, activation = model.predict(x_test[15])
+
+    print(pose, activation)
