@@ -102,41 +102,41 @@ from tensorflow.keras import callbacks
 #     print('manipulated result saved to %s/manipulate-%d.png' % (args.save_dir, args.digit))
 #     print('-' * 30 + 'End: manipulate' + '-' * 30)
 
+if __name__ == '__main__':
+    class Args:
+        def __init__(self):
+            self.epochs = 2
+            self.batch_size = 112
+            self.lr = 0.001
+            self.lr_decay = 0.9
+            self.lam_recon = 0.392
+            self.routings = 3
+            self.shift_fraction = 0.1
+            self.save_dir = '.'
+            self.digit = 5
 
-class Args:
-    def __init__(self):
-        self.epochs = 2
-        self.batch_size = 112
-        self.lr = 0.001
-        self.lr_decay = 0.9
-        self.lam_recon = 0.392
-        self.routings = 3
-        self.shift_fraction = 0.1
-        self.save_dir = '.'
-        self.digit = 5
 
+    args = Args()
 
-args = Args()
+    # load data
+    (x_train, y_train), (x_test, y_test) = utls.load('mnist')
+    # define model
 
-# load data
-(x_train, y_train), (x_test, y_test) = utls.load('mnist')
-# define model
+    model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
+                                                         classes=len(np.unique(np.argmax(y_train, 1))),
+                                                         routings=args.routings).build()
 
-model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
-                                                     classes=len(np.unique(np.argmax(y_train, 1))),
-                                                     routings=args.routings).build()
+    model.summary()
 
-model.summary()
+    model.compile(optimizer=optimizers.Adam(lr=0.001),
+                  loss=[losses.margin_loss, 'mse'],
+                  metrics='accuracy')
 
-model.compile(optimizer=optimizers.Adam(lr=0.001),
-              loss=[losses.margin_loss, 'mse'],
-              metrics='accuracy')
+    model.fit([x_train, y_train], [y_train, x_train], batch_size=100, epochs=5,
+              validation_data=[[x_test, y_test], [y_test, x_test]])
 
-model.fit([x_train, y_train], [y_train, x_train], batch_size=100, epochs=5,
-          validation_data=[[x_test, y_test], [y_test, x_test]])
+    # model.fit(x_train, y_train, validation_data=[x_test, y_test])
 
-# model.fit(x_train, y_train, validation_data=[x_test, y_test])
-
-#
-# train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
-# test(model=eval_model, data=(x_test, y_test), args=args)
+    #
+    # train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
+    # test(model=eval_model, data=(x_test, y_test), args=args)

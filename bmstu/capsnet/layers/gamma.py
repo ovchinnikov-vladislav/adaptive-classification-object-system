@@ -1,11 +1,12 @@
 import tensorflow as tf
+from tensorflow.keras import activations
 from bmstu.capsnet.utls import squash
 import numpy as np
 
 
-class GammaCapsule(tf.keras.Model):
-    def __init__(self, capsules, dim_capsules, routings, name=''):
-        super(GammaCapsule, self).__init__(name=name)
+class GammaCapsule(tf.keras.layers.Layer):
+    def __init__(self, capsules, dim_capsules, routings, **kwargs):
+        super(GammaCapsule, self).__init__(**kwargs)
         self.capsules = capsules
         self.dim_capsules = dim_capsules
         self.routings = routings
@@ -22,11 +23,11 @@ class GammaCapsule(tf.keras.Model):
             shape=(1, self.capsules, self.dim_capsules),
             dtype='float32'), trainable=True)
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, **kwargs):
         """
             param: u - (batch_size, in_caps, in_dim)
         """
-        batch_size = tf.shape(inputs)[0]
+        batch_size = inputs.shape[0]
         u_norm = tf.norm(inputs, axis=-1)  # (batch_size, in_caps)
 
         # Reshape u into (batch_size, out_caps, in_caps, out_dim, in_dim)
@@ -83,18 +84,20 @@ class GammaCapsule(tf.keras.Model):
         return super(GammaCapsule, self).get_config()
 
 
-class GammaDecoder(tf.keras.Model):
-    def __init__(self, dim, name=''):
-        super(GammaDecoder, self).__init__(name)
+class GammaDecoder(tf.keras.layers.Layer):
+    def __init__(self, dim, **kwargs):
+        super(GammaDecoder, self).__init__(**kwargs)
         self.dim = dim
+        self.decoder = None
 
+    def build(self, input_shape):
         self.decoder = tf.keras.Sequential()
         self.decoder.add(tf.keras.layers.Flatten())
-        self.decoder.add(tf.keras.layers.Dense(512, activation=tf.nn.relu))
-        self.decoder.add(tf.keras.layers.Dense(1024, activation=tf.nn.relu))
-        self.decoder.add(tf.keras.layers.Dense(dim * dim, activation=tf.nn.sigmoid))
+        self.decoder.add(tf.keras.layers.Dense(512, activation=activations.relu))
+        self.decoder.add(tf.keras.layers.Dense(1024, activation=activations.relu))
+        self.decoder.add(tf.keras.layers.Dense(self.dim * self.dim, activation=activations.sigmoid))
 
-    def call(self, inputs, training=None, mask=None):
+    def call(self, inputs, **kwargs):
         return self.decoder(inputs)
 
     def get_config(self):

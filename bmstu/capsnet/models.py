@@ -50,12 +50,14 @@ class CapsNet:
 
 class GammaCapsNet(tf.keras.Model):
     # TODO: добить обучение Gamma СapsNet
-    def __init__(self, shape, classes, routings, gamma_robust=True):
+    def __init__(self, shape, classes, routings, batch_size, gamma_robust=True):
         super(GammaCapsNet, self).__init__()
         self.gamma_robust = gamma_robust
         self.classes = classes
-        self.input_capsnet = tf.keras.layers.Input(shape=shape)
-        self.conv1 = tf.keras.layers.Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)
+        self.batch_size = batch_size
+
+        self.input_layer = tf.keras.layers.Reshape(target_shape=shape, input_shape=shape, batch_size=self.batch_size)
+        self.conv1 = tf.keras.layers.Conv2D(256, (9, 9), padding='valid', activation=activations.relu)
         self.primaryCaps = basic_layers.PrimaryCapsule2D(capsules=32, dim_capsules=8, kernel_size=9, strides=2)
         self.gammaCaps1 = gamma_layers.GammaCapsule(capsules=32, dim_capsules=8, routings=routings)
         self.gammaCaps2 = gamma_layers.GammaCapsule(capsules=10, dim_capsules=16, routings=routings)
@@ -63,19 +65,6 @@ class GammaCapsNet(tf.keras.Model):
         self.norm = common_layers.Norm()
 
         self.input_decoder = tf.keras.layers.Input(shape=(classes,))
-        self.optimizer = self.train_accuracy = self.train_t_score = self.train_d_score = None
-        self.test_accuracy = self.test_loss = self.test_t_score = self.test_d_score = None
-
-    def compile(self,
-                optimizer='rmsprop',
-                loss=None,
-                metrics=None,
-                loss_weights=None,
-                weighted_metrics=None,
-                run_eagerly=None,
-                **kwargs):
-        super(GammaCapsNet, self).compile(optimizer, loss, metrics, loss_weights,
-                                          weighted_metrics, run_eagerly, **kwargs)
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
         self.train_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='train_accuracy')
         self.train_t_score = tf.keras.metrics.Mean(name='train_t_score')
@@ -87,7 +76,8 @@ class GammaCapsNet(tf.keras.Model):
         self.test_d_score = tf.keras.metrics.Mean(name='test_d_score')
 
     def call(self, inputs, training=None, mask=None):
-        x = self.conv1(self.input_capsnet)
+        x = self.input_layer(inputs)
+        x = self.conv1(x)
         x = self.primaryCaps(x)
         v_1, c_1 = self.gammaCaps1(x)
         v_2, c_2 = self.gammaCaps2(v_1)
@@ -189,6 +179,16 @@ class MatrixCapsNet(tf.keras.Model):
     def get_config(self):
         super(MatrixCapsNet, self).get_config()
 
+
+# if __name__ == '__main__':
+#     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
+#
+#     model = GammaCapsNet(shape=[28, 28, 1], classes=10, routings=3, batch_size=64)
+#     model.build((64, 28, 28, 1))
+#     model.summary()
+#     model.compile()
+#     model.fit(x_train, y_train, batch_size=64, epochs=5,
+#               validation_data=[x_test, y_test])
 
 if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
