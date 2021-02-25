@@ -47,31 +47,30 @@ def cross_entropy_loss(y_true, y_pred, x):
     return loss_all, reconstruction_loss, y_pred
 
 
-def spread_loss(labels, activations, margin):
+def spread_loss(y_true, y_pred, margin):
     """Spread loss
     :param margin:
-    :param labels: (24, 10] in one-hot vector
-    :param activations: [24, 10], activation for each class
+    :param y_true: (24, 10] in one-hot vector
+    :param y_pred: [24, 10], activation for each class
     :return: spread loss
 
     margin: increment from 0.2 to 0.9 during training
     """
 
-    activations_shape = activations.shape
+    activations_shape = y_pred.shape
 
     # mask_t, mask_f Tensor (?, 10)
-    mask_t = tf.equal(labels, 1)  # Mask for the true label
-    mask_i = tf.equal(labels, 0)  # Mask for the non-true label
+    mask_t = tf.equal(y_true, 1)  # Mask for the true label
+    mask_i = tf.equal(y_true, 0)  # Mask for the non-true label
 
     # Activation for the true label
     # activations_t (?, 1)
-    activations_t = tf.reshape(tf.boolean_mask(activations, mask_t), shape=(tf.shape(activations)[0], 1))
+    activations_t = tf.reshape(tf.boolean_mask(y_pred, mask_t), shape=(tf.shape(y_pred)[0], 1))
 
     # Activation for the other classes
     # activations_i (?, 9)
-    activations_i = tf.reshape(tf.boolean_mask(activations, mask_i),
-                               [tf.shape(activations)[0], activations_shape[1] - 1])
+    activations_i = tf.reshape(tf.boolean_mask(y_pred, mask_i),
+                               [tf.shape(y_pred)[0], activations_shape[1] - 1])
 
     loss = tf.reduce_sum(tf.square(tf.maximum(0.0, margin - (activations_t - activations_i))))
-    tf.print(" spread_loss:", loss, "learning_rate:", margin)
     return loss
