@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 from tensorflow.keras import activations
 from functools import reduce
 from bmstu.capsnet.vos_utils import em_routing, em_routing_cond, create_coords_mat
