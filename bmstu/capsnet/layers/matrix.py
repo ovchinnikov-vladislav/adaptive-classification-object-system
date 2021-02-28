@@ -1,8 +1,6 @@
 import tensorflow as tf
-import numpy as np
 from tensorflow.keras import layers, activations
-from bmstu.capsnet.em_utils import kernel_tile, matrix_capsules_em_routing, \
-    compute_votes, create_routing_map, coord_addition, init_beta
+from bmstu.capsnet.em_utils import kernel_tile, coord_addition, mat_transform, matrix_capsules_em_routing
 
 
 class PrimaryCapsule2D(layers.Layer):
@@ -29,20 +27,16 @@ class PrimaryCapsule2D(layers.Layer):
         self.built = True
 
     def call(self, inputs, **kwargs):
-        self.batch_size = inputs.shape[0]
+        self.batch_size = tf.shape(inputs)[0]
 
         pose = self.conv2d_pose(inputs)
+        pose = tf.reshape(pose, shape=[-1, inputs.shape[-3], inputs.shape[-2],
+                                       self.capsules, self.pose_shape[0], self.pose_shape[1]])
+
         activation = self.conv2d_activation(inputs)
 
-        spatial_size = int(pose.shape[1])
-        pose = tf.reshape(pose, shape=[self.batch_size, spatial_size, spatial_size,
-                                       self.capsules, self.pose_shape[0] * self.pose_shape[1]])
-
-        activation = tf.reshape(activation, shape=[self.batch_size, spatial_size, spatial_size,
-                                                   self.capsules, 1])
-
-        # tf.print('PrimaryCaps2D activation', activation)
-        # tf.print('PrimaryCaps2D pose', pose)
+        # pose (?, 14, 14, 32, 4, 4), activation (?, 14, 14, 32)
+        # print('1. primaryCaps {', 'pose', pose.shape, 'activation', activation.shape, '}')
 
         return pose, activation
 
@@ -51,86 +45,89 @@ class PrimaryCapsule2D(layers.Layer):
 
 
 class ConvolutionalCapsule(layers.Layer):
-    """Convolutional capsule layer.
-        "The routing procedure is used between each adjacent pair of capsule layers.
-        For convolutional capsules, each capsule in layer L + 1 sends feedback only to
-        capsules within its receptive field in layer L. Therefore each convolutional
-        instance of a capsule in layer L receives at most kernel size X kernel size
-        feedback from each capsule type in layer L + 1. The instances closer to the
-        border of the image receive fewer feedbacks with corner ones receiving only
-        one feedback per capsule type in layer L + 1."
-        See Hinton et al. "Matrix Capsules with EM Routing" for detailed description
-        convolutional capsule layer.
-        Author:
-          Vladislav Ovchinnikov
-        Args:
-          kernel_size:
-          strides:
-          capsules: depth dimension of parent capsules
-          routings:
-          weights_regularizer:
-        """
-
-    def __init__(self, kernel_size, strides, capsules, routings, weights_regularizer, **kwargs):
+    def __init__(self, kernel_size, strides, capsules, routings, **kwargs):
         super(ConvolutionalCapsule, self).__init__(**kwargs)
         self.kernel_size = kernel_size
         self.strides = strides
         self.routings = routings
         self.capsules = capsules
-        self.weights_regularizer = weights_regularizer
-        self.batch_size = self.shape = None
-        self.child_space = self.square_child_space = self.child_caps = None
-        self.parent_space = self.square_parent_space = self.parent_caps = None
-        self.square_kernel_size = int(kernel_size ** 2)
+        self.batch_size = None
         self.w = self.beta_a = self.beta_v = None
+        self.stride = strides[1]  # 2
+        self.i_size = self.o_size = None
+        self.pose_size = None
 
     def build(self, input_shape):
-        self.shape = input_shape[0]
-        self.child_space = self.shape[1]
-        self.square_child_space = int(self.child_space ** 2)
-        self.child_caps = self.shape[3]
-        self.parent_space = int(np.floor((self.child_space - self.kernel_size) / self.strides + 1))
-        self.square_parent_space = int(self.parent_space ** 2)
-        self.parent_caps = self.capsules
+        pose_shape = input_shape[0]
+        self.i_size = pose_shape[3]  # 32
+        self.o_size = self.capsules  # 32
+        self.pose_size = pose_shape[-1]  # 4
+        caps_num_i = 3 * 3 * self.i_size  # 288
 
         self.w = self.add_weight(
-            shape=[1, self.square_kernel_size * self.child_caps, self.parent_caps, 4, 4],
+            shape=[1, caps_num_i, self.capsules, 4, 4],
             name='w',
             trainable=True,
-            regularizer=self.weights_regularizer,
-            initializer=tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0))
+            initializer=tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0))  # (1, 288, 32, 4, 4)
 
-        self.beta_a, self.beta_v = init_beta(self, self.parent_caps)
+        # print('2. convCaps { w', self.w.shape, '}')
+
+        self.beta_a = self.add_weight(
+            name='beta_a',
+            shape=[1, 1, 1, self.o_size],
+            trainable=True,
+            dtype=tf.float32,
+            initializer=tf.keras.initializers.GlorotUniform())
+        self.beta_v = self.add_weight(
+            name='beta_v',
+            trainable=True,
+            shape=[1, 1, 1, self.o_size],
+            dtype=tf.float32,
+            initializer=tf.keras.initializers.GlorotUniform())
+
         self.built = True
 
     def call(self, inputs, **kwargs):
         inputs_pose, inputs_activation = inputs
-        self.batch_size = inputs_pose.shape[0]
+        batch_size = inputs_pose.shape[0]
+
+        inputs_pose = kernel_tile(inputs_pose, 3, self.stride)  # (?, 14, 14, 32, 4, 4) -> (?, 6, 6, 3x3=9, 32x16=512)
+
+        inputs_activation = kernel_tile(inputs_activation, 3, self.stride)  # (?, 14, 14, 32) -> (?, 6, 6, 9, 32)
+        # print('2.1. convCaps { inputs_pose', inputs_pose.shape, 'inputs_activation', inputs_activation.shape, '}')
+
+        spatial_size = int(inputs_activation.shape[1])  # 6
+
+        inputs_pose = tf.reshape(inputs_pose, shape=[-1, 3 * 3 * self.i_size, 16])  # (?, 9x32=288, 16)
+        inputs_activation = tf.reshape(inputs_activation,
+                                       shape=[-1, spatial_size, spatial_size,
+                                              3 * 3 * self.i_size])  # (?, 6, 6, 9x32=288)
+        # print('2.2. convCaps { inputs_pose', inputs_pose.shape, 'inputs_activation', inputs_activation.shape, '}')
 
         # Block votes
-        pose_tiled, spatial_routing_matrix = kernel_tile(inputs_pose,
-                                                         kernel=self.kernel_size,
-                                                         stride=self.strides)
-        activation_tiled, _ = kernel_tile(inputs_activation,
-                                          kernel=self.kernel_size,
-                                          stride=self.strides)
-        pose_unroll = tf.reshape(pose_tiled,
-                                 shape=[self.batch_size * self.square_parent_space,
-                                        self.square_kernel_size * self.child_caps, 16])
-        activation_unroll = tf.reshape(activation_tiled,
-                                       shape=[self.batch_size * self.square_parent_space,
-                                              self.square_kernel_size * self.child_caps, 1])
-        votes = compute_votes(pose_unroll, self.parent_caps, self.w)
+        votes = mat_transform(inputs_pose, self.o_size,
+                              batch_size * spatial_size * spatial_size, self.w)  # (864, 288, 32, 16)
+
+        # print('2.3. convCaps { votes', votes.shape, '}')
+
+        votes_shape = votes.shape
+        votes = tf.reshape(votes, shape=[batch_size, spatial_size, spatial_size, votes_shape[-3], votes_shape[-2],
+                                         votes_shape[-1]])  # (24, 6, 6, 288, 32, 16)
+
+        # print('2.4. convCaps { votes', votes.shape, '}')
 
         # Block routing
-        pose, activation = matrix_capsules_em_routing(votes=votes,
-                                                      activation=activation_unroll,
-                                                      spatial_routing_matrix=spatial_routing_matrix,
-                                                      batch_size=self.batch_size,
-                                                      routings=self.routings,
-                                                      final_lambda=0.01,
-                                                      beta_a=self.beta_a,
-                                                      beta_v=self.beta_v)
+        # votes (24, 6, 6, 3x3x32=288, 32, 16), inputs_activation (?, 6, 6, 288)
+        # pose (24, 6, 6, 32, 16), activation (24, 6, 6, 32)
+        pose, activation = matrix_capsules_em_routing(votes, inputs_activation,
+                                                      self.beta_v, self.beta_a, self.routings)
+        # print('2.5. convCaps { pose', pose.shape, 'activation', activation.shape, '}')
+
+        pose_shape = pose.shape
+        pose = tf.reshape(pose, [pose_shape[0], pose_shape[1], pose_shape[2], pose_shape[3],
+                                 self.pose_size, self.pose_size])  # (24, 6, 6, 32, 4, 4)
+
+        # print('2.6. convCaps { pose', pose.shape, '}')
 
         return pose, activation
 
@@ -139,61 +136,93 @@ class ConvolutionalCapsule(layers.Layer):
 
 
 class ClassCapsule(layers.Layer):
-    def __init__(self, classes, routings, weights_regularizer, **kwargs):
+    def __init__(self, classes, routings, **kwargs):
         super(ClassCapsule, self).__init__(**kwargs)
         self.classes = classes
         self.routings = routings
-        self.weights_regularizer = weights_regularizer
-        self.shape = self.batch_size = self.child_space = self.child_caps = None
+        self.pose_shape = self.batch_size = self.spatial_size = self.pose_size = self.i_size = None
         self.w = self.beta_v = self.beta_a = None
 
     def build(self, input_shape):
-        self.shape = input_shape[0]
-        self.child_space = self.shape[1]
-        self.child_caps = self.shape[3]
+        self.pose_shape = input_shape[0]
+        self.spatial_size = int(self.pose_shape[1])
+        self.pose_size = int(self.pose_shape[-1])
+        self.i_size = int(self.pose_shape[3])
 
         self.w = self.add_weight(
-            shape=[1, self.child_caps, self.classes, 4, 4],
+            shape=[1, self.pose_shape[-3], self.classes, 4, 4],
             name='w',
             trainable=True,
-            regularizer=self.weights_regularizer,
-            initializer=tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0))
-        self.beta_a, self.beta_v = init_beta(self, self.classes)
+            initializer=tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0))  # (1, 32, 10, 4, 4)
+
+        # print('3. classCaps { w', self.w.shape, '}')
+
+        self.beta_a = self.add_weight(
+            name='beta_a',
+            shape=[1, self.classes],
+            dtype=tf.float32,
+            trainable=True,
+            initializer=tf.keras.initializers.GlorotUniform())
+        self.beta_v = self.add_weight(
+            name='beta_v',
+            shape=[1, self.classes],
+            dtype=tf.float32,
+            trainable=True,
+            initializer=tf.keras.initializers.GlorotUniform())
+
         self.built = True
 
     def call(self, inputs, **kwargs):
         inputs_pose, inputs_activation = inputs
-        self.batch_size = inputs_pose.shape[0]
+        batch_size = inputs_pose.shape[0]
+
+        # (24 * 4 * 4=384, 32, 16)
+        inputs_pose = tf.reshape(inputs_pose, shape=[batch_size * self.spatial_size * self.spatial_size,
+                                                     self.pose_shape[-3], self.pose_shape[-2] * self.pose_shape[-2]])
+
+        # print('3.1. classCaps { inputs_pose', inputs_pose.shape, 'inputs_activation', inputs_activation.shape, '}')
 
         # Block votes
-        pose = tf.reshape(inputs_pose, shape=[self.batch_size * self.child_space * self.child_space,
-                                              self.child_caps, 16])
-        activation = tf.reshape(inputs_activation, shape=[self.batch_size * self.child_space * self.child_space,
-                                                          self.child_caps, 1])
-        votes = compute_votes(pose, self.classes, self.w)
+        # inputs_poses (384, 32, 16)
+        # votes: (384, 32, 10, 16)
+        votes = mat_transform(inputs_pose, self.classes, batch_size * self.spatial_size * self.spatial_size, self.w)
 
-        # Block coord add
-        votes = tf.reshape(votes, shape=[self.batch_size, self.child_space, self.child_space,
-                                         self.child_caps, self.classes, votes.shape[-1]])
-        votes = coord_addition(votes)
+        # print('3.2. classCaps { votes', votes.shape, '}')
+
+        # votes (24, 4, 4, 32, 10, 16)
+        votes = tf.reshape(votes, shape=[batch_size, self.spatial_size, self.spatial_size, self.i_size,
+                                         self.classes, self.pose_size * self.pose_size])
+
+        # print('3.3. classCaps { votes', votes.shape, '}')
+
+        votes = coord_addition(votes, self.spatial_size, self.spatial_size)  # (24, 4, 4, 32, 10, 16)
+
+        # print('3.4. classCaps { votes', votes.shape, '}')
 
         # Block routing
-        votes_flat = tf.reshape(
-            votes, shape=[self.batch_size, self.child_space * self.child_space * self.child_caps,
-                          self.classes, votes.shape[-1]])
-        activation_flat = tf.reshape(
-            activation, shape=[self.batch_size, self.child_space * self.child_space * self.child_caps, 1])
-        spatial_routing_matrix = create_routing_map(child_space=1, k=1, s=1)
-        pose, activation = matrix_capsules_em_routing(votes=votes_flat,
-                                                      activation=activation_flat,
-                                                      spatial_routing_matrix=spatial_routing_matrix,
-                                                      batch_size=self.batch_size,
-                                                      routings=self.routings,
-                                                      final_lambda=0.01,
-                                                      beta_a=self.beta_a,
-                                                      beta_v=self.beta_v)
-        activation = tf.squeeze(activation)
-        pose = tf.squeeze(pose)
+        # votes (24, 4, 4, 32, 10, 16) -> (24, 512, 10, 16)
+        votes_shape = votes.shape
+        votes = tf.reshape(votes, shape=[batch_size, votes_shape[1] * votes_shape[2] * votes_shape[3],
+                                         votes_shape[4], votes_shape[5]])
+
+        # print('3.5. classCaps { votes', votes.shape, '}')
+
+        # inputs_activations (24, 4, 4, 32) -> (24, 512)
+        inputs_activation = tf.reshape(inputs_activation, shape=[batch_size,
+                                                                 votes_shape[1] * votes_shape[2] * votes_shape[3]])
+
+        # print('3.6. classCaps { inputs_activation', inputs_activation.shape, '}')
+
+        # votes (24, 512, 10, 16), inputs_activations (24, 512)
+        # poses (24, 10, 16), activation (24, 10)
+        pose, activation = matrix_capsules_em_routing(votes, inputs_activation, self.beta_v, self.beta_a, self.routings)
+
+        # print('3.7. classCaps { pose', pose.shape, 'activation', activation.shape, '}')
+
+        # poses (24, 10, 16) -> (24, 10, 4, 4)
+        pose = tf.reshape(pose, shape=[batch_size, self.classes, self.pose_size, self.pose_size])
+
+        # print('3.8. classCaps { pose', pose.shape, '}')
 
         return pose, activation
 
@@ -202,16 +231,35 @@ class ClassCapsule(layers.Layer):
 
 
 if __name__ == '__main__':
-    input_layer = layers.Input(shape=[28, 28, 1], batch_size=64)
-    conv1 = layers.Conv2D(filters=64, kernel_size=5, strides=2,
+    input_layer = layers.Input(shape=[28, 28, 1], batch_size=24)
+    conv1 = layers.Conv2D(filters=32, kernel_size=5, strides=2,
                           padding='same', activation=activations.relu)(input_layer)
-    primaryCaps = PrimaryCapsule2D(capsules=8, kernel_size=1, strides=1,
+    primaryCaps = PrimaryCapsule2D(capsules=32, kernel_size=1, strides=1,
                                    padding='valid', pose_shape=[4, 4])(conv1)
-    convCaps1 = ConvolutionalCapsule(kernel_size=3, strides=2, capsules=16, routings=3,
-                                     weights_regularizer=tf.keras.regularizers.L2(0.0000002))(primaryCaps)
-    convCaps2 = ConvolutionalCapsule(kernel_size=3, strides=1, capsules=16, routings=3,
-                                     weights_regularizer=tf.keras.regularizers.L2(0.0000002))(convCaps1)
-    classCaps = ClassCapsule(classes=10, routings=3,
-                             weights_regularizer=tf.keras.regularizers.L2(0.0000002))(convCaps2)
+    convCaps1 = ConvolutionalCapsule(kernel_size=3, capsules=32,
+                                     routings=3, strides=[1, 2, 2, 1])(primaryCaps)
+    convCaps2 = ConvolutionalCapsule(kernel_size=3, strides=[1, 1, 1, 1],
+                                     capsules=32, routings=3)(convCaps1)
+    classCaps = ClassCapsule(classes=10, routings=3)(convCaps2)
     model = tf.keras.Model(input_layer, classCaps)
     model.summary(line_length=200)
+
+    import bmstu.utls as utls
+
+    # load data
+    (x_train, y_train), (x_test, y_test) = utls.load('mnist')
+    # define model
+
+    x_val = x_test[:1000]
+    x_test = x_test[1000:]
+    y_val = y_test[:1000]
+    y_test = y_test[1000:]
+
+    from tensorflow.keras import optimizers
+
+    model.compile(optimizer=optimizers.Adam(lr=0.001),
+                  loss=['mse'],
+                  metrics='accuracy')
+
+    model.fit(x_train, y_train, batch_size=24, epochs=5,
+              validation_data=[x_val, y_val])

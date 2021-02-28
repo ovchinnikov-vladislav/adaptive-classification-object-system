@@ -47,15 +47,26 @@ def cross_entropy_loss(y_true, y_pred, x):
     return loss_all, reconstruction_loss, y_pred
 
 
-def spread_loss(y_true, y_pred, margin):
+def spread_loss(y_true, y_pred, iterations_per_epoch, global_step):
     """Spread loss
-    :param margin:
+    :param iterations_per_epoch:
+    :param global_step:
     :param y_true: (24, 10] in one-hot vector
     :param y_pred: [24, 10], activation for each class
     :return: spread loss
 
     margin: increment from 0.2 to 0.9 during training
     """
+
+    margin = tf.compat.v1.train.piecewise_constant(
+        tf.cast(global_step, dtype=tf.int32),
+        boundaries=[
+            (iterations_per_epoch * x) for x in range(1, 8)
+        ],
+        values=[
+            x / 10.0 for x in range(2, 10)
+        ]
+    )
 
     activations_shape = y_pred.shape
 
@@ -73,4 +84,5 @@ def spread_loss(y_true, y_pred, margin):
                                [tf.shape(y_pred)[0], activations_shape[1] - 1])
 
     loss = tf.reduce_sum(tf.square(tf.maximum(0.0, margin - (activations_t - activations_i))))
+
     return loss

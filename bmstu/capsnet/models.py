@@ -131,16 +131,15 @@ class MatrixCapsNet(tf.keras.Model):
         self.batch_size = batch_size
 
         self.reshape = tf.keras.layers.Reshape(target_shape=shape, input_shape=shape, batch_size=self.batch_size)
-        self.conv1 = tf.keras.layers.Conv2D(filters=64, kernel_size=5, strides=2,
+        self.conv1 = tf.keras.layers.Conv2D(filters=32, kernel_size=5, strides=2,
                                             padding='same', activation=activations.relu)
-        self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=8, kernel_size=1, strides=1,
+        self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=32, kernel_size=1, strides=1,
                                                           padding='valid', pose_shape=[4, 4])
-        self.convCaps1 = matrix_layers.ConvolutionalCapsule(kernel_size=3, strides=2, capsules=16, routings=routings,
-                                                            weights_regularizer=tf.keras.regularizers.L2(0.0000002))
-        self.convCaps2 = matrix_layers.ConvolutionalCapsule(kernel_size=3, strides=1, capsules=16, routings=routings,
-                                                            weights_regularizer=tf.keras.regularizers.L2(0.0000002))
-        self.classCaps = matrix_layers.ClassCapsule(classes=classes, routings=routings,
-                                                    weights_regularizer=tf.keras.regularizers.L2(0.0000002))
+        self.convCaps1 = matrix_layers.ConvolutionalCapsule(kernel_size=3, capsules=32,
+                                                            routings=routings, strides=[1, 2, 2, 1])
+        self.convCaps2 = matrix_layers.ConvolutionalCapsule(kernel_size=3, strides=[1, 1, 1, 1],
+                                                            capsules=32, routings=routings)
+        self.classCaps = matrix_layers.ClassCapsule(classes=10, routings=routings)
 
     def call(self, inputs, training=None, mask=None):
         inputs = self.reshape(inputs)
@@ -158,7 +157,8 @@ class MatrixCapsNet(tf.keras.Model):
         x, y = data
         with tf.GradientTape() as tape:
             pose, activation = self(x, training=True)
-            loss = losses.spread_loss(y, activation, self.optimizer.learning_rate(self.optimizer.iterations))
+            iteration = tf.cast(self.optimizer.iterations, tf.int32)
+            loss = losses.spread_loss(y, activation, 60000 // self.batch_size, iteration)
 
         trainable_vars = self.trainable_variables
         gradients = tape.gradient(loss, trainable_vars)
@@ -166,16 +166,23 @@ class MatrixCapsNet(tf.keras.Model):
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
         self.compiled_metrics.update_state(y, activation)
 
-        return {m.name: m.result() for m in self.metrics}
+        metrics_out = {m.name: m.result() for m in self.metrics}
+        metrics_out['spread_loss'] = loss
+        metrics_out['global_step'] = iteration
+        return metrics_out
 
     def test_step(self, data):
         x, y = data
         pose, activation = self(x, training=False)
-        loss = losses.spread_loss(y, activation, self.optimizer.learning_rate(self.optimizer.iterations))
+        iteration = tf.cast(self.optimizer.iterations, tf.int32)
+        loss = losses.spread_loss(y, activation, 10000 // self.batch_size, iteration)
 
         self.compiled_metrics.update_state(y, activation)
 
-        return {m.name: m.result() for m in self.metrics}
+        metrics_out = {m.name: m.result() for m in self.metrics}
+        metrics_out['spread_loss'] = loss
+        metrics_out['global_step'] = iteration
+        return metrics_out
 
     def get_config(self):
         super(MatrixCapsNet, self).get_config()
@@ -193,18 +200,14 @@ class MatrixCapsNet(tf.keras.Model):
 
 if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
-    epochs = 1
-    batch_size = 10
-    model = MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=1, batch_size=batch_size)
+    epochs = 5
+    batch_size = 24
+    model = MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=3, batch_size=batch_size)
     model.build(x_train.shape)
     model.summary()
 
-    model.compile(optimizer=tf.keras.optimizers.Adam(
-        learning_rate=tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-            boundaries=[(len(x_train) // batch_size * x) for x in range(1, 8)],
-            values=[x / 10.0 for x in range(2, 10)])),
-        metrics='accuracy')
+    model.compile(optimizer=tf.keras.optimizers.Adam(lr=0.001),
+                  metrics='accuracy')
 
     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
               validation_data=(x_test, y_test))
-

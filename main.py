@@ -102,51 +102,64 @@ from tensorflow.keras import callbacks
 #     print('-' * 30 + 'End: manipulate' + '-' * 30)
 
 if __name__ == '__main__':
-    class Args:
-        def __init__(self):
-            self.epochs = 2
-            self.batch_size = 112
-            self.lr = 0.001
-            self.lr_decay = 0.9
-            self.lam_recon = 0.392
-            self.routings = 3
-            self.shift_fraction = 0.1
-            self.save_dir = '.'
-            self.digit = 5
-
-
-    args = Args()
-
-    # load data
     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
-    # define model
-
-    x_val = x_test[:1000]
-    x_test = x_test[1000:]
-    y_val = y_test[:1000]
-    y_test = y_test[1000:]
-
-    model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
-                                                         classes=len(np.unique(np.argmax(y_train, 1))),
-                                                         routings=args.routings).build()
-
+    epochs = 5
+    batch_size = 24
+    model = models.MatrixCapsNet(shape=[28, 28, 1], classes=10, routings=3, batch_size=batch_size)
+    model.build(x_train.shape)
     model.summary()
 
     model.compile(optimizer=optimizers.Adam(lr=0.001),
-                  loss=[losses.margin_loss, 'mse'],
                   metrics='accuracy')
 
-    model.fit([x_train, y_train], [y_train, x_train], batch_size=100, epochs=5,
-              validation_data=[[x_val, y_val], [y_val, x_val]])
+    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
+              validation_data=(x_test, y_test))
 
-    eval_model.save('mnist-model')
+# class Args:
+#     def __init__(self):
+#         self.epochs = 2
+#         self.batch_size = 112
+#         self.lr = 0.001
+#         self.lr_decay = 0.9
+#         self.lam_recon = 0.392
+#         self.routings = 3
+#         self.shift_fraction = 0.1
+#         self.save_dir = '.'
+#         self.digit = 5
+#
+#
+# args = Args()
+#
+# # load data
+# (x_train, y_train), (x_test, y_test) = utls.load('mnist')
+# # define model
+#
+# x_val = x_test[:1000]
+# x_test = x_test[1000:]
+# y_val = y_test[:1000]
+# y_test = y_test[1000:]
+#
+# model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
+#                                                      classes=len(np.unique(np.argmax(y_train, 1))),
+#                                                      routings=args.routings).build()
+#
+# model.summary()
+#
+# model.compile(optimizer=optimizers.Adam(lr=0.001),
+#               loss=[losses.margin_loss, 'mse'],
+#               metrics='accuracy')
+#
+# model.fit([x_train, y_train], [y_train, x_train], batch_size=100, epochs=5,
+#           validation_data=[[x_val, y_val], [y_val, x_val]])
+#
+# eval_model.save('mnist-model')
+#
+# predictions = eval_model.predict(x_test[:1])
+#
+# print('y_pred = ', predictions[0], 'y_true = ', y_test[:1])
 
-    predictions = eval_model.predict(x_test[:1])
+# model.fit(x_train, y_train, validation_data=[x_test, y_test])
 
-    print('y_pred = ', predictions[0], 'y_true = ', y_test[:1])
-
-    # model.fit(x_train, y_train, validation_data=[x_test, y_test])
-
-    #
-    # train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
-    # test(model=eval_model, data=(x_test, y_test), args=args)
+#
+# train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
+# test(model=eval_model, data=(x_test, y_test), args=args)
