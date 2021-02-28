@@ -6,7 +6,6 @@ from bmstu import utls
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import callbacks
 
-
 # def train(model,  # type: models.Model
 #           data, args):
 #     """
@@ -140,9 +139,11 @@ if __name__ == '__main__':
     model.fit([x_train, y_train], [y_train, x_train], batch_size=100, epochs=5,
               validation_data=[[x_val, y_val], [y_val, x_val]])
 
-    predictions = model.predict(x_test)
+    eval_model.save('mnist-model')
 
-    print(predictions)
+    predictions = eval_model.predict(x_test[:1])
+
+    print('y_pred = ', predictions[0], 'y_true = ', y_test[:1])
 
     # model.fit(x_train, y_train, validation_data=[x_test, y_test])
 

@@ -61,28 +61,36 @@ class Capsule(layers.Layer):
 
     def call(self, inputs, **kwargs):
         inputs_expand = tf.expand_dims(inputs, 1)
-        inputs_tiled = tf.tile(inputs_expand, [1, self.capsules, 1, 1])
-        inputs_tiled = tf.expand_dims(inputs_tiled, 4)
+        u_i = tf.tile(inputs_expand, [1, self.capsules, 1, 1])
+        u_i = tf.expand_dims(u_i, 4)  # u_i
 
-        inputs_hat = tf.map_fn(lambda x: tf.matmul(self.w, x), elems=inputs_tiled)
+        u_ji_hat = tf.map_fn(lambda x: tf.matmul(self.w, x), elems=u_i)  # u_j|i_hat = Wij * u_i
 
-        b = tf.zeros(shape=[tf.shape(inputs_hat)[0], self.capsules, inputs.shape[1], 1, 1])
+        # for all capsule i in layer l and capsule j in layer(l + 1): b_ij <- 0
+        b_ij = tf.zeros(shape=[tf.shape(u_ji_hat)[0], self.capsules, inputs.shape[1], 1, 1])  # b_ij <- 0
 
         assert self.routings > 0, 'The routings should be > 0.'
-        outputs = None
+        v_j = None
+        # for r iterations do
         for i in range(self.routings):
-            c = tf.nn.softmax(b, axis=1)
+            # for all capsule i in layer l: c_i <- softmax(b_i)
+            c_i = tf.nn.softmax(b_ij, axis=1)
 
-            outputs = tf.multiply(c, inputs_hat)
-            outputs = tf.reduce_sum(outputs, axis=2, keepdims=True)
-            outputs = squash(outputs, axis=-2)
+            # for all capsule j in layer (l + 1): s_j <- Sum_i (c_ij * u_j|i_hat)
+            s_j = tf.multiply(c_i, u_ji_hat)  # c_ij * u_j|i_hat
+            s_j = tf.reduce_sum(s_j, axis=2, keepdims=True)  # s_j <- Sum_i (c_ij * u_j|i_hat)
 
+            # for all capsule j in layer (l + 1): v_j <- squash(s_j)
+            v_j = squash(s_j, axis=-2)  # v_j <- squash(s_j)
+
+            # Небольшая оптимизация по причине того, что финальным тензором является v_j <- squash(s_j)
             if i < self.routings - 1:
-                outputs_tiled = tf.tile(outputs, [1, 1, inputs.shape[1], 1, 1])
-                agreement = tf.matmul(inputs_hat, outputs_tiled, transpose_a=True)
-                b = tf.add(b, agreement)
+                # for all capsule i in layer l and capsule j in layer (l + 1): b_ij <- b_ij + u_j|i_hat * v_j
+                outputs_tiled = tf.tile(v_j, [1, 1, inputs.shape[1], 1, 1])
+                agreement = tf.matmul(u_ji_hat, outputs_tiled, transpose_a=True)  # u_j|i_hat * v_j
+                b_ij = tf.add(b_ij, agreement)  # b_ij <- b_ij + u_j|i_hat * v_j
 
-        return tf.squeeze(outputs, [2, 4])
+        return tf.squeeze(v_j, [2, 4])  # return v_j
 
     def get_config(self):
         return super(Capsule, self).get_config()
