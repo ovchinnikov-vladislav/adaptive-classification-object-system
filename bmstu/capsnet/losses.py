@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.keras import activations
 
 
 def margin_loss(y_true, y_pred, m_plus=0.9, m_minus=0.1, down_weighting=0.5):
@@ -24,54 +25,61 @@ def compute_loss(y_true, y_pred, reconstruction, x, reconstruction_weight=0.0005
     return loss, reconstruction_loss
 
 
-def cross_entropy_loss(y_true, y_pred, x):
-    loss = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=y_true, logits=y_pred)
+def cross_ent_loss(output, x, y, regularization):
+    loss = tf.compat.v1.losses.sparse_softmax_cross_entropy(labels=y, logits=output)
     loss = tf.reduce_mean(loss)
-    num_classes = int(y_pred.shape[-1])
-    data_size = int(x.shape[1])
+    num_class = output.shape[-1]
+    data_size = x.shape[1]
 
-    y_true = tf.one_hot(y_true, num_classes, dtype=tf.float32)
-    y_true = tf.expand_dims(y_true, axis=2)
-    y_pred = tf.expand_dims(y_pred, axis=2)
-    y_pred = tf.reshape(tf.multiply(y_pred, y_true), shape=[-1])
+    # reconstruction loss
+    y = tf.one_hot(y, num_class, dtype=tf.float32)
+    y = tf.expand_dims(y, axis=2)
+    output = tf.expand_dims(output, axis=2)
+    output = tf.reshape(tf.multiply(output, y), shape=[x.shape[0], -1])
 
-    y_pred = tf.keras.layers.Dense(512, trainable=True)(y_pred)
-    y_pred = tf.keras.layers.Dense(1024, trainable=True)(y_pred)
-    y_pred = tf.keras.layers.Dense(data_size * data_size, trainable=True, activation=tf.sigmoid)(y_pred)
+    output = tf.keras.layers.Dense(512, trainable=True)(output)
+    output = tf.keras.layers.Dense(1024, trainable=True)(output)
+    output = tf.keras.layers.Dense(data_size * data_size, trainable=True,
+                                   activation=activations.sigmoid)(output)
 
-    x = tf.reshape(x, shape=[-1])
-    reconstruction_loss = tf.reduce_mean(tf.square(y_pred - x))
+    x = tf.reshape(x, shape=[x.shape[0], -1])
+    reconstruction_loss = tf.reduce_mean(tf.square(output - x))
 
-    loss_all = tf.add_n([loss] + [0.0005 * reconstruction_loss])
+    loss_all = tf.add_n([loss] + [0.0005 * reconstruction_loss] + regularization)
 
-    return loss_all, reconstruction_loss, y_pred
+    return loss_all, reconstruction_loss, output
 
 
-def spread_loss(labels, activations, margin):
-    """Spread loss
-    :param margin:
-    :param labels: (24, 10] in one-hot vector
-    :param activations: [24, 10], activation for each class
-    :return: spread loss
+def spread_loss(output, pose_out, x, y, m, regularization=None):
+    num_class = output.shape[-1]
+    data_size = x.shape[1]
 
-    margin: increment from 0.2 to 0.9 during training
-    """
+    # y = tf.one_hot(tf.cast(y, tf.int32), num_class, dtype=tf.float32)
+    # spread loss
+    output1 = tf.reshape(output, shape=[x.shape[0], 1, num_class])
+    y = tf.expand_dims(y, axis=2)
+    at = tf.matmul(output1, y)
 
-    activations_shape = activations.shape
+    loss = tf.square(tf.maximum(0., m - (at - output1)))
+    loss = tf.matmul(loss, 1. - y)
+    loss = tf.reduce_mean(loss)
 
-    # mask_t, mask_f Tensor (?, 10)
-    mask_t = tf.equal(labels, 1)  # Mask for the true label
-    mask_i = tf.equal(labels, 0)  # Mask for the non-true label
+    # reconstruction loss
+    # pose_out = tf.reshape(tf.matmul(pose_out, y, transpose_a=True), shape=[x.shape[0], -1])
+    # pose_out = tf.reshape(tf.multiply(pose_out, y), shape=[x.shape[0], -1])
+    #
+    # pose_out = tf.keras.layers.Dense(512, trainable=True, kernel_regularizer=tf.keras.regularizers.L2(5e-04))(pose_out)
+    # pose_out = tf.keras.layers.Dense(1024, trainable=True, kernel_regularizer=tf.keras.regularizers.L2(5e-04))(pose_out)
+    # pose_out = tf.keras.layers.Dense(data_size * data_size, trainable=True,
+    #                                  kernel_regularizer=tf.keras.regularizers.L2(5e-04))(pose_out)
+    #
+    # x = tf.reshape(x, shape=[x.shape[0], -1])
+    # reconstruction_loss = tf.reduce_mean(tf.square(pose_out - x))
 
-    # Activation for the true label
-    # activations_t (?, 1)
-    activations_t = tf.reshape(tf.boolean_mask(activations, mask_t), shape=(tf.shape(activations)[0], 1))
+    # if regularization is not None:
+    #     loss_all = tf.add_n([loss] + [0.0005 * data_size * data_size * reconstruction_loss] + regularization)
+    # else:
+    #     loss_all = tf.add_n([loss] + [0.0005 * data_size * data_size * reconstruction_loss])
 
-    # Activation for the other classes
-    # activations_i (?, 9)
-    activations_i = tf.reshape(tf.boolean_mask(activations, mask_i),
-                               [tf.shape(activations)[0], activations_shape[1] - 1])
-
-    loss = tf.reduce_sum(tf.square(tf.maximum(0.0, margin - (activations_t - activations_i))))
-    tf.print(" spread_loss:", loss, "learning_rate:", margin)
+    # return loss_all, loss, reconstruction_loss, pose_out
     return loss
