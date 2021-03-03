@@ -158,7 +158,7 @@ if __name__ == '__main__':
     x_test = x_test[9000:]
     y_test = y_test[9000:]
 
-    epochs = 2
+    epochs = 5
     batch_size = 50
 
     model = models.MatrixCapsNet([28, 28, 1], 10, 3, batch_size, coord_add).build()
