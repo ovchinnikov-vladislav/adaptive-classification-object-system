@@ -152,14 +152,14 @@ if __name__ == '__main__':
 
     coord_add = np.array(coord_add, dtype=np.float32) / 28.
 
-    (x_train, y_train), (x_test, y_test) = utls.load('fashion_mnist')
+    (x_train, y_train), (x_test, y_test) = utls.load('mnist')
     x_val = x_test[:9000]
     y_val = y_test[:9000]
     x_test = x_test[9000:]
     y_test = y_test[9000:]
 
     epochs = 2
-    batch_size = 25
+    batch_size = 50
 
     model = models.MatrixCapsNet([28, 28, 1], 10, 3, batch_size, coord_add).build()
     model.summary()
