@@ -86,13 +86,13 @@ class ConvolutionalCapsule(layers.Layer):
         # (16, 16)
         self.beta_v = self.add_weight(
             name='beta_v', shape=[self.capsules, 16], dtype=tf.float32,
-            initializer=tf.constant_initializer(0.0),  # tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01),
+            initializer=tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01),
             trainable=True, regularizer=tf.keras.regularizers.L2(5e-04))
 
         # (16,)
         self.beta_a = self.add_weight(
             name='beta_a', shape=[self.capsules], dtype=tf.float32,
-            initializer=tf.constant_initializer(0.0),  # tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01),
+            initializer=tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01),
             trainable=True, regularizer=tf.keras.regularizers.L2(5e-04))
 
         self.built = True
@@ -166,13 +166,13 @@ class ClassCapsule(layers.Layer):
         # (10, 18)
         self.beta_v = self.add_weight(
             name='beta_v', shape=[self.capsules, 18], dtype=tf.float32,
-            initializer=tf.constant_initializer(0.0),  # tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01),
+            initializer=tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01),
             trainable=True, regularizer=tf.keras.regularizers.L2(5e-04))
 
         # (10,)
         self.beta_a = self.add_weight(
             name='beta_a', shape=[self.capsules], dtype=tf.float32,
-            initializer=tf.constant_initializer(0.0),  # tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01),
+            initializer=tf.keras.initializers.TruncatedNormal(mean=0.0, stddev=0.01),
             trainable=True, regularizer=tf.keras.regularizers.L2(5e-04))
 
         self.built = True

@@ -54,7 +54,7 @@ def spread_loss(output, pose_out, x, y, m, regularization=None):
     num_class = output.shape[-1]
     data_size = x.shape[1]
 
-    # y = tf.one_hot(tf.cast(y, tf.int32), num_class, dtype=tf.float32)
+    y = tf.one_hot(tf.cast(y, tf.int32), num_class, dtype=tf.float32)
     # spread loss
     output1 = tf.reshape(output, shape=[x.shape[0], 1, num_class])
     y = tf.expand_dims(y, axis=2)
