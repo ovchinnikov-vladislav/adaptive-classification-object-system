@@ -123,7 +123,7 @@ if __name__ == '__main__':
     # # define model
     #
     # model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
-    #                                                      classes=len(np.unique(np.argmax(y_train, 1))),
+    #                                                      num_classes=len(np.unique(np.argmax(y_train, 1))),
     #                                                      routings=args.routings).build()
     #
     # model.summary()

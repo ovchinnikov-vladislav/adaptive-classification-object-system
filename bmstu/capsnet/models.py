@@ -174,7 +174,7 @@ class MatrixCapsuleModel(tf.keras.Model):
 # if __name__ == '__main__':
 #     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
 #
-#     model = GammaCapsNet(shape=[28, 28, 1], classes=10, routings=3, batch_size=64)
+#     model = GammaCapsNet(shape=[28, 28, 1], num_classes=10, routings=3, batch_size=64)
 #     model.build((64, 28, 28, 1))
 #     model.summary()
 #     model.compile()
