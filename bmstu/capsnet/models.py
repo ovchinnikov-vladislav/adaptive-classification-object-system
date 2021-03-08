@@ -1,5 +1,6 @@
 import tensorflow as tf
 import bmstu.capsnet.layers.basic as basic_layers
+import bmstu.capsnet.layers.segment as segment_layers
 import bmstu.layers as common_layers
 import bmstu.capsnet.layers.gamma as gamma_layers
 import bmstu.capsnet.layers.matrix as matrix_layers
@@ -171,6 +172,66 @@ class MatrixCapsuleModel(tf.keras.Model):
         return metrics
 
 
+class SegCapsNetBasic:
+    def __init__(self, shape, classes, routings):
+        self.shape = shape
+        self.classes = classes
+        self.routings = routings
+
+        self.input = tf.keras.layers.Input(shape=shape)
+        self.conv1 = tf.keras.layers.Conv2D(filters=256, kernel_size=5, strides=1, padding='same',
+                                            activation=activations.relu, name='conv1')
+        self.primary_caps = segment_layers.ConvCapsuleLayer(kernel_size=5, num_capsule=8, num_atoms=32, strides=1,
+                                                            padding='same', routings=1, name='primarycaps')
+        self.seg_caps = segment_layers.ConvCapsuleLayer(kernel_size=1, num_capsule=1, num_atoms=16, strides=1,
+                                                        padding='same', routings=routings, name='segcaps')
+        self.out_seg = segment_layers.Length(num_classes=classes, seg=True, name='outseg')
+
+    def build(self):
+        conv1 = self.conv1(self.input)
+        _, h, w, c = conv1.shape
+        conv1_reshaped = tf.keras.layers.Reshape((h, w, 1, c))(conv1)
+        primary_caps = self.primary_caps(conv1_reshaped)
+        seg_caps = self.seg_caps(primary_caps)
+        out_seg = self.out_seg(seg_caps)
+
+        _, h, w, c, a = seg_caps.shape
+        y = tf.keras.layers.Input(shape=list(self.shape[:-1])+list((1,)))
+        masked_by_y = segment_layers.Mask()([seg_caps, y])
+        masked = segment_layers.Mask()(seg_caps)
+
+        def shared_decoder(mask_layer):
+            recon_remove_dim = tf.keras.layers.Reshape((h, w, a))(mask_layer)
+            recon_1 = tf.keras.layers.Conv2D(filters=64, kernel_size=1, padding='same',
+                                             kernel_regularizer=tf.keras.initializers.get('he_normal'),
+                                             activation=activations.relu, name='recon_1')(recon_remove_dim)
+            recon_2 = tf.keras.layers.Conv2D(filters=128, kernel_size=1, padding='same',
+                                             kernel_regularizer=tf.keras.initializers.get('he_normal'),
+                                             activation=activations.relu, name='recon_2')(recon_1)
+            out_recon = tf.keras.layers.Conv2D(filters=1, kernel_size=1, padding='same',
+                                               kernel_regularizer=tf.keras.initializers.get('he_normal'),
+                                               activation=activations.sigmoid, name='out_recon')(recon_2)
+
+            return out_recon
+
+        train_model = tf.keras.Model([self.input, y], [out_seg, shared_decoder(masked_by_y)])
+        eval_model = tf.keras.Model(self.input, [out_seg, shared_decoder(masked)])
+
+        noise = tf.keras.layers.Input((h, w, c, a))
+        noised_seg_caps = tf.keras.layers.Add()([seg_caps, noise])
+        masked_noised_y = segment_layers.Mask()([noised_seg_caps, y])
+        manipulate_model = tf.keras.Model([self.input, y, noise], shared_decoder(masked_noised_y))
+
+        return train_model, eval_model, manipulate_model
+
+
+class DarkNet():
+    def build(self):
+        model = tf.keras.Sequential()
+        model.add(tf.keras.layers.Conv2D(32, 3, strides=(1, 1), padding=1))
+        model.add(tf.keras.layers.BatchNormalization(momentum=0.01))
+
+
 # if __name__ == '__main__':
 #     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
 #
@@ -181,36 +242,40 @@ class MatrixCapsuleModel(tf.keras.Model):
 #     model.fit(x_train, y_train, batch_size=64, epochs=5,
 #               validation_data=[x_test, y_test])
 
+# if __name__ == '__main__':
+#     import numpy as np
+#
+#     coord_add = [[[8., 8.], [12., 8.], [16., 8.]],
+#                  [[8., 12.], [12., 12.], [16., 12.]],
+#                  [[8., 16.], [12., 16.], [16., 16.]]]
+#
+#     coord_add = np.array(coord_add, dtype=np.float32) / 28.
+#
+#     (x_train, y_train), (x_test, y_test) = utls.load('fashion_mnist')
+#     x_val = x_test[:9000]
+#     y_val = y_test[:9000]
+#     x_test = x_test[9000:]
+#     y_test = y_test[9000:]
+#
+#     epochs = 2
+#     batch_size = 25
+#
+#     model = MatrixCapsNet([28, 28, 1], 10, 3, batch_size, coord_add).build()
+#     model.summary()
+#
+#     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+#         boundaries=[(len(x_train) // batch_size * x) for x in
+#                     range(1, 8)],
+#         values=[x / 10.0 for x in range(2, 10)])),
+#         metrics=matrix_metrics.matrix_accuracy)
+#
+#     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
+#               validation_data=(x_val, y_val))
+#
+#     print(y_test[0])
+#     activation, pose_out = model.predict(x_test[0])
+#     print(activation)
+
 if __name__ == '__main__':
-    import numpy as np
-
-    coord_add = [[[8., 8.], [12., 8.], [16., 8.]],
-                 [[8., 12.], [12., 12.], [16., 12.]],
-                 [[8., 16.], [12., 16.], [16., 16.]]]
-
-    coord_add = np.array(coord_add, dtype=np.float32) / 28.
-
-    (x_train, y_train), (x_test, y_test) = utls.load('fashion_mnist')
-    x_val = x_test[:9000]
-    y_val = y_test[:9000]
-    x_test = x_test[9000:]
-    y_test = y_test[9000:]
-
-    epochs = 2
-    batch_size = 25
-
-    model = MatrixCapsNet([28, 28, 1], 10, 3, batch_size, coord_add).build()
-    model.summary()
-
-    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-        boundaries=[(len(x_train) // batch_size * x) for x in
-                    range(1, 8)],
-        values=[x / 10.0 for x in range(2, 10)])),
-        metrics=matrix_metrics.matrix_accuracy)
-
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
-              validation_data=(x_val, y_val))
-
-    print(y_test[0])
-    activation, pose_out = model.predict(x_test[0])
-    print(activation)
+    segmodel = SegCapsNetBasic([28, 28, 1], 10, 3).build()
+    segmodel[0].summary()

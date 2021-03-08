@@ -144,36 +144,88 @@ if __name__ == '__main__':
     # test(model=eval_model, data=(x_test, y_test), args=args)
 
     # MatrixCapsNet Mnist
-    import numpy as np
+    # import numpy as np
+    #
+    # coord_add = [[[8., 8.], [12., 8.], [16., 8.]],
+    #              [[8., 12.], [12., 12.], [16., 12.]],
+    #              [[8., 16.], [12., 16.], [16., 16.]]]
+    #
+    # coord_add = np.array(coord_add, dtype=np.float32) / 28.
+    #
+    # (x_train, y_train), (x_test, y_test) = utls.load('mnist')
+    # x_val = x_test[:9000]
+    # y_val = y_test[:9000]
+    # x_test = x_test[9000:]
+    # y_test = y_test[9000:]
+    #
+    # epochs = 5
+    # batch_size = 50
+    #
+    # model = models.MatrixCapsNet([28, 28, 1], 10, 3, batch_size, coord_add).build()
+    # model.summary()
+    #
+    # from bmstu.capsnet.metrics import matrix as matrix_metrics
+    # model.compile(optimizer=optimizers.Adam(learning_rate=optimizers.schedules.PiecewiseConstantDecay(
+    #     boundaries=[(len(x_train) // batch_size * x) for x in
+    #                 range(1, 8)],
+    #     values=[x / 10.0 for x in range(2, 10)])),
+    #     metrics=matrix_metrics.matrix_accuracy)
+    #
+    # model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
+    #           validation_data=(x_val, y_val))
+    #
+    # print(y_test[0])
+    # activation, pose_out = model.predict(x_test[0])
+    # print(activation)
 
-    coord_add = [[[8., 8.], [12., 8.], [16., 8.]],
-                 [[8., 12.], [12., 12.], [16., 12.]],
-                 [[8., 16.], [12., 16.], [16., 16.]]]
+    import tensorflow as tf
+    from tensorflow.keras.layers import Input, Conv2D, UpSampling2D, Dense, Reshape, BatchNormalization, LeakyReLU
+    from bmstu.capsnet.layers.basic import PrimaryCapsule2D, Capsule, Length, Mask
+    from bmstu.layers import UnFlatten
 
-    coord_add = np.array(coord_add, dtype=np.float32) / 28.
+    inputs = Input([28, 28, 1])
+    conv = Conv2D(128, 3)(inputs)
+    x = BatchNormalization()(conv)
+    x = LeakyReLU(0.1)(x)
 
-    (x_train, y_train), (x_test, y_test) = utls.load('mnist')
-    x_val = x_test[:9000]
-    y_val = y_test[:9000]
-    x_test = x_test[9000:]
-    y_test = y_test[9000:]
+    x = Conv2D(256, 3)(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.1)(x)
 
-    epochs = 5
-    batch_size = 50
+    x = Conv2D(64, 4, 2)(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.1)(x)
 
-    model = models.MatrixCapsNet([28, 28, 1], 10, 3, batch_size, coord_add).build()
+    x = Conv2D(128, 4, 2)(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.1)(x)
+
+    x = Conv2D(256, 4, 2)(x)
+    x = BatchNormalization()(x)
+    x = LeakyReLU(0.1)(x)
+
+    primary_capsules = PrimaryCapsule2D(capsules=8, kernel_size=8, dim_capsules=16, strides=2)(x)
+    traffic_sign_capsules = Capsule(dim_capsules=16, capsules=8, routings=3)(primary_capsules)
+    model = tf.keras.Model(inputs, traffic_sign_capsules)
     model.summary()
 
-    from bmstu.capsnet.metrics import matrix as matrix_metrics
-    model.compile(optimizer=optimizers.Adam(learning_rate=optimizers.schedules.PiecewiseConstantDecay(
-        boundaries=[(len(x_train) // batch_size * x) for x in
-                    range(1, 8)],
-        values=[x / 10.0 for x in range(2, 10)])),
-        metrics=matrix_metrics.matrix_accuracy)
+    # conv1 = Conv2D(filters=256, kernel_size=9, strides=1)(inputs)
+    # primary_capsules = PrimaryCapsule2D(capsules=8, kernel_size=8, dim_capsules=16, strides=2)(conv1)
 
-    model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
-              validation_data=(x_val, y_val))
 
-    print(y_test[0])
-    activation, pose_out = model.predict(x_test[0])
-    print(activation)
+    # decoder = tf.keras.models.Sequential()
+    # decoder.add(Dense(16 * 4 * 4, activation='relu', input_dim=16 * 10))
+    # decoder.add(UnFlatten(16, 4, 4))
+    # decoder.add(UpSampling2D((8, 8)))
+    # decoder.add(Conv2D(4, 3, activation='relu'))
+    # decoder.add(UpSampling2D((16, 16)))
+    # decoder.add(Conv2D(8, 3, activation='relu'))
+    # decoder.add(UpSampling2D((32, 32)))
+    # decoder.add(Conv2D(16, 3, activation='relu'))
+    # decoder.add(Conv2D(3, 3, activation='tanh'))
+    #
+    # input_decoder = Input(shape=(10,))
+    #
+    # model = tf.keras.Model([inputs, input_decoder], [output, decoder(Mask()([traffic_sign_capsules, input_decoder]))])
+    # model.summary(line_length=150)
+

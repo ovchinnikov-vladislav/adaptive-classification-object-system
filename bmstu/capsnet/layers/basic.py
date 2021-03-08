@@ -17,7 +17,6 @@ class PrimaryCapsule2D(layers.Layer):
 
     def __init__(self, capsules, dim_capsules, kernel_size, strides, **kwargs):
         super(PrimaryCapsule2D, self).__init__(**kwargs)
-        assert capsules % dim_capsules == 0, "Invalid size of capsules and dim_capsules"
 
         num_filters = capsules * dim_capsules
         self.conv2d = layers.Conv2D(filters=num_filters,
@@ -28,6 +27,7 @@ class PrimaryCapsule2D(layers.Layer):
         self.reshape = layers.Reshape(target_shape=(-1, dim_capsules))
 
     def call(self, inputs, **kwargs):
+        print(inputs.shape)
         x = self.conv2d(inputs)
         x = self.reshape(x)
         x = squash(x)
