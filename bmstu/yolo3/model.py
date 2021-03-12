@@ -21,7 +21,7 @@ class YoloModel:
                  classes_path="model_data/coco_classes.txt",
                  score=0.3,
                  iou=0.45,
-                 model_image_size=(416, 416)):
+                 model_image_size=(640, 480)):
         self.model_path = model_path
         self.anchors_path = anchors_path
         self.classes_path = classes_path
@@ -77,6 +77,7 @@ class YoloModel:
 
         # Generate output tensor targets for filtered bounding boxes
         self.input_image_shape = backend.placeholder(shape=(2,))
+
         boxes, scores, classes = yolo_eval(self.yolo_model.output, self.anchors, len(self.class_names),
                                            self.input_image_shape, score_threshold=self.score, iou_threshold=self.iou)
 
@@ -95,22 +96,19 @@ class YoloModel:
             boxed_image = letterbox_image(image, new_image_size)
         image_data = np.array(boxed_image, dtype='float32')
 
-        print(image_data.shape)
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
 
-        # out_boxes, out_scores, out_classes = self.generate(image_data)
-
         out_boxes, out_scores, out_classes = self.sess.run(self.result_predictions,
-                                feed_dict={
-                                    self.yolo_model.input: image_data,
-                                    self.input_image_shape: [image.size[1], image.size[0]],
-                                    backend.learning_phase(): 0
-                                })
+                                                           feed_dict={
+                                                               self.yolo_model.input: image_data,
+                                                               self.input_image_shape: [image.size[1], image.size[0]],
+                                                               backend.learning_phase(): 0
+                                                           })
 
-        print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+      #  print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
 
-        font = ImageFont.truetype(font='font/FiraMono-Medium.otf',
+        font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
                                   size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness = (image.size[0] + image.size[1]) // 300
 
@@ -118,6 +116,8 @@ class YoloModel:
             predicted_class = self.class_names[c]
             box = out_boxes[i]
             score = out_scores[i]
+            if score < 0.7:
+                continue
 
             label = '{} {:.2f}'.format(predicted_class, score)
             draw = ImageDraw.Draw(image)
@@ -128,7 +128,7 @@ class YoloModel:
             left = max(0, np.floor(left + 0.5).astype('int32'))
             bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
             right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
-            print(label, (left, top), (right, bottom))
+         #   print(label, (left, top), (right, bottom))
 
             if top - label_size[1] >= 0:
                 text_origin = np.array([left, top - label_size[1]])
@@ -147,5 +147,5 @@ class YoloModel:
             del draw
 
         end = timer()
-        print(end - start)
+       # print(end - start)
         return image

@@ -4,3 +4,4 @@ build
 __pycache__
 dist
 bmstu_ovchinnikov_capsnet.egg-info
+model_data/yolo.dat
