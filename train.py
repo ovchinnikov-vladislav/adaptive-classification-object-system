@@ -102,9 +102,9 @@ def data_generator_wrapper(annotation_lines, batch_size, input_shape, anchors, n
 if __name__ == '__main__':
     args = parser.parse_args()
     root_path = args.root_dataset
-    train_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDQUUwd21EckhU4jt2EpyCXK-ui-lE9lMQsuG6HHaIWv5zLxecQeXtbVk/WIDER_train/images/'
-    test_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDbW4tdGpaYjgzOwMT4R6ikuxYiUtHrEwFA7Iw4SVAMwhF1wp3mCQfiNM/WIDER_test/images/'
-    val_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDd3dIRmpvSk8t-e-9CfKMXS2IS-jA6u85ZxWMhmpZP8NqsEE-SypYoXo/WIDER_val/images/'
+    train_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDQUUwd21EckhUTyERqlzqRmG-dE3XrDIFA3rgWZ-kRknnz4ONTBO2wsA/WIDER_train/images/'
+    test_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDbW4tdGpaYjgzqpD1B9Dnv82IcKtgBzjedFSRfGEgujZCg3LdgCTEzOE/WIDER_test/images/'
+    val_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDd3dIRmpvSk8tRQ_BOHmf9uRcw8Nep7xEQEkB7JQ-JBwqCEhD2SNDPj4/WIDER_val/images/'
     train_ds = tfds.load('wider_face', split='train', data_dir=root_path)
     val_ds = tfds.load('wider_face', split='validation', data_dir=root_path)
     test_ds = tfds.load('wider_face', split='test', data_dir=root_path)
