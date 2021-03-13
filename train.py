@@ -10,6 +10,12 @@ from bmstu.yolo3.utils import preprocess_true_boxes, get_random_data
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 from tensorflow.keras.optimizers import Adam
 
+import argparse
+
+parser = argparse.ArgumentParser(description='Train WIDER YOLO')
+parser.add_argument('--root_dataset', default='D:/tensorflow_datasets/',
+                    help='path dataset ')
+
 
 def _get_anchors(anchors_path):
     anchors_path = os.path.expanduser(anchors_path)
@@ -92,7 +98,8 @@ def data_generator_wrapper(annotation_lines, batch_size, input_shape, anchors, n
 
 
 if __name__ == '__main__':
-    root_path = 'D:/tensorflow_datasets/'
+    args = parser.parse_args()
+    root_path = args.root_dataset
     train_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDQUUwd21EckhU4jt2EpyCXK-ui-lE9lMQsuG6HHaIWv5zLxecQeXtbVk/WIDER_train/images/'
     test_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDbW4tdGpaYjgzOwMT4R6ikuxYiUtHrEwFA7Iw4SVAMwhF1wp3mCQfiNM/WIDER_test/images/'
     val_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDd3dIRmpvSk8t-e-9CfKMXS2IS-jA6u85ZxWMhmpZP8NqsEE-SypYoXo/WIDER_val/images/'
