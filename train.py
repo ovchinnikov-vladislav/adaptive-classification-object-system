@@ -15,6 +15,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Train WIDER YOLO')
 parser.add_argument('--root_dataset', default='D:/tensorflow_datasets/',
                     help='path dataset ')
+parser.add_argument('--prepare_annotation', default=True, help='prepare annotation')
 
 
 def _get_anchors(anchors_path):
@@ -111,7 +112,7 @@ if __name__ == '__main__':
     annotation_test_path = 'model_data/wider_face_test_annotation.txt'
     annotation_val_path = 'model_data/wider_face_val_annotation.txt'
 
-    is_prepare_annotation = False
+    is_prepare_annotation = args.prepare_annotation
 
     if is_prepare_annotation:
         prepare_annotation(annotation_train_path, train_ds)
