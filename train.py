@@ -58,10 +58,10 @@ def create_model(input_shape, anchors, num_classes, load_pretrained=True, freeze
     return model
 
 
-def prepare_annotation(filename, dataset):
+def prepare_annotation(filename, path, dataset):
     with open(filename, 'w') as file:
         for example in dataset:
-            string = train_path + example['image/filename'].numpy().decode()
+            string = path + example['image/filename'].numpy().decode()
             height, width, _ = example['image'].shape
             bbox = example['faces']['bbox'].numpy()
             bboxs = ''
@@ -116,9 +116,9 @@ if __name__ == '__main__':
     is_prepare_annotation = args.prepare_annotation
 
     if is_prepare_annotation:
-        prepare_annotation(annotation_train_path, train_ds)
-        prepare_annotation(annotation_test_path, test_ds)
-        prepare_annotation(annotation_val_path, val_ds)
+        prepare_annotation(annotation_train_path, train_path, train_ds)
+        prepare_annotation(annotation_test_path, test_path, test_ds)
+        prepare_annotation(annotation_val_path, val_path, val_ds)
 
     anchors_path = 'model_data/yolo_anchors.txt'
     log_dir = 'logs/000/'
