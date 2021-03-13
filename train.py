@@ -16,6 +16,7 @@ parser = argparse.ArgumentParser(description='Train WIDER YOLO')
 parser.add_argument('--root_dataset', default='D:/tensorflow_datasets/',
                     help='path dataset ')
 parser.add_argument('--prepare_annotation', default=True, help='prepare annotation')
+parser.add_argument('--weights', default='model_data/yolo.dat', help='weights')
 
 
 def _get_anchors(anchors_path):
@@ -126,7 +127,7 @@ if __name__ == '__main__':
 
     input_shape = (416, 416)
 
-    model = create_model(input_shape, anchors, num_classes, freeze_body=2, weights_path='model_data/yolo.dat')
+    model = create_model(input_shape, anchors, num_classes, freeze_body=2, weights_path=args.weights)
 
     logging = TensorBoard(log_dir=log_dir)
     checkpoint = ModelCheckpoint(log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5', monitor='val_loss',
