@@ -82,6 +82,7 @@ def make_last_layers(x, num_filters, out_filters):
                 DarknetConv2DBNLeakyRelu(filters=num_filters * 2, kernel_size=(3, 3)),
                 DarknetConv2DBNLeakyRelu(filters=num_filters, kernel_size=(1, 1)))(x)
 
+    # TODO: y - заменить на CapsuleNets (обычную, а также попробовать остаточную)
     y = compose(DarknetConv2DBNLeakyRelu(filters=num_filters * 2, kernel_size=(3, 3)),
                 DarknetConv2D(filters=out_filters, kernel_size=(1, 1)))(x)
     return x, y

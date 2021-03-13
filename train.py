@@ -10,6 +10,7 @@ from bmstu.yolo3.utils import preprocess_true_boxes, get_random_data
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 from tensorflow.keras.optimizers import Adam
 
+import shutil
 import argparse
 
 parser = argparse.ArgumentParser(description='Train WIDER YOLO')
@@ -102,12 +103,24 @@ def data_generator_wrapper(annotation_lines, batch_size, input_shape, anchors, n
 if __name__ == '__main__':
     args = parser.parse_args()
     root_path = args.root_dataset
-    train_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDQUUwd21EckhUTyERqlzqRmG-dE3XrDIFA3rgWZ-kRknnz4ONTBO2wsA/WIDER_train/images/'
-    test_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDbW4tdGpaYjgzqpD1B9Dnv82IcKtgBzjedFSRfGEgujZCg3LdgCTEzOE/WIDER_test/images/'
-    val_path = f'{root_path}downloads/extracted/ZIP.ucexport_download_id_0B6eKvaijfFUDd3dIRmpvSk8tRQ_BOHmf9uRcw8Nep7xEQEkB7JQ-JBwqCEhD2SNDPj4/WIDER_val/images/'
+    train_path = f'{root_path}wider_face/WIDER_train/images/'
+    test_path = f'{root_path}wider_face/WIDER_test/images/'
+    val_path = f'{root_path}wider_face/WIDER_val/images/'
     train_ds = tfds.load('wider_face', split='train', data_dir=root_path)
     val_ds = tfds.load('wider_face', split='validation', data_dir=root_path)
     test_ds = tfds.load('wider_face', split='test', data_dir=root_path)
+
+    list_d = os.listdir(os.path.join(root_path, 'downloads', 'extracted'))
+    for dir in list_d:
+        if os.listdir(os.path.join(root_path, 'downloads', 'extracted', dir))[0] == 'WIDER_train':
+            shutil.move(os.path.join(root_path, 'downloads', 'extracted', dir, 'WIDER_train'),
+                        os.path.join(root_path, 'wider_face', 'WIDER_train'))
+        elif os.listdir(os.path.join(root_path, 'downloads', 'extracted', dir))[0] == 'WIDER_test':
+            shutil.move(os.path.join(root_path, 'downloads', 'extracted', dir, 'WIDER_test'),
+                        os.path.join(root_path, 'wider_face', 'WIDER_test'))
+        elif os.listdir(os.path.join(root_path, 'downloads', 'extracted', dir))[0] == 'WIDER_val':
+            shutil.move(os.path.join(root_path, 'downloads', 'extracted', dir, 'WIDER_val'),
+                        os.path.join(root_path, 'wider_face', 'WIDER_val'))
 
     annotation_train_path = 'model_data/wider_face_train_annotation.txt'
     annotation_test_path = 'model_data/wider_face_test_annotation.txt'
