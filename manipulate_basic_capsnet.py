@@ -1,5 +1,5 @@
 from bmstu import utls
-from bmstu.capsnets import models
+from bmstu.capsnets.models.basic import caps_net
 import numpy as np
 from PIL import Image
 import argparse
@@ -10,16 +10,15 @@ parser.add_argument('--save_dir', default='./')
 parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--digit', default=5)
 
-
 if __name__ == '__main__':
     print('-' * 30 + 'Begin: manipulate' + '-' * 30)
     args = parser.parse_args()
 
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
 
-    _, _, model = models.CapsNet(shape=x_train.shape[1:],
-                                 num_classes=len(np.unique(np.argmax(y_train, 1))),
-                                 routings=args.routings).build()
+    _, _, model = caps_net(shape=x_train.shape[1:],
+                           num_classes=len(np.unique(np.argmax(y_train, 1))),
+                           routings=args.routings)
 
     model.load_weights(f'{args.save_dir}/manipulate_basic_capsnet_model_{args.dataset}.h5')
 
