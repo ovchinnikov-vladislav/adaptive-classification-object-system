@@ -9,6 +9,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', default=25, type=int)
 parser.add_argument('--batch_size', default=64, type=int)
+parser.add_argument('--shift_fraction', default=0.1, type=float)
 parser.add_argument('--dataset', default='cifar10', help='values: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--lr', default=0.003, type=float)
 parser.add_argument('--lr_decay', default=0.90, type=float)
