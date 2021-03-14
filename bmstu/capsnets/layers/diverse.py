@@ -3,6 +3,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.backend import epsilon
 import numpy as np
 
+from tflearn.layers.conv import global_avg_pool
 from tensorflow.keras.layers import Conv2D, Dense, GlobalAveragePooling2D
 from tensorflow.keras.layers import Activation, BatchNormalization, Lambda
 from tensorflow.keras.layers import DepthwiseConv2D
@@ -11,8 +12,6 @@ from bmstu.capsnets.utls import squash
 from bmstu.capsnets.layers import basic
 
 weight_decay = 1E-4
-K.set_image_data_format('channels_last')
-concat_axis = 1 if K.image_data_format() == 'channels_first' else -1
 
 
 # Mobilenet V3 bottleneck
@@ -89,7 +88,6 @@ class PrimaryCapsule2D(layers.Layer):
                                   strides=strides,
                                   padding='valid')
 
-        self.global_average_pooling = layers.GlobalAveragePooling2D()
         self.dense_first = layers.Dense(units=int(num_capsules / 5))
         self.dense_second = layers.Dense(units=num_capsules)
 
@@ -98,22 +96,22 @@ class PrimaryCapsule2D(layers.Layer):
         output = layers.Activation('relu')(output)
         output = self.conv(output)
 
-        outputs = tf.reshape(output, shape=(-1, self.dim_capsules))
+        outputs = layers.Reshape(target_shape=(-1, self.dim_capsules))(output)
 
         length = tf.sqrt(tf.reduce_sum(tf.square(outputs), -1) + epsilon())
-        data_size = inputs.shape[1]
+        data_size = int(inputs.shape[1])
         strides = self.strides[0]
         data_size = int(np.floor((data_size - self.kernel_size) / strides + 1))
-        length = tf.reshape(length, shape=(data_size, data_size, self.num_capsules))
+        length = layers.Reshape(target_shape=(data_size, data_size, self.num_capsules))(length)
 
-        squeeze = self.global_average_pooling(length)
+        squeeze = global_avg_pool(length)
         excitation = self.dense_first(squeeze)
         excitation = tf.nn.relu(excitation)
         excitation = self.dense_second(excitation)
-        excitation = tf.reshape(excitation, shape=(-1, self.num_capsules))
+        excitation = layers.Reshape(target_shape=(-1, self.num_capsules))(excitation)
         excitation = tf.reduce_mean(excitation, axis=-1, keepdims=True)
         excitation = tf.nn.sigmoid(excitation)
-        excitation = tf.reshape(excitation, shape=(-1, 1))
+        excitation = layers.Reshape(target_shape=(-1, 1))(excitation)
 
         return output, layers.Lambda(squash)(outputs), excitation
 
