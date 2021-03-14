@@ -6,7 +6,7 @@ def margin_loss(y_true, y_pred, m_plus=0.9, m_minus=0.1, down_weighting=0.5):
     correction = y_true * tf.square(tf.maximum(0., m_plus - y_pred)) + down_weighting * (1 - y_true) \
                  * tf.square(tf.maximum(0., y_pred - m_minus))
 
-    return tf.reduce_sum(tf.reduce_sum(correction, 1))
+    return tf.reduce_mean(tf.reduce_sum(correction, 1))
 
 
 def compute_loss(y_true, y_pred, reconstruction, x, reconstruction_weight=0.0005):
