@@ -12,9 +12,7 @@ parser.add_argument('--dataset', default='mnist', help='values: mnist, fashion_m
 parser.add_argument('--lr', default=0.003)
 parser.add_argument('--lr_decay', default=0.90)
 parser.add_argument('-r', '--routings', default=3)
-parser.add_argument('--shift_fraction', default=0.1)
 parser.add_argument('--save_dir', default='./')
-parser.add_argument('--digit', default=5)
 
 
 if __name__ == '__main__':
@@ -23,7 +21,7 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('mnist')
 
     model, eval_model = diverse.CapsNet(input_shape=x_train.shape[1:],
-                                        n_class=len(np.unique(np.argmax(y_train, 1))),
+                                        num_classes=len(np.unique(np.argmax(y_train, 1))),
                                         routings=args.routings)
     model.summary()
 

@@ -9,7 +9,7 @@ from tensorflow.keras.layers import Concatenate
 from bmstu.capsnets.utls import squash
 
 
-def CapsNet(input_shape, n_class, routings):
+def CapsNet(input_shape, num_classes, routings):
     x = layers.Input(shape=input_shape)
     l_1 = bottleneck(x, 32, (3, 3), e=1, s=1, squeeze=False, nl='RE')
     m_1 = Concatenate(axis=-1)([x, l_1])
@@ -99,9 +99,9 @@ def CapsNet(input_shape, n_class, routings):
     primarycaps2 = layers.Reshape(target_shape=(-1, 12), name='primarycaps21')(primarycaps2)
     primarycaps3 = layers.Reshape(target_shape=(-1, 12), name='primarycaps31')(primarycaps3)
 
-    digitcaps2 = Capsule(num_capsule=n_class, dim_capsule=6, routings=routings, name='digitcaps2')(primarycaps1)
-    digitcaps3 = Capsule(num_capsule=n_class, dim_capsule=6, routings=routings, name='digitcaps3')(primarycaps2)
-    digitcaps4 = Capsule(num_capsule=n_class, dim_capsule=6, routings=routings, name='digitcaps4')(primarycaps3)
+    digitcaps2 = Capsule(num_capsule=num_classes, dim_capsule=6, routings=routings, name='digitcaps2')(primarycaps1)
+    digitcaps3 = Capsule(num_capsule=num_classes, dim_capsule=6, routings=routings, name='digitcaps3')(primarycaps2)
+    digitcaps4 = Capsule(num_capsule=num_classes, dim_capsule=6, routings=routings, name='digitcaps4')(primarycaps3)
 
     digitcaps2 = layers.Reshape(target_shape=(-1, 6), name='digitcaps21')(digitcaps2)
     a1 = K.tile(a1, [1, 10, 6])
@@ -123,12 +123,12 @@ def CapsNet(input_shape, n_class, routings):
 
     digitcaps = layers.Lambda(squash)(digitcaps)
     out_caps = Length(name='capsnet')(digitcaps)
-    y = layers.Input(shape=(n_class,))
+    y = layers.Input(shape=(num_classes,))
     train_model = models.Model([x, y], out_caps)
     eval_model = models.Model(x, out_caps)
     return train_model, eval_model
 
 
 if __name__ == '__main__':
-    model, eval_model = CapsNet(input_shape=(32, 32, 3), n_class=10, routings=3)
+    model, eval_model = CapsNet(input_shape=(32, 32, 3), num_classes=10, routings=3)
     model.summary()
