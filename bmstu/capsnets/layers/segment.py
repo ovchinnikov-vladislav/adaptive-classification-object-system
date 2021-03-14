@@ -5,7 +5,7 @@ from tensorflow.keras import backend
 from tensorflow.keras import initializers, layers
 from tensorflow.python.keras.utils.conv_utils import conv_output_length, deconv_output_length
 
-from bmstu.capsnet.utls import squash
+from bmstu.capsnets.utls import squash
 
 
 class ConvCapsuleLayer(layers.Layer):

@@ -1,7 +1,7 @@
 import numpy as np
 from tensorflow.keras import optimizers
 from tensorflow.keras import callbacks
-from bmstu.capsnet import models, losses
+from bmstu.capsnets import models, losses
 from bmstu import utls
 import argparse
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     model.compile(optimizer=optimizers.Adam(lr=args.lr),
                   loss=[losses.margin_loss, 'mse'],
                   loss_weights=[1., args.lam_recon],
-                  metrics={'capsnet': 'accuracy'})
+                  metrics={'capsnets': 'accuracy'})
 
     model.fit([x_train, y_train], [y_train, x_train], batch_size=args.batch_size, epochs=args.epochs,
               validation_data=[[x_test, y_test], [y_test, x_test]], callbacks=[log, tb, checkpoint, lr_decay])
