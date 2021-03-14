@@ -9,3 +9,8 @@ model_data/wider_face_train_annotation.txt
 model_data/wider_face_val_annotation.txt
 model_data/wider_face_test_annotation.txt
 downloads/
+tensorboard-logs/
+logs/
+log.csv/
+*.h5
+*.dat
