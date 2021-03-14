@@ -8,7 +8,7 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', default=25)
 parser.add_argument('--batch_size', default=64)
-parser.add_argument('--dataset', default='mnist', help='values: mnist, fashion_mnist, cifar10, cifar100')
+parser.add_argument('--dataset', default='cifar10', help='values: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--lr', default=0.003)
 parser.add_argument('--lr_decay', default=0.90)
 parser.add_argument('-r', '--routings', default=3)
@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     model, eval_model = diverse.CapsNet(input_shape=x_train.shape[1:],
                                         num_classes=len(np.unique(np.argmax(y_train, 1))),
-                                        routings=args.routings)
+                                        routings=int(args.routings))
     model.summary()
 
     log = callbacks.CSVLogger(args.save_dir + '/log.csv')
@@ -30,14 +30,14 @@ if __name__ == '__main__':
                                batch_size=args.batch_size)
     checkpoint = callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', monitor='val_capsnet_acc',
                                            save_best_only=True, save_weights_only=True, verbose=2)
-    lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
+    lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: float(args.lr) * (float(args.lr_decay) ** epoch))
 
-    model.compile(optimizer=optimizers.Adam(lr=args.lr),
+    model.compile(optimizer=optimizers.Adam(lr=float(args.lr)),
                   loss=margin_loss,
                   loss_weights=[1.],
                   metrics={'capsnet': 'accuracy'})
 
-    model.fit([x_train, y_train], y_train, batch_size=args.batch_size, epochs=args.epochs,
+    model.fit([x_train, y_train], y_train, batch_size=int(args.batch_size), epochs=int(args.epochs),
               validation_data=[[x_test, y_test], y_test], callbacks=[log, tb, checkpoint, lr_decay])
 
     model.save_weights(f'{args.save_dir}/trained_diverse_capsnet_model_{args.dataset}.h5')
