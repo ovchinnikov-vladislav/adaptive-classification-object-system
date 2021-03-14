@@ -47,7 +47,7 @@ class PrimaryCapsule3D(tf.keras.layers.Layer):
 
 class DenseCapsule(tf.keras.layers.Layer):
     """
-    :param capsules: The number of capsules in the following layer
+    :param capsules: The number of num_capsules in the following layer
     :param route_min: A threshold activation to route
     :param coord_add: A boolean, whether or not to to do coordinate addition
     :param rel_center: A boolean, whether or not the coordinate addition is relative to the center
@@ -179,7 +179,7 @@ class Convolutional3DCapsule(tf.keras.layers.Layer):
         # output dimensions
         d_out, h_out, w_out = len(d_offsets), len(h_offsets), len(w_offsets)
 
-        # gathers the capsules into shape (N, D2, H2, W2, KD, KH, KW, Ch_in, 17)
+        # gathers the num_capsules into shape (N, D2, H2, W2, KD, KH, KW, Ch_in, 17)
         d_gathered = tf.gather(u_padded, d_offsets, axis=1)
         h_gathered = tf.gather(d_gathered, h_offsets, axis=3)
         w_gathered = tf.gather(h_gathered, w_offsets, axis=5)
@@ -277,7 +277,7 @@ class ConditionDenseCapsule(tf.keras.layers.Layer):
         activation = tf.reshape(activation, (self.batch_size, self.n_capsch_i, self.ch, 1))
         coords = create_coords_mat(pose, self.rel_center, self.dim_capsules) if self.coord_add else tf.zeros_like(u_i)
 
-        # reshapes the input capsules
+        # reshapes the input num_capsules
         u_i = tf.reshape(u_i, (self.batch_size, self.n_capsch_i, self.ch, self.dim_capsules, self.dim_capsules))
         u_i = tf.expand_dims(u_i, axis=-3)
         u_i = tf.tile(u_i, [1, 1, 1, self.capsules, 1, 1])
@@ -384,7 +384,7 @@ class ConditionConvolutional3DCapsule(tf.keras.layers.Layer):
         # output dimensions
         d_out, h_out, w_out = len(d_offsets), len(h_offsets), len(w_offsets)
 
-        # gathers the capsules into shape (N, D2, H2, W2, KD, KH, KW, Ch_in, 17)
+        # gathers the num_capsules into shape (N, D2, H2, W2, KD, KH, KW, Ch_in, 17)
         d_gathered = tf.gather(u_padded, d_offsets, axis=1)
         h_gathered = tf.gather(d_gathered, h_offsets, axis=3)
         w_gathered = tf.gather(h_gathered, w_offsets, axis=5)

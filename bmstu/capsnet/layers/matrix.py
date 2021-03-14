@@ -29,7 +29,7 @@ class PrimaryCapsule2D(layers.Layer):
         self.built = True
 
     def call(self, inputs, **kwargs):
-        # inputs (50, 12, 12, 32), capsules 8, kernel_size [1, 1], strides 1, padding 'valid'
+        # inputs (50, 12, 12, 32), num_capsules 8, kernel_size [1, 1], strides 1, padding 'valid'
 
         # (50, 12, 12, 8x16=128)
         pose = self.conv2d_pose(inputs)
@@ -98,7 +98,7 @@ class ConvolutionalCapsule(layers.Layer):
         self.built = True
 
     def call(self, inputs, **kwargs):
-        # inputs (50, 12, 12, 136), capsules 16, kernel 3, stride 2, routings 3
+        # inputs (50, 12, 12, 136), num_capsules 16, kernel 3, stride 2, routings 3
 
         # (50, 12, 12, 8x(16+1)=136) -> (50, 5, 5, 3x3=9, 136)
         output = kernel_tile(inputs, self.kernel, self.stride)

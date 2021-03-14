@@ -37,7 +37,7 @@ def em_routing(v, a_i, beta_v, beta_a, n_iterations=3):
     cost_mean = tf.reduce_mean(cost, axis=-2, keepdims=True)
     cost_stdv = tf.sqrt(tf.reduce_sum(tf.square(cost - cost_mean), axis=-2, keepdims=True) / n_caps_j + epsilon)
 
-    # calculates the activations for the capsules in layer j
+    # calculates the activations for the num_capsules in layer j
     a_j = tf.sigmoid(float(config_inv_temp) * (beta_a + (cost_mean - cost) / (cost_stdv + epsilon)))
 
     def condition(mean, stdsqr, act_j, r_temp, counter):
@@ -104,7 +104,7 @@ def em_routing_cond(v_v1, v_v2, a_i_v, v_f, a_i_f, beta_v_v, beta_a_v, beta_v_f,
     cost_mean_f = tf.reduce_mean(cost_f, axis=-2, keepdims=True)
     cost_stdv_f = tf.sqrt(tf.reduce_sum(tf.square(cost_f - cost_mean_f), axis=-2, keepdims=True) / n_caps_j + epsilon)
 
-    # calculates the activations for the capsules in layer j for the frame capsules
+    # calculates the activations for the num_capsules in layer j for the frame num_capsules
     a_j_f = tf.sigmoid(float(config_inv_temp) * (beta_a_f + (cost_mean_f - cost_f) / (cost_stdv_f + epsilon)))
 
     def condition(mean_f, stdsqr_f, act_j_f, counter):
@@ -146,7 +146,7 @@ def em_routing_cond(v_v1, v_v2, a_i_v, v_f, a_i_f, beta_v_v, beta_a_v, beta_v_f,
 
     [mean_f_fin, _, act_j_f_fin, _] = tf.while_loop(condition, route, [m_f, s_f, a_j_f, 1.0])
 
-    # performs m step for the video capsules
+    # performs m step for the video num_capsules
     a_i_v = tf.expand_dims(a_i_v, axis=-1)
 
     dist_v = tf.reduce_sum(tf.square(v_v1 - mean_f_fin), axis=-1)
@@ -171,7 +171,7 @@ def em_routing_cond(v_v1, v_v2, a_i_v, v_f, a_i_f, beta_v_v, beta_a_v, beta_v_f,
         ) / n_caps_j + epsilon
     )
 
-    # calculates the activations for the capsules in layer j for the frame capsules
+    # calculates the activations for the num_capsules in layer j for the frame num_capsules
     a_j_v = tf.sigmoid(float(config_inv_temp) * (beta_a_v + (cost_mean_v - cost_v) / (cost_stdv_v + epsilon)))
 
     return (tf.reshape(m_v, (batch_size, n_caps_j, mat_len)), tf.reshape(a_j_v, (batch_size, n_caps_j, 1))), \
@@ -184,7 +184,7 @@ def create_coords_mat(pose, rel_center, dim_capsules):
         be 1, 2 or 3 dimensional.
         :param rel_center: whether or not the coordinates are relative to the center of the map
         :param dim_capsules:
-        :return: returns the coordinates (padded to 16) fir the incoming capsules
+        :return: returns the coordinates (padded to 16) fir the incoming num_capsules
         """
     batch_size = pose.shape[0]
     shape_list = [int(x) for x in pose.shape[1:-2]]

@@ -15,10 +15,10 @@ class PrimaryCapsule2D(layers.Layer):
     :param name: имя слоя
     """
 
-    def __init__(self, capsules, dim_capsules, kernel_size, strides, **kwargs):
+    def __init__(self, num_capsules, dim_capsules, kernel_size, strides, **kwargs):
         super(PrimaryCapsule2D, self).__init__(**kwargs)
 
-        num_filters = capsules * dim_capsules
+        num_filters = num_capsules * dim_capsules
         self.conv2d = layers.Conv2D(filters=num_filters,
                                     kernel_size=kernel_size,
                                     strides=strides,
@@ -45,15 +45,15 @@ class Capsule(layers.Layer):
     :param name: имя слоя
     """
 
-    def __init__(self, capsules, dim_capsules, routings, **kwargs):
+    def __init__(self, num_capsules, dim_capsules, routings, **kwargs):
         super(Capsule, self).__init__(**kwargs)
-        self.capsules = capsules
+        self.num_capsules = num_capsules
         self.dim_capsules = dim_capsules
         self.routings = routings
         self.w = None
 
     def build(self, input_shape):
-        self.w = self.add_weight(shape=[self.capsules, input_shape[1], self.dim_capsules, input_shape[2]],
+        self.w = self.add_weight(shape=[self.num_capsules, input_shape[1], self.dim_capsules, input_shape[2]],
                                  dtype=tf.float32,
                                  initializer=tf.random_normal_initializer(stddev=0.1),
                                  trainable=True)
@@ -61,13 +61,13 @@ class Capsule(layers.Layer):
 
     def call(self, inputs, **kwargs):
         inputs_expand = tf.expand_dims(inputs, 1)
-        u_i = tf.tile(inputs_expand, [1, self.capsules, 1, 1])
+        u_i = tf.tile(inputs_expand, [1, self.num_capsules, 1, 1])
         u_i = tf.expand_dims(u_i, 4)  # u_i
 
         u_ji_hat = tf.map_fn(lambda x: tf.matmul(self.w, x), elems=u_i)  # u_j|i_hat = Wij * u_i
 
         # for all capsule i in layer l and capsule j in layer(l + 1): b_ij <- 0
-        b_ij = tf.zeros(shape=[tf.shape(u_ji_hat)[0], self.capsules, inputs.shape[1], 1, 1])  # b_ij <- 0
+        b_ij = tf.zeros(shape=[tf.shape(u_ji_hat)[0], self.num_capsules, inputs.shape[1], 1, 1])  # b_ij <- 0
 
         assert self.routings > 0, 'The routings should be > 0.'
         v_j = None
@@ -97,13 +97,13 @@ class Capsule(layers.Layer):
 
 
 class Decoder(layers.Layer):
-    def __init__(self, classes, output_shape, **kwargs):
+    def __init__(self, num_classes, output_shape, **kwargs):
         super(Decoder, self).__init__(**kwargs)
-        self.classes = classes
+        self.num_classes = num_classes
         self.shape = output_shape
         self.masked = Mask()
         self.decoder = tf.keras.models.Sequential()
-        self.decoder.add(layers.Dense(512, activation='relu', input_dim=16 * self.classes))
+        self.decoder.add(layers.Dense(512, activation='relu', input_dim=16 * self.num_classes))
         self.decoder.add(layers.Dense(1024, activation='relu'))
         self.decoder.add(layers.Dense(np.prod(self.shape), activation='sigmoid'))
         self.decoder.add(layers.Reshape(target_shape=self.shape))

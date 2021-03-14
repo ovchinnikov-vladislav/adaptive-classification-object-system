@@ -103,37 +103,37 @@ from tensorflow.keras import callbacks
 
 if __name__ == '__main__':
     # CapsNet Mnist
-    # class Args:
-    #     def __init__(self):
-    #         self.epochs = 2
-    #         self.batch_size = 112
-    #         self.lr = 0.001
-    #         self.lr_decay = 0.9
-    #         self.lam_recon = 0.392
-    #         self.routings = 3
-    #         self.shift_fraction = 0.1
-    #         self.save_dir = '.'
-    #         self.digit = 5
-    #
-    #
-    # args = Args()
-    #
-    # # load data
-    # (x_train, y_train), (x_test, y_test) = utls.load('mnist')
-    # # define model
-    #
-    # model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
-    #                                                      num_classes=len(np.unique(np.argmax(y_train, 1))),
-    #                                                      routings=args.routings).build()
-    #
-    # model.summary()
-    #
-    # model.compile(optimizer=optimizers.Adam(lr=0.001),
-    #               loss=[losses.margin_loss, 'mse'],
-    #               metrics='accuracy')
-    #
-    # model.fit([x_train, y_train], [y_train, x_train], batch_size=100, epochs=5,
-    #           validation_data=[[x_test, y_test], [y_test, x_test]])
+    class Args:
+        def __init__(self):
+            self.epochs = 2
+            self.batch_size = 112
+            self.lr = 0.001
+            self.lr_decay = 0.9
+            self.lam_recon = 0.392
+            self.routings = 3
+            self.shift_fraction = 0.1
+            self.save_dir = '.'
+            self.digit = 5
+
+
+    args = Args()
+
+    # load data
+    (x_train, y_train), (x_test, y_test) = utls.load('cifar10')
+    # define model
+
+    model, eval_model, manipulate_model = models.CapsNet(shape=x_train.shape[1:],
+                                                         num_classes=len(np.unique(np.argmax(y_train, 1))),
+                                                         routings=args.routings).build()
+
+    model.summary()
+
+    model.compile(optimizer=optimizers.Adam(lr=0.001),
+                  loss=[losses.margin_loss, 'mse'],
+                  metrics='accuracy')
+
+    model.fit([x_train, y_train], [y_train, x_train], batch_size=100, epochs=5,
+              validation_data=[[x_test, y_test], [y_test, x_test]])
     #
     # predictions = model.predict(x_test[0])
 
@@ -178,39 +178,39 @@ if __name__ == '__main__':
     # activation, pose_out = model.predict(x_test[0])
     # print(activation)
 
-    import tensorflow as tf
-    from tensorflow.keras.layers import Input, Conv2D, UpSampling2D, Dense, Reshape, BatchNormalization, LeakyReLU
-    from bmstu.capsnet.layers.basic import PrimaryCapsule2D, Capsule, Length, Mask
-    from bmstu.layers import UnFlatten
-
-    inputs = Input([28, 28, 1])
-    conv = Conv2D(128, 3)(inputs)
-    x = BatchNormalization()(conv)
-    x = LeakyReLU(0.1)(x)
-
-    x = Conv2D(256, 3)(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(0.1)(x)
-
-    x = Conv2D(64, 4, 2)(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(0.1)(x)
-
-    x = Conv2D(128, 4, 2)(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(0.1)(x)
-
-    x = Conv2D(256, 4, 2)(x)
-    x = BatchNormalization()(x)
-    x = LeakyReLU(0.1)(x)
-
-    primary_capsules = PrimaryCapsule2D(capsules=8, kernel_size=8, dim_capsules=16, strides=2)(x)
-    traffic_sign_capsules = Capsule(dim_capsules=16, capsules=8, routings=3)(primary_capsules)
-    model = tf.keras.Model(inputs, traffic_sign_capsules)
-    model.summary()
+    # import tensorflow as tf
+    # from tensorflow.keras.layers import Input, Conv2D, UpSampling2D, Dense, Reshape, BatchNormalization, LeakyReLU
+    # from bmstu.capsnet.layers.basic import PrimaryCapsule2D, Capsule, Length, Mask
+    # from bmstu.layers import UnFlatten
+    #
+    # inputs = Input([28, 28, 1])
+    # conv = Conv2D(128, 3)(inputs)
+    # x = BatchNormalization()(conv)
+    # x = LeakyReLU(0.1)(x)
+    #
+    # x = Conv2D(256, 3)(x)
+    # x = BatchNormalization()(x)
+    # x = LeakyReLU(0.1)(x)
+    #
+    # x = Conv2D(64, 4, 2)(x)
+    # x = BatchNormalization()(x)
+    # x = LeakyReLU(0.1)(x)
+    #
+    # x = Conv2D(128, 4, 2)(x)
+    # x = BatchNormalization()(x)
+    # x = LeakyReLU(0.1)(x)
+    #
+    # x = Conv2D(256, 4, 2)(x)
+    # x = BatchNormalization()(x)
+    # x = LeakyReLU(0.1)(x)
+    #
+    # primary_capsules = PrimaryCapsule2D(num_capsules=8, kernel_size=8, dim_capsules=16, strides=2)(x)
+    # traffic_sign_capsules = Capsule(dim_capsules=16, num_capsules=8, routings=3)(primary_capsules)
+    # model = tf.keras.Model(inputs, traffic_sign_capsules)
+    # model.summary()
 
     # conv1 = Conv2D(filters=256, kernel_size=9, strides=1)(inputs)
-    # primary_capsules = PrimaryCapsule2D(capsules=8, kernel_size=8, dim_capsules=16, strides=2)(conv1)
+    # primary_capsules = PrimaryCapsule2D(num_capsules=8, kernel_size=8, dim_capsules=16, strides=2)(conv1)
 
 
     # decoder = tf.keras.models.Sequential()

@@ -13,18 +13,18 @@ from bmstu import utls
 
 
 class CapsNet:
-    def __init__(self, shape, classes, routings):
+    def __init__(self, shape, num_classes, routings):
         self.shape = shape
-        self.classes = classes
+        self.num_classes = num_classes
 
         self.input_capsnet = tf.keras.layers.Input(shape=shape)
         self.conv1 = tf.keras.layers.Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)
-        self.primaryCaps = basic_layers.PrimaryCapsule2D(capsules=32, dim_capsules=8, kernel_size=9, strides=2)
-        self.capsules = basic_layers.Capsule(capsules=classes, dim_capsules=16, routings=routings)
+        self.primaryCaps = basic_layers.PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=9, strides=2)
+        self.capsules = basic_layers.Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)
         self.output = basic_layers.Length()
 
-        self.input_decoder = tf.keras.layers.Input(shape=(classes,))
-        self.input_noise_decoder = tf.keras.layers.Input(shape=(classes, 16))
+        self.input_decoder = tf.keras.layers.Input(shape=(num_classes,))
+        self.input_noise_decoder = tf.keras.layers.Input(shape=(num_classes, 16))
 
     def build(self):
         self.conv1 = self.conv1(self.input_capsnet)
@@ -34,17 +34,17 @@ class CapsNet:
 
         train_model = tf.keras.models.Model(
             [self.input_capsnet, self.input_decoder],
-            [self.output, basic_layers.Decoder(
-                classes=self.classes, output_shape=self.shape)([self.capsules, self.input_decoder])])
+            [self.output, basic_layers.Decoder(num_classes=self.num_classes,
+                                               output_shape=self.shape)([self.capsules, self.input_decoder])])
 
         eval_model = tf.keras.models.Model(
             self.input_capsnet,
-            [self.output, basic_layers.Decoder(classes=self.classes, output_shape=self.shape)(self.capsules)])
+            [self.output, basic_layers.Decoder(num_classes=self.num_classes, output_shape=self.shape)(self.capsules)])
 
         noised_digitcaps = tf.keras.layers.Add()([self.capsules, self.input_noise_decoder])
         manipulate_model = tf.keras.models.Model(
             [self.input_capsnet, self.input_decoder, self.input_noise_decoder],
-            basic_layers.Decoder(classes=self.classes, output_shape=self.shape)([noised_digitcaps, self.input_decoder]))
+            basic_layers.Decoder(num_classes=self.num_classes, output_shape=self.shape)([noised_digitcaps, self.input_decoder]))
 
         return train_model, eval_model, manipulate_model
 

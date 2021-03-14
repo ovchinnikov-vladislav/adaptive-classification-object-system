@@ -208,7 +208,7 @@ class Length(layers.Layer):
 
     def call(self, inputs, **kwargs):
         if inputs.shape.ndims == 5:
-            assert inputs.shape[-2] == 1, 'Error: must have capsules = 1 going into Length'
+            assert inputs.shape[-2] == 1, 'Error: must have num_capsules = 1 going into Length'
             inputs = backend.squeeze(inputs, axis=-2)
         return backend.expand_dims(tf.norm(inputs, axis=-1), axis=-1)
 
