@@ -5,3 +5,7 @@ __pycache__
 dist
 bmstu_ovchinnikov_capsnet.egg-info
 model_data/yolo.dat
+model_data/wider_face_train_annotation.txt
+model_data/wider_face_val_annotation.txt
+model_data/wider_face_test_annotation.txt
+downloads/
