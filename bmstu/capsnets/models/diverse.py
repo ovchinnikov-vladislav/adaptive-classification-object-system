@@ -126,6 +126,7 @@ def CapsNet(input_shape, num_classes, routings):
     y = layers.Input(shape=(num_classes,))
     train_model = models.Model([x, y], out_caps)
     eval_model = models.Model(x, out_caps)
+
     return train_model, eval_model
 
 

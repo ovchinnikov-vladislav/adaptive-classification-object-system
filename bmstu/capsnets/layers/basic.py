@@ -27,7 +27,6 @@ class PrimaryCapsule2D(layers.Layer):
         self.reshape = layers.Reshape(target_shape=(-1, dim_capsules))
 
     def call(self, inputs, **kwargs):
-        print(inputs.shape)
         x = self.conv2d(inputs)
         x = self.reshape(x)
         x = squash(x)
