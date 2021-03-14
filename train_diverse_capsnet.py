@@ -35,7 +35,7 @@ if __name__ == '__main__':
     model.compile(optimizer=optimizers.Adam(lr=args.lr),
                   loss=margin_loss,
                   loss_weights=[1.],
-                  metrics='accuracy')
+                  metrics=['accuracy'])
 
     model.fit([x_train, y_train], y_train,
               epochs=args.epochs,
