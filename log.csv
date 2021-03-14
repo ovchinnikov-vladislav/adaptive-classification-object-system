@@ -1,2 +1,0 @@
-epoch,decoder_accuracy,decoder_loss,length_accuracy,length_loss,loss,val_decoder_accuracy,val_decoder_loss,val_length_accuracy,val_length_loss,val_loss
-0,0.7954761981964111,0.05318063125014305,0.958216667175293,0.05186085030436516,0.0727076381444931,0.0,0.0,0.0,0.0,0.0
