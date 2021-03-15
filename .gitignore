@@ -11,6 +11,6 @@ model_data/wider_face_test_annotation.txt
 downloads/
 tensorboard-logs/
 logs/
-log.csv/
+log.*
 *.h5
 *.dat

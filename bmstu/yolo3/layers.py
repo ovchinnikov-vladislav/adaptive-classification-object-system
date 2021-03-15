@@ -1,12 +1,8 @@
-from functools import wraps
-from tensorflow.keras import backend
 from tensorflow.keras.layers import Conv2D, Add, ZeroPadding2D, UpSampling2D, Concatenate, LeakyReLU, BatchNormalization
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Layer
 from tensorflow.keras.regularizers import l2
 from bmstu.yolo3.utils import compose
-import numpy as np
-import tensorflow as tf
+from bmstu.capsnets.layers.basic import PrimaryCapsule2D, Capsule, Length
 
 
 def DarknetConv2D(filters, kernel_size, strides=(1, 1), use_bias=True):
@@ -83,8 +79,13 @@ def make_last_layers(x, num_filters, out_filters):
                 DarknetConv2DBNLeakyRelu(filters=num_filters, kernel_size=(1, 1)))(x)
 
     # TODO: y - заменить на CapsuleNets (обычную, а также попробовать остаточную)
-    y = compose(DarknetConv2DBNLeakyRelu(filters=num_filters * 2, kernel_size=(3, 3)),
-                DarknetConv2D(filters=out_filters, kernel_size=(1, 1)))(x)
+    # y = compose(DarknetConv2DBNLeakyRelu(filters=num_filters * 2, kernel_size=(3, 3)),
+    #             DarknetConv2D(filters=out_filters, kernel_size=(1, 1)))(x)
+
+    capsules = PrimaryCapsule2D(num_capsules=num_filters, dim_capsules=1, kernel_size=9, strides=2)(x)
+    capsules = Capsule(num_capsules=out_filters, dim_capsules=16, routings=3)(capsules)
+    y = Length()(capsules)
+
     return x, y
 
 

@@ -33,15 +33,15 @@ def create_model(input_shape, anchors, num_classes, load_pretrained=True, freeze
     model_body = yolo_body(image_input, num_anchors // 3, num_classes)
     print('Create YOLOv3 model with {} anchors and {} num_classes.'.format(num_anchors, num_classes))
 
-    if load_pretrained:
-        model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
-        print('Load weights {}.'.format(weights_path))
-        if freeze_body in [1, 2]:
-            # Freeze darknet53 body or freeze all but 3 output layers.
-            num = (185, len(model_body.layers) - 3)[freeze_body - 1]
-            for i in range(num):
-                model_body.layers[i].trainable = False
-            print('Freeze the first {} layers of total {} layers.'.format(num, len(model_body.layers)))
+    # if load_pretrained:
+    #     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
+    #     print('Load weights {}.'.format(weights_path))
+    #     if freeze_body in [1, 2]:
+    #         # Freeze darknet53 body or freeze all but 3 output layers.
+    #         num = (185, len(model_body.layers) - 3)[freeze_body - 1]
+    #         for i in range(num):
+    #             model_body.layers[i].trainable = False
+    #         print('Freeze the first {} layers of total {} layers.'.format(num, len(model_body.layers)))
 
     model_loss = Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
                         arguments={'anchors': anchors, 'num_classes': num_classes, 'ignore_thresh': 0.5})(
