@@ -16,12 +16,9 @@ def caps_net(shape, num_classes, routings):
     input_noise_decoder = Input(shape=(num_classes, 16))
 
     train_model = Model([input_capsnet, input_decoder],
-                        [output, Decoder(num_classes=num_classes,
-                                         output_shape=shape)([capsules, input_decoder])])
+                        [output, Decoder(num_classes=num_classes, output_shape=shape)([capsules, input_decoder])])
 
-    eval_model = Model(input_capsnet,
-                       [output, Decoder(num_classes=num_classes,
-                                        output_shape=shape)(capsules)])
+    eval_model = Model(input_capsnet, [output, Decoder(num_classes=num_classes, output_shape=shape)(capsules)])
 
     noised_digitcaps = tf.keras.layers.Add()([capsules, input_noise_decoder])
     manipulate_model = tf.keras.models.Model([input_capsnet, input_decoder, input_noise_decoder],

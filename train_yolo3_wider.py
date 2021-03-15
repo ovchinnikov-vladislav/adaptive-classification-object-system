@@ -46,18 +46,18 @@ if __name__ == '__main__':
     num_val = len(val_lines)
     num_train = len(train_lines)
 
-    if True:
-        model.compile(optimizer=Adam(lr=1e-3), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-        batch_size = 10
-        print(f'Train on {num_train} samples, val on {num_val} samples, with batch size {batch_size}.')
-        model.fit_generator(generator=data_generator(train_lines, batch_size, input_shape, anchors, num_classes),
-                            steps_per_epoch=max(1, num_train // batch_size),
-                            validation_data=data_generator(val_lines, batch_size, input_shape, anchors, num_classes),
-                            validation_steps=max(1, num_val // batch_size),
-                            epochs=50,
-                            initial_epoch=0,
-                            callbacks=[logging, checkpoint])
-        model.save_weights(log_dir + 'trained_weights_stage_1.h5')
+    # if True:
+    #     model.compile(optimizer=Adam(lr=1e-3), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
+    #     batch_size = 10
+    #     print(f'Train on {num_train} samples, val on {num_val} samples, with batch size {batch_size}.')
+    #     model.fit_generator(generator=data_generator(train_lines, batch_size, input_shape, anchors, num_classes),
+    #                         steps_per_epoch=max(1, num_train // batch_size),
+    #                         validation_data=data_generator(val_lines, batch_size, input_shape, anchors, num_classes),
+    #                         validation_steps=max(1, num_val // batch_size),
+    #                         epochs=50,
+    #                         initial_epoch=0,
+    #                         callbacks=[logging, checkpoint])
+    #     model.save_weights(log_dir + 'trained_weights_stage_1.h5')
 
     if True:
         for i in range(len(model.layers)):
