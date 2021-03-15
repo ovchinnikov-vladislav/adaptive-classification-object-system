@@ -3,12 +3,14 @@ from bmstu.datasets.wider_faces import wider_dataset_annotations
 from bmstu.yolo3.train import get_anchors, create_model, data_generator
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 from tensorflow.keras.optimizers import Adam
+from bmstu.capsnets.losses import margin_loss
 
 import argparse
 
 parser = argparse.ArgumentParser(description='Train WIDER YOLO')
 parser.add_argument('--root_dataset', default='D:/tensorflow_datasets/',
                     help='path dataset ')
+parser.add_argument('--batch_size', default=10)
 parser.add_argument('--prepare_annotation', default=True, help='prepare annotation')
 parser.add_argument('--weights', default='model_data/yolo.dat', help='weights')
 
@@ -63,9 +65,9 @@ if __name__ == '__main__':
     if True:
         for i in range(len(model.layers)):
             model.layers[i].trainable = True
-        model.compile(optimizer=Adam(lr=1e-4), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
+        model.compile(optimizer=Adam(lr=1e-4), loss=margin_loss)
         print('Unfreeze all of the layers.')
-        batch_size = 1
+        batch_size = args.batch_size
         print(f'Train on {num_train} samples, val on {num_val} samples, with batch size {batch_size}.')
         model.fit_generator(generator=data_generator(train_lines, batch_size, input_shape, anchors, num_classes),
                             steps_per_epoch=max(1, num_train // batch_size),

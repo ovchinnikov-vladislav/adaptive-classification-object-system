@@ -84,7 +84,7 @@ def make_last_layers(x, num_filters, out_filters):
 
     y = PrimaryCapsule2D(num_capsules=num_filters // 2, dim_capsules=2, kernel_size=9, strides=2)(x)
     y = Capsule(num_capsules=out_filters, dim_capsules=16, routings=1)(y)
-    # y = Length()(y)
+    y = Length()(y)
 
     return x, y
 
