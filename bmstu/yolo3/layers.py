@@ -82,9 +82,9 @@ def make_last_layers(x, num_filters, out_filters):
     # y = compose(DarknetConv2DBNLeakyRelu(filters=num_filters * 2, kernel_size=(3, 3)),
     #             DarknetConv2D(filters=out_filters, kernel_size=(1, 1)))(x)
 
-    capsules = PrimaryCapsule2D(num_capsules=num_filters, dim_capsules=1, kernel_size=9, strides=2)(x)
-    capsules = Capsule(num_capsules=out_filters, dim_capsules=16, routings=3)(capsules)
-    y = Length()(capsules)
+    y = PrimaryCapsule2D(num_capsules=num_filters // 2, dim_capsules=2, kernel_size=9, strides=2)(x)
+    y = Capsule(num_capsules=out_filters, dim_capsules=16, routings=1)(y)
+    # y = Length()(y)
 
     return x, y
 
@@ -106,5 +106,7 @@ def yolo_body(inputs, num_anchors, num_classes):
     x, y3 = make_last_layers(x, 128, num_anchors * (num_classes + 5))
 
     model = Model(inputs, [y1, y2, y3])
+    model.summary()
+
     return model
 

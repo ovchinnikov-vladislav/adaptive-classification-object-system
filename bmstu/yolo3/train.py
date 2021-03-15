@@ -23,8 +23,8 @@ def get_anchors(anchors_path):
 def create_model(input_shape, anchors, num_classes, load_pretrained=True, freeze_body=2,
                  weights_path='model_data/yolo_weights.h5'):
     """create the training model"""
-    image_input = Input(shape=(None, None, 3))
     h, w = input_shape
+    image_input = Input(shape=(h, w, 3))
     num_anchors = len(anchors)
 
     y_true = [Input(shape=(h // {0: 32, 1: 16, 2: 8}[i], w // {0: 32, 1: 16, 2: 8}[i],
@@ -33,6 +33,7 @@ def create_model(input_shape, anchors, num_classes, load_pretrained=True, freeze
     model_body = yolo_body(image_input, num_anchors // 3, num_classes)
     print('Create YOLOv3 model with {} anchors and {} num_classes.'.format(num_anchors, num_classes))
 
+    # TODO: вернуть для тренировки на базе натренированной сети
     # if load_pretrained:
     #     model_body.load_weights(weights_path, by_name=True, skip_mismatch=True)
     #     print('Load weights {}.'.format(weights_path))
