@@ -17,7 +17,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     root_path = args.root_dataset
     annotation_train_path, annotation_test_path, annotation_val_path = \
-        wider_dataset_annotations('D:/tensorflow_datasets/', is_prepare_annotation=args.prepare_annotation)
+        wider_dataset_annotations(args.root_dataset, is_prepare_annotation=args.prepare_annotation)
 
     anchors_path = 'model_data/yolo_anchors.txt'
     log_dir = 'logs/000/'
