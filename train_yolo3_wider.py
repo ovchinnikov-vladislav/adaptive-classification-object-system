@@ -10,7 +10,7 @@ import argparse
 parser = argparse.ArgumentParser(description='Train WIDER YOLO')
 parser.add_argument('--root_dataset', default='D:/tensorflow_datasets/',
                     help='path dataset ')
-parser.add_argument('--batch_size', default=10)
+parser.add_argument('--batch_size', default=10, type=int)
 parser.add_argument('--prepare_annotation', default=True, help='prepare annotation')
 parser.add_argument('--weights', default='model_data/yolo.dat', help='weights')
 
