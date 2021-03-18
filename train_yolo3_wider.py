@@ -1,5 +1,5 @@
 import numpy as np
-from bmstu.datasets.wider_faces import wider_dataset_annotations
+from bmstu.datasets.wider_faces import wider_dataset_annotations, coco_dataset_annotations
 from bmstu.yolo3.train import get_anchors, create_model, data_generator
 from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
 from tensorflow.keras.optimizers import Adam
@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(description='Train WIDER YOLO')
 parser.add_argument('--root_dataset', default='D:/tensorflow_datasets/',
                     help='path dataset ')
 parser.add_argument('--batch_size', default=5, type=int)
-parser.add_argument('--prepare_annotation', default=False, help='prepare annotation')
+parser.add_argument('--prepare_annotation', default=False, type=bool, help='prepare annotation')
 parser.add_argument('--weights', default='model_data/yolo.dat', help='weights')
 
 if __name__ == '__main__':
