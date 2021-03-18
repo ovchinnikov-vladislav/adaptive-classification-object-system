@@ -56,22 +56,12 @@ def detect_video_webcam(yolo, video_path, output_path=""):
 
 
 def detect_video_ipcam(yolo, video_path):
-    # stream = request.urlopen(video_path)
-    #
     accum_time = 0
     curr_fps = 0
     fps = "FPS: ??"
     prev_time = timer()
     # bytes = b''
     while True:
-        # bytes += stream.read(1024)
-        # a = bytes.find(b'\xff\xd8')
-        # b = bytes.find(b'\xff\xd9')
-        # if a != -1 and b != -1:
-        # jpg = bytes[a:b + 2]
-        # bytes = bytes[b + 2:]
-        # i = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
-        # image = Image.fromarray(i)
         im = Image.open(request.urlopen(video_path))
         image = yolo.detect_image(im)
         result = np.asarray(image)
@@ -86,8 +76,8 @@ def detect_video_ipcam(yolo, video_path):
             curr_fps = 0
         cv2.putText(result, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=0.50, color=(255, 0, 0), thickness=2)
-        cv2.namedWindow("result", cv2.WINDOW_NORMAL)
         cv2.imshow("result", result)
+       #  cv2.imwrite('shot.jpg', result)
 
         if cv2.waitKey(1) == 27:
             break
@@ -113,10 +103,12 @@ def get_video(video_path):
 if __name__ == '__main__':
    #  video_id = 'ENvmK1x0ZTc'
    #  url = f'https://www.youtube.com/watch?v={video_id}'
-   #
+
    #  streams = streamlink.streams(url)
-   # # print(streams)
+   #  print(streams)
    #
-    yolo = YoloModel()
+   yolo = YoloModel()
    #  detect_video_webcam(yolo, streams["360p"].url)
-    detect_video_ipcam(yolo, 'http://192.168.0.16:8080/shot.jpg')
+   # detect_video_ipcam(yolo, 'http://192.168.43.1:8080/shot.jpg')
+   detect_video_webcam(yolo, 0)
+   #  detect_video_webcam(yolo, 'rtsp://10.75.118.98:5554/out.h264')

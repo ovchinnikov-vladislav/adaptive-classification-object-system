@@ -13,7 +13,6 @@ from bmstu.yolo3.layers import yolo_body
 
 tf.compat.v1.disable_eager_execution()
 
-
 class YoloModel:
 
     def __init__(self, model_path="model_data/yolo.dat",
@@ -21,7 +20,7 @@ class YoloModel:
                  classes_path="model_data/coco_classes.txt",
                  score=0.3,
                  iou=0.45,
-                 model_image_size=(640, 480)):
+                 model_image_size=(416, 416)):
         self.model_path = model_path
         self.anchors_path = anchors_path
         self.classes_path = classes_path
@@ -41,10 +40,13 @@ class YoloModel:
         num_classes = len(self.class_names)
 
         model_path = os.path.expanduser(self.model_path)
-        self.sess = tf.compat.v1.keras.backend.get_session()
         self.yolo_model = yolo_body(Input(shape=(None, None, 3)), num_anchors // 3, num_classes)
         self.yolo_model.load_weights(model_path)
         self.yolo_model.summary()
+
+        # self.model = tf.keras.Model(self.yolo_model.input, tf.keras.layers.Lambda(
+        #     lambda x: yolo_eval(x, self.anchors, len(self.class_names),
+        #                         (480, 640), score_threshold=self.score, iou_threshold=self.iou))(self.yolo_model.output))
 
         # Generate colors for drawing bounding boxes.
         hsv_tuples = [(x / len(self.class_names), 1., 1.) for x in range(len(self.class_names))]
@@ -53,7 +55,7 @@ class YoloModel:
         np.random.seed(10101)
         np.random.shuffle(self.colors)
         np.random.seed(None)
-        self.input_image_shape = None
+        self.sess = tf.compat.v1.keras.backend.get_session()
         self.result_predictions = self.generate()
 
     @staticmethod
@@ -75,7 +77,6 @@ class YoloModel:
     def generate(self):
         #   assert model_path.endswith('.h5'), 'Keras model or weights must be a .h5 file.'
 
-        # Generate output tensor targets for filtered bounding boxes
         self.input_image_shape = backend.placeholder(shape=(2,))
 
         boxes, scores, classes = yolo_eval(self.yolo_model.output, self.anchors, len(self.class_names),
@@ -98,15 +99,16 @@ class YoloModel:
 
         image_data /= 255.
         image_data = np.expand_dims(image_data, 0)  # Add batch dimension.
-
+        print(image.size, image.size)
+        # out_boxes, out_scores, out_classes = self.generate()(image_data, [image.size[1], image.size[0]])
+        # out_boxes, out_scores, out_classes = self.model.predict(image_data)
         out_boxes, out_scores, out_classes = self.sess.run(self.result_predictions,
                                                            feed_dict={
                                                                self.yolo_model.input: image_data,
-                                                               self.input_image_shape: [image.size[1], image.size[0]],
-                                                               backend.learning_phase(): 0
+                                                               self.input_image_shape: [image.size[1], image.size[0]]
                                                            })
 
-      #  print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
+        #  print('Found {} boxes for {}'.format(len(out_boxes), 'img'))
 
         font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
                                   size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
@@ -128,7 +130,7 @@ class YoloModel:
             left = max(0, np.floor(left + 0.5).astype('int32'))
             bottom = min(image.size[1], np.floor(bottom + 0.5).astype('int32'))
             right = min(image.size[0], np.floor(right + 0.5).astype('int32'))
-         #   print(label, (left, top), (right, bottom))
+            #   print(label, (left, top), (right, bottom))
 
             if top - label_size[1] >= 0:
                 text_origin = np.array([left, top - label_size[1]])
@@ -147,5 +149,5 @@ class YoloModel:
             del draw
 
         end = timer()
-       # print(end - start)
+        # print(end - start)
         return image
