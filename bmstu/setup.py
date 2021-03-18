@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name='bmstu-ovchinnikov-capsnet',
+setup(name='bmstu-ovchinnikov-capsnets',
       version='0.0.3-alpha',
       description='В данной библиотеке находятся вспомогательные классы и функции для реализации и использования'
                   'различных архитектур капсульных сетей',
@@ -11,7 +11,7 @@ setup(name='bmstu-ovchinnikov-capsnet',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6'
       ],
-      keywords='capsnet ai classification',
+      keywords='capsnets ai classification',
       url='',
       author='Vladislav Ovchinnikov',
       author_email='vladovchinnikov950@gmail.com',

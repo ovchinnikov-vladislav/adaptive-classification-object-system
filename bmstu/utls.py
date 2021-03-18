@@ -125,8 +125,6 @@ def plot_generated_image(x, y_pred):
 
 
 def load(dataset):
-    (x_train, y_train), (x_test, y_test) = (None, None), (None, None)
-    shape = None
     if dataset == 'mnist':
         shape = [-1, 28, 28, 1]
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -144,7 +142,7 @@ def load(dataset):
 
     x_train = x_train.reshape(shape).astype('float32') / 255.
     x_test = x_test.reshape(shape).astype('float32') / 255.
-    # y_train = to_categorical(y_train.astype('float32'))
-    # y_test = to_categorical(y_test.astype('float32'))
+    y_train = to_categorical(y_train.astype('float32'))
+    y_test = to_categorical(y_test.astype('float32'))
 
     return (x_train, y_train), (x_test, y_test)
