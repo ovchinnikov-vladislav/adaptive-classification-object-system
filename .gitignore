@@ -14,3 +14,6 @@ logs/
 log.*
 *.h5
 *.dat
+yolov3.tf*
+yolov3-tiny.tf*
+checkpoint*
