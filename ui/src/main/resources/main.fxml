@@ -6,6 +6,7 @@
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.control.SeparatorMenuItem?>
 <GridPane xmlns="http://javafx.com/javafx"
           xmlns:fx="http://javafx.com/fxml"
           fx:controller="bmstu.dynamic.simulator.controller.MainController">
@@ -24,14 +25,15 @@
 
     <MenuBar GridPane.rowIndex="0">
         <Menu text="Главная">
-            <MenuItem text="Создать"/>
-            <MenuItem text="Открыть"/>
-            <MenuItem text="Cохранить"/>
-            <MenuItem text="Закрыть"/>
+            <MenuItem fx:id="createMenuItem" text="Создать"/>
+            <MenuItem fx:id="openMenuItem" text="Открыть"/>
+            <MenuItem fx:id="saveMenuItem" text="Cохранить"/>
+            <SeparatorMenuItem/>
+            <MenuItem fx:id="exitMenuItem" text="Выход"/>
         </Menu>
-        <Menu text="Симуляция">
-            <MenuItem text="Перейти к просмотру"/>
-            <MenuItem text="Настройки"/>
+        <Menu text="Модель">
+            <MenuItem text="Обучение модели"/>
+            <MenuItem text="Результат обучения"/>
         </Menu>
         <Menu text="Статистика"/>
         <Menu text="Настройки"/>
