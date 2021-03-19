@@ -6,8 +6,19 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane xmlns="http://javafx.com/javafx"
+<GridPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="bmstu.dynamic.simulator.controller.MLController" visible="false">
-
-</AnchorPane>
+    <rowConstraints>
+        <RowConstraints minHeight="15"/>
+        <RowConstraints minHeight="30"/>
+        <RowConstraints vgrow="ALWAYS"/>
+        <RowConstraints minHeight="15"/>
+    </rowConstraints>
+    <columnConstraints>
+        <ColumnConstraints minWidth="15"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+        <ColumnConstraints minWidth="15"/>
+    </columnConstraints>
+    <Label text="Обучение модели" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.halignment="CENTER"/>
+</GridPane>
