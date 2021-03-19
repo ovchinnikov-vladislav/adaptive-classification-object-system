@@ -12,12 +12,18 @@
           fx:controller="bmstu.dynamic.simulator.controller.SimulationController"
           visible="false">
     <rowConstraints>
-        <RowConstraints/>
+        <RowConstraints minHeight="15"/>
+        <RowConstraints minHeight="30"/>
+        <RowConstraints vgrow="ALWAYS"/>
+        <RowConstraints minHeight="15"/>
     </rowConstraints>
     <columnConstraints>
-        <ColumnConstraints/>
+        <ColumnConstraints minWidth="15"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+        <ColumnConstraints minWidth="15"/>
     </columnConstraints>
+    <Label text="Результат обучения" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.halignment="CENTER"/>
 
-    <ImageView fx:id="imageView">
+    <ImageView fx:id="imageView" GridPane.columnIndex="1" GridPane.rowIndex="2">
     </ImageView>
 </GridPane>

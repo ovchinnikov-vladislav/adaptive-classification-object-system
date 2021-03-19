@@ -19,9 +19,9 @@
         <ColumnConstraints hgrow="ALWAYS" />
     </columnConstraints>
 
-    <fx:include fx:id="ml" source="ml.fxml" GridPane.rowIndex="1"/>
-    <fx:include fx:id="stat" source="stat.fxml" GridPane.rowIndex="1"/>
-    <fx:include fx:id="simulation" source="simulation.fxml" GridPane.rowIndex="1"/>
+    <fx:include fx:id="machineLearningPane" source="ml.fxml" GridPane.rowIndex="1"/>
+    <fx:include fx:id="statisticPane" source="stat.fxml" GridPane.rowIndex="1"/>
+    <fx:include fx:id="resultLearningPane" source="simulation.fxml" GridPane.rowIndex="1"/>
 
     <MenuBar GridPane.rowIndex="0">
         <Menu text="Главная">
@@ -29,14 +29,17 @@
             <MenuItem fx:id="openMenuItem" text="Открыть"/>
             <MenuItem fx:id="saveMenuItem" text="Cохранить"/>
             <SeparatorMenuItem/>
+            <MenuItem fx:id="settingsMenuItem" text="Настройки"/>
+            <SeparatorMenuItem/>
             <MenuItem fx:id="exitMenuItem" text="Выход"/>
         </Menu>
         <Menu text="Модель">
-            <MenuItem text="Обучение модели"/>
-            <MenuItem text="Результат обучения"/>
+            <MenuItem fx:id="machineLearningMenuItem" text="Обучение модели"/>
+            <MenuItem fx:id="resultLeaningMenuItem" text="Результат обучения"/>
+            <MenuItem fx:id="statisticMenuItem" text="Статистика"/>
         </Menu>
-        <Menu text="Статистика"/>
-        <Menu text="Настройки"/>
-        <Menu text="Помощь"/>
+        <Menu text="Помощь">
+            <MenuItem fx:id="aboutMenuItem" text="О программе"/>
+        </Menu>
     </MenuBar>
 </GridPane>
