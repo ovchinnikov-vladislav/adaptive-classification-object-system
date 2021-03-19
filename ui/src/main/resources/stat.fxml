@@ -6,9 +6,12 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
 <GridPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="bmstu.dynamic.simulator.controller.StatController" visible="false">
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bmstu.dynamic.simulator.controller.StatController" visible="false">
     <rowConstraints>
         <RowConstraints minHeight="15"/>
         <RowConstraints minHeight="30"/>
@@ -20,5 +23,49 @@
         <ColumnConstraints hgrow="ALWAYS"/>
         <ColumnConstraints minWidth="15"/>
     </columnConstraints>
-    <Label text="Статистика" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.halignment="CENTER"/>
+    <Label text="Статистика последнего обучения" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.halignment="CENTER"/>
+    <GridPane GridPane.columnIndex="1" GridPane.rowIndex="2">
+        <rowConstraints>
+            <RowConstraints vgrow="ALWAYS"/>
+            <RowConstraints minHeight="15"/>
+            <RowConstraints vgrow="ALWAYS"/>
+        </rowConstraints>
+        <columnConstraints>
+            <ColumnConstraints hgrow="ALWAYS"/>
+            <ColumnConstraints minWidth="15"/>
+            <ColumnConstraints hgrow="ALWAYS"/>
+        </columnConstraints>
+        <LineChart title="LineChart 1" GridPane.rowIndex="0" GridPane.columnIndex="0">
+            <xAxis>
+                <CategoryAxis label="x"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis label="y"/>
+            </yAxis>
+        </LineChart>
+        <LineChart title="LineChart 2" GridPane.rowIndex="0" GridPane.columnIndex="2">
+            <xAxis>
+                <CategoryAxis label="x"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis label="y"/>
+            </yAxis>
+        </LineChart>
+        <LineChart title="LineChart 3" GridPane.rowIndex="2" GridPane.columnIndex="0">
+            <xAxis>
+                <CategoryAxis label="x"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis label="y"/>
+            </yAxis>
+        </LineChart>
+        <LineChart title="LineChart 4" GridPane.rowIndex="2" GridPane.columnIndex="2">
+            <xAxis>
+                <CategoryAxis label="x"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis label="y"/>
+            </yAxis>
+        </LineChart>
+    </GridPane>
 </GridPane>
