@@ -4,7 +4,7 @@ import tensorflow as tf
 import numpy as np
 from bmstu.yolo3.utils import transform_images, draw_outputs
 
-from bmstu.yolo3.layers import YoloV3, YoloV3Tiny
+from bmstu.yolo3.layers import yolo_v3, yolo_v3_tiny
 
 
 class YoloModel:
@@ -12,7 +12,7 @@ class YoloModel:
                  weights='./model_data/yolov3.tf',
                  classes='./model_data/coco_classes.txt',
                  size=416):
-        self.yolo = YoloV3(classes=num_classes)
+        self.yolo = yolo_v3(classes=num_classes)
         self.yolo.load_weights(weights).expect_partial()
         self.class_names = [c.strip() for c in open(classes).readlines()]
         self.size = size
