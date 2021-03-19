@@ -1,323 +1,287 @@
-from functools import reduce
-from PIL import Image
-from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
-from tensorflow.keras import backend
-import tensorflow as tf
+from absl import logging
+from PIL import ImageDraw, ImageFont, Image
 import numpy as np
+import tensorflow as tf
+import cv2
+
+YOLOV3_LAYER_LIST = [
+    'yolo_darknet',
+    'yolo_conv_0',
+    'yolo_output_0',
+    'yolo_conv_1',
+    'yolo_output_1',
+    'yolo_conv_2',
+    'yolo_output_2',
+]
+
+YOLOV3_TINY_LAYER_LIST = [
+    'yolo_darknet',
+    'yolo_conv_0',
+    'yolo_output_0',
+    'yolo_conv_1',
+    'yolo_output_1',
+]
 
 
-def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
-    """Convert final layer features to bounding box parameters"""
-    num_anchors = len(anchors)
-    # Reshape to batch, height, width, num_anchors, box_params
-    anchors_tensor = backend.reshape(backend.constant(anchors), [1, 1, 1, num_anchors, 2])
 
-    grid_shape = backend.shape(feats)[1:3]  # height, width
-    grid_y = backend.tile(backend.reshape(backend.arange(0, stop=grid_shape[0]), [-1, 1, 1, 1]),
-                          [1, grid_shape[1], 1, 1])
-    grid_x = backend.tile(backend.reshape(backend.arange(0, stop=grid_shape[1]), [1, -1, 1, 1]),
-                          [grid_shape[0], 1, 1, 1])
-    grid = backend.concatenate([grid_x, grid_y])
-    type_feats = feats.dtype
-    grid = backend.cast(grid, type_feats)
+def yolo_boxes(pred, anchors, classes):
+    # pred: (batch_size, grid, grid, anchors, (x, y, w, h, obj, ...classes))
+    grid_size = tf.shape(pred)[1:3]
+    box_xy, box_wh, objectness, class_probs = tf.split(
+        pred, (2, 2, 1, classes), axis=-1)
 
-    feats = backend.reshape(feats, [-1, grid_shape[0], grid_shape[1], num_anchors, num_classes + 5])
+    box_xy = tf.sigmoid(box_xy)
+    objectness = tf.sigmoid(objectness)
+    class_probs = tf.sigmoid(class_probs)
+    pred_box = tf.concat((box_xy, box_wh), axis=-1)  # original xywh for loss
 
-    # Adjust predictions to each spatial grid point and anchor size
-    box_xy = (backend.sigmoid(feats[..., :2]) + grid) / backend.cast(grid_shape[::-1], backend.dtype(feats))
-    box_wh = backend.exp(feats[..., 2:4]) * anchors_tensor / backend.cast(input_shape[::-1], backend.dtype(feats))
-    box_confidence = backend.sigmoid(feats[..., 4:5])
-    box_class_probs = backend.sigmoid(feats[..., 5:])
+    # !!! grid[x][y] == (y, x)
+    grid = tf.meshgrid(tf.range(grid_size[1]), tf.range(grid_size[0]))
+    grid = tf.expand_dims(tf.stack(grid, axis=-1), axis=2)  # [gx, gy, 1, 2]
 
-    if calc_loss:
-        return grid, feats, box_xy, box_wh
+    box_xy = (box_xy + tf.cast(grid, tf.float32)) / \
+             tf.cast(grid_size, tf.float32)
+    box_wh = tf.exp(box_wh) * anchors
 
-    return box_xy, box_wh, box_confidence, box_class_probs
+    box_x1y1 = box_xy - box_wh / 2
+    box_x2y2 = box_xy + box_wh / 2
+    bbox = tf.concat([box_x1y1, box_x2y2], axis=-1)
+
+    return bbox, objectness, class_probs, pred_box
 
 
-def yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape):
-    """Get corrected boxes"""
-    box_yx = box_xy[..., ::-1]
-    box_hw = box_wh[..., ::-1]
-    input_shape = backend.cast(input_shape, backend.dtype(box_yx))
-    image_shape = backend.cast(image_shape, backend.dtype(box_yx))
-    new_shape = backend.round(image_shape * backend.min(input_shape / image_shape))
-    offset = (input_shape - new_shape) / 2. / input_shape
-    scale = input_shape / new_shape
-    box_yx = (box_yx - offset) * scale
-    box_hw *= scale
+def yolo_nms(outputs, anchors, masks, classes, yolo_max_boxes=100, yolo_iou_threshold=0.5, yolo_score_threshold=0.5):
+    # boxes, conf, type
+    b, c, t = [], [], []
 
-    box_mins = box_yx - (box_hw / 2.)
-    box_maxes = box_yx + (box_hw / 2.)
-    boxes = backend.concatenate([
-        box_mins[..., 0:1],  # y_min
-        box_mins[..., 1:2],  # x_min
-        box_maxes[..., 0:1],  # y_max
-        box_maxes[..., 1:2]  # x_max
-    ])
+    for o in outputs:
+        b.append(tf.reshape(o[0], (tf.shape(o[0])[0], -1, tf.shape(o[0])[-1])))
+        c.append(tf.reshape(o[1], (tf.shape(o[1])[0], -1, tf.shape(o[1])[-1])))
+        t.append(tf.reshape(o[2], (tf.shape(o[2])[0], -1, tf.shape(o[2])[-1])))
 
-    # Scale boxes back to original image shape
-    boxes *= backend.concatenate([image_shape, image_shape])
-    return boxes
+    bbox = tf.concat(b, axis=1)
+    confidence = tf.concat(c, axis=1)
+    class_probs = tf.concat(t, axis=1)
 
+    scores = confidence * class_probs
+    boxes, scores, classes, valid_detections = tf.image.combined_non_max_suppression(
+        boxes=tf.reshape(bbox, (tf.shape(bbox)[0], -1, 1, 4)),
+        scores=tf.reshape(
+            scores, (tf.shape(scores)[0], -1, tf.shape(scores)[-1])),
+        max_output_size_per_class=yolo_max_boxes,
+        max_total_size=yolo_max_boxes,
+        iou_threshold=yolo_iou_threshold,
+        score_threshold=yolo_score_threshold
+    )
 
-def yolo_boxes_and_scores(feats, anchors, num_classes, input_shape, image_shape):
-    """Process Convolutional layer output"""
-    box_xy, box_wh, box_confidence, box_class_probs = yolo_head(feats, anchors, num_classes, input_shape)
-    boxes = yolo_correct_boxes(box_xy, box_wh, input_shape, image_shape)
-    boxes = backend.reshape(boxes, [-1, 4])
-    box_scores = box_confidence * box_class_probs
-    box_scores = backend.reshape(box_scores, [-1, num_classes])
-    return boxes, box_scores
+    return boxes, scores, classes, valid_detections
 
 
-def yolo_eval(yolo_outputs, anchors, num_classes, image_shape, max_boxes=20, score_threshold=.6, iou_threshold=.5):
-    """Evaluate YOLO model on given input and return filtered boxes."""
-    num_layers = len(yolo_outputs)
-    anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]] if num_layers == 3 else [[3, 4, 5], [1, 2, 3]]  # default setting
-    input_shape = backend.shape(yolo_outputs[0])[1:3] * 32
-    boxes = []
-    box_scores = []
-    for i in range(num_layers):
-        _boxes, _box_scores = yolo_boxes_and_scores(yolo_outputs[i], anchors[anchor_mask[i]],
-                                                    num_classes, input_shape, image_shape)
-        boxes.append(_boxes)
-        box_scores.append(_box_scores)
-    boxes = backend.concatenate(boxes, axis=0)
-    box_scores = backend.concatenate(box_scores, axis=0)
+def load_darknet_weights(model, weights_file, tiny=False):
+    wf = open(weights_file, 'rb')
+    major, minor, revision, seen, _ = np.fromfile(wf, dtype=np.int32, count=5)
 
-    mask = box_scores >= score_threshold
-    max_boxes_tensor = backend.constant(max_boxes, dtype='int32')
-    boxes_ = []
-    scores_ = []
-    classes_ = []
-    for c in range(num_classes):
-        class_boxes = tf.boolean_mask(boxes, mask[:, c])
-        class_box_scores = tf.boolean_mask(box_scores[:, c], mask[:, c])
-        nms_index = tf.image.non_max_suppression(class_boxes, class_box_scores,
-                                                 max_boxes_tensor, iou_threshold=iou_threshold)
-        class_boxes = backend.gather(class_boxes, nms_index)
-        class_box_scores = backend.gather(class_box_scores, nms_index)
-        classes = backend.ones_like(class_box_scores, 'int32') * c
-        boxes_.append(class_boxes)
-        scores_.append(class_box_scores)
-        classes_.append(classes)
-    boxes_ = backend.concatenate(boxes_, axis=0)
-    scores_ = backend.concatenate(scores_, axis=0)
-    classes_ = backend.concatenate(classes_, axis=0)
-
-    return boxes_, scores_, classes_
-
-
-def box_iou(b1, b2):
-    # Expand dim to apply broadcasting
-    b1 = backend.expand_dims(b1, -2)
-    b1_xy = b1[..., :2]
-    b1_wh = b1[..., 2:4]
-    b1_wh_half = b1_wh / 2.
-    b1_mins = b1_xy - b1_wh_half
-    b1_maxes = b1_xy + b1_wh_half
-
-    # Expand dim to apply broadcasting
-    b2 = backend.expand_dims(b2, 0)
-    b2_xy = b2[..., :2]
-    b2_wh = b2[..., 2:4]
-    b2_wh_half = b2_wh / 2.
-    b2_mins = b2_xy - b2_wh_half
-    b2_maxes = b2_xy + b2_wh_half
-
-    intersect_mins = backend.minimum(b1_mins, b2_mins)
-    intersect_maxes = backend.minimum(b1_maxes, b2_maxes)
-    intersect_wh = backend.maximum(intersect_maxes - intersect_mins, 0.)
-    intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
-    b1_area = b1_wh[..., 0] * b1_wh[..., 1]
-    b2_area = b2_wh[..., 0] * b2_wh[..., 1]
-    iou = intersect_area / (b1_area + b2_area - intersect_area)
-
-    return iou
-
-
-def preprocess_true_boxes(true_boxes, input_shape, anchors, num_classes):
-    """Preprocess true boxes to training input format
-    Parameters
-    ----------
-    true_boxes: array, shape=(m, T, 5)
-        Absolute x_min, y_min, x_max, y_max, class_id relative to input_shape.
-    input_shape: array-like, hw, multiples of 32
-    anchors: array, shape=(N, 2), wh
-    num_classes: integer
-    Returns
-    -------
-    y_true: list of array, shape like yolo_outputs, xywh are reletive value
-    """
-    assert (true_boxes[..., 4] < num_classes).all(), 'class id must be less than num_classes'
-    num_layers = len(anchors) // 3  # default setting
-    anchor_mask = [[6, 7, 8], [3, 4, 5], [0, 1, 2]] if num_layers == 3 else [[3, 4, 5], [1, 2, 3]]
-
-    true_boxes = np.array(true_boxes, dtype='float32')
-    input_shape = np.array(input_shape, dtype='int32')
-    boxes_xy = (true_boxes[..., 0:2] + true_boxes[..., 2:4]) // 2
-    boxes_wh = true_boxes[..., 2:4] - true_boxes[..., 0:2]
-    true_boxes[..., 0:2] = boxes_xy / input_shape[::-1]
-    true_boxes[..., 2:4] = boxes_wh / input_shape[::-1]
-
-    m = true_boxes.shape[0]
-    grid_shapes = [input_shape // {0: 32, 1: 16, 2: 8}[l] for l in range(num_layers)]
-    y_true = [np.zeros((m, grid_shapes[l][0], grid_shapes[l][1], len(anchor_mask[l]), 5 + num_classes),
-                       dtype='float32') for l in range(num_layers)]
-
-    # Expand dim to apply broadcasting.
-    anchors = np.expand_dims(anchors, 0)
-    anchor_maxes = anchors / 2.
-    anchor_mins = -anchor_maxes
-    valid_mask = boxes_wh[..., 0] > 0
-
-    for b in range(m):
-        # Discard zero rows.
-        wh = boxes_wh[b, valid_mask[b]]
-        if len(wh) == 0: continue
-        # Expand dim to apply broadcasting.
-        wh = np.expand_dims(wh, -2)
-        box_maxes = wh / 2.
-        box_mins = -box_maxes
-
-        intersect_mins = np.maximum(box_mins, anchor_mins)
-        intersect_maxes = np.minimum(box_maxes, anchor_maxes)
-        intersect_wh = np.maximum(intersect_maxes - intersect_mins, 0.)
-        intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
-        box_area = wh[..., 0] * wh[..., 1]
-        anchor_area = anchors[..., 0] * anchors[..., 1]
-        iou = intersect_area / (box_area + anchor_area - intersect_area)
-
-        # Find best anchor for each true box
-        best_anchor = np.argmax(iou, axis=-1)
-
-        for t, n in enumerate(best_anchor):
-            for l in range(num_layers):
-                if n in anchor_mask[l]:
-                    i = np.floor(true_boxes[b, t, 0] * grid_shapes[l][1]).astype('int32')
-                    j = np.floor(true_boxes[b, t, 1] * grid_shapes[l][0]).astype('int32')
-                    k = anchor_mask[l].index(n)
-                    c = true_boxes[b, t, 4].astype('int32')
-                    y_true[l][b, j, i, k, 0:4] = true_boxes[b, t, 0:4]
-                    y_true[l][b, j, i, k, 4] = 1
-                    y_true[l][b, j, i, k, 5 + c] = 1
-
-    return y_true
-
-
-def compose(*funcs):
-    if funcs:
-        return reduce(lambda f, g: lambda *a, **kw: g(f(*a, **kw)), funcs)
+    if tiny:
+        layers = YOLOV3_TINY_LAYER_LIST
     else:
-        raise ValueError('Composition of empty sequence not supported.')
+        layers = YOLOV3_LAYER_LIST
+
+    for layer_name in layers:
+        sub_model = model.get_layer(layer_name)
+        for i, layer in enumerate(sub_model.layers):
+            if not layer.name.startswith('conv2d'):
+                continue
+            batch_norm = None
+            if i + 1 < len(sub_model.layers) and \
+                    sub_model.layers[i + 1].name.startswith('batch_norm'):
+                batch_norm = sub_model.layers[i + 1]
+
+            logging.info("{}/{} {}".format(
+                sub_model.name, layer.name, 'bn' if batch_norm else 'bias'))
+
+            filters = layer.filters
+            size = layer.kernel_size[0]
+            in_dim = layer.get_input_shape_at(0)[-1]
+
+            if batch_norm is None:
+                conv_bias = np.fromfile(wf, dtype=np.float32, count=filters)
+            else:
+                # darknet [beta, gamma, mean, variance]
+                bn_weights = np.fromfile(
+                    wf, dtype=np.float32, count=4 * filters)
+                # tf [gamma, beta, mean, variance]
+                bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]]
+
+            # darknet shape (out_dim, in_dim, height, width)
+            conv_shape = (filters, in_dim, size, size)
+            conv_weights = np.fromfile(
+                wf, dtype=np.float32, count=np.product(conv_shape))
+            # tf shape (height, width, in_dim, out_dim)
+            conv_weights = conv_weights.reshape(
+                conv_shape).transpose([2, 3, 1, 0])
+
+            if batch_norm is None:
+                layer.set_weights([conv_weights, conv_bias])
+            else:
+                layer.set_weights([conv_weights])
+                batch_norm.set_weights(bn_weights)
+
+    assert len(wf.read()) == 0, 'failed to read all data'
+    wf.close()
 
 
-def letterbox_image(image, size):
-    iw, ih = image.size
-    w, h = size
-    scale = min(w / iw, h / ih)
-    nw = int(iw * scale)
-    nh = int(ih * scale)
+def broadcast_iou(box_1, box_2):
+    # box_1: (..., (x1, y1, x2, y2))
+    # box_2: (N, (x1, y1, x2, y2))
 
-    image = image.resize((nw, nh), Image.BICUBIC)
-    new_image = Image.new('RGB', size, (128, 128, 128))
-    new_image.paste(image, ((w - nw) // 2, (h - nh) // 2))
+    # broadcast boxes
+    box_1 = tf.expand_dims(box_1, -2)
+    box_2 = tf.expand_dims(box_2, 0)
+    # new_shape: (..., N, (x1, y1, x2, y2))
+    new_shape = tf.broadcast_dynamic_shape(tf.shape(box_1), tf.shape(box_2))
+    box_1 = tf.broadcast_to(box_1, new_shape)
+    box_2 = tf.broadcast_to(box_2, new_shape)
 
-    return new_image
+    int_w = tf.maximum(tf.minimum(box_1[..., 2], box_2[..., 2]) -
+                       tf.maximum(box_1[..., 0], box_2[..., 0]), 0)
+    int_h = tf.maximum(tf.minimum(box_1[..., 3], box_2[..., 3]) -
+                       tf.maximum(box_1[..., 1], box_2[..., 1]), 0)
+    int_area = int_w * int_h
+    box_1_area = (box_1[..., 2] - box_1[..., 0]) * \
+        (box_1[..., 3] - box_1[..., 1])
+    box_2_area = (box_2[..., 2] - box_2[..., 0]) * \
+        (box_2[..., 3] - box_2[..., 1])
+    return int_area / (box_1_area + box_2_area - int_area)
 
 
-def rand(a=0., b=1.):
-    return np.random.rand() * (b - a) + a
+def draw_outputs(img, outputs, class_names, colors):
+    boxes, scores, classes, nums = outputs
+    boxes, scores, classes, nums = boxes[0], scores[0], classes[0], nums[0]
+    wh = np.flip(img.shape[0:2])
+    img = Image.fromarray(img)
+    font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
+                              size=np.floor(3e-2 * img.size[1] + 0.5).astype('int32'))
+    thickness = (img.size[0] + img.size[1]) // 300
+    for i in range(nums):
+        predicted_class = class_names[int(classes[i])]
+        box = boxes[i]
+        score = scores[i]
+        if score < 0.7:
+            continue
+
+        label = '{} {:.2f}'.format(predicted_class, score)
+        draw = ImageDraw.Draw(img)
+        label_size = draw.textsize(label, font)
+
+        x1, y1 = tuple((np.array(box[0:2]) * wh).astype(np.int32))
+        x2, y2 = tuple((np.array(box[2:4]) * wh).astype(np.int32))
+
+        if y1 - label_size[1] >= 0:
+            text_origin = np.array([x1, y1 - label_size[1]])
+        else:
+            text_origin = np.array([x1, y1 + 1])
+
+        # My kingdom for a good redistributable image drawing library.
+        for j in range(thickness):
+            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=colors[int(classes[i])])
+        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=colors[int(classes[i])])
+        draw.text(text_origin, label, fill=(0, 0, 0), font=font)
+        del draw
+
+    return np.asarray(img)
 
 
-def get_random_data(annotation_line, input_shape, random=True,
-                    max_boxes=20, jitter=.3, hue=.1, sat=1.5, val=1.5, proc_img=True):
-    """random preprocessing for real-time data augmentation"""
-    line = annotation_line.split()
-    image = Image.open(line[0])
-    iw, ih = image.size
-    h, w = input_shape
-    box = np.array([np.array(list(map(int, box.split(',')))) for box in line[1:]])
+def draw_labels(x, y, class_names):
+    img = x.numpy()
+    boxes, classes = tf.split(y, (4, 1), axis=-1)
+    classes = classes[..., 0]
+    wh = np.flip(img.shape[0:2])
+    for i in range(len(boxes)):
+        x1y1 = tuple((np.array(boxes[i][0:2]) * wh).astype(np.int32))
+        x2y2 = tuple((np.array(boxes[i][2:4]) * wh).astype(np.int32))
+        img = cv2.rectangle(img, x1y1, x2y2, (255, 0, 0), 2)
+        img = cv2.putText(img, class_names[classes[i]],
+                          x1y1, cv2.FONT_HERSHEY_COMPLEX_SMALL,
+                          1, (0, 0, 255), 2)
+    return img
 
-    if not random:
-        # resize image
-        scale = min(w / iw, h / ih)
-        nw = int(iw * scale)
-        nh = int(ih * scale)
-        dx = (w - nw) // 2
-        dy = (h - nh) // 2
-        image_data = 0
-        if proc_img:
-            image = image.resize((nw, nh), Image.BICUBIC)
-            new_image = Image.new('RGB', (w, h), (128, 128, 128))
-            new_image.paste(image, (dx, dy))
-            image_data = np.array(new_image) / 255.
 
-        # correct boxes
-        box_data = np.zeros((max_boxes, 5))
-        if len(box) > 0:
-            np.random.shuffle(box)
-            if len(box) > max_boxes:
-                box = box[:max_boxes]
-            box[:, [0, 2]] = box[:, [0, 2]] * scale + dx
-            box[:, [1, 3]] = box[:, [1, 3]] * scale + dy
-            box_data[:len(box)] = box
+def freeze_all(model, frozen=True):
+    model.trainable = not frozen
+    if isinstance(model, tf.keras.Model):
+        for l in model.layers:
+            freeze_all(l, frozen)
 
-        return image_data, box_data
 
-    # resize image
-    new_ar = w / h * rand(1 - jitter, 1 + jitter) / rand(1 - jitter, 1 + jitter)
-    scale = rand(.25, 2)
-    if new_ar < 1:
-        nh = int(scale * h)
-        nw = int(nh * new_ar)
-    else:
-        nw = int(scale * w)
-        nh = int(nw / new_ar)
-    image = image.resize((nw, nh), Image.BICUBIC)
+def transform_images(x_train, size):
+    x_train = tf.image.resize(x_train, (size, size))
+    x_train = x_train / 255
+    return x_train
 
-    # place image
-    dx = int(rand(0, w - nw))
-    dy = int(rand(0, h - nh))
-    new_image = Image.new('RGB', (w, h), (128, 128, 128))
-    new_image.paste(image, (dx, dy))
-    image = new_image
 
-    # flip image or not
-    flip = rand() < .5
-    if flip:
-        image = image.transpose(Image.FLIP_LEFT_RIGHT)
+@tf.function
+def transform_targets_for_output(y_true, grid_size, anchor_idxs):
+    # y_true: (N, boxes, (x1, y1, x2, y2, class, best_anchor))
+    N = tf.shape(y_true)[0]
 
-    # distort image
-    hue = rand(-hue, hue)
-    sat = rand(1, sat) if rand() < .5 else 1 / rand(1, sat)
-    val = rand(1, val) if rand() < .5 else 1 / rand(1, val)
-    x = rgb_to_hsv(np.array(image) / 255.)
-    x[..., 0] += hue
-    x[..., 0][x[..., 0] > 1] -= 1
-    x[..., 1] *= sat
-    x[..., 2] *= val
-    x[x > 1] = 1
-    x[x < 0] = 0
-    image_data = hsv_to_rgb(x)  # numpy array, 0 to 1
+    # y_true_out: (N, grid, grid, anchors, [x1, y1, x2, y2, obj, class])
+    y_true_out = tf.zeros(
+        (N, grid_size, grid_size, tf.shape(anchor_idxs)[0], 6))
 
-    # correct boxes
-    box_data = np.zeros((max_boxes, 5))
-    if len(box) > 0:
-        np.random.shuffle(box)
-        box[:, [0, 2]] = box[:, [0, 2]] * nw / iw + dx
-        box[:, [1, 3]] = box[:, [1, 3]] * nh / ih + dy
-        if flip:
-            box[:, [0, 2]] = w - box[:, [2, 0]]
-        box[:, 0:2][box[:, 0:2] < 0] = 0
-        box[:, 2][box[:, 2] > w] = w
-        box[:, 3][box[:, 3] > h] = h
-        box_w = box[:, 2] - box[:, 0]
-        box_h = box[:, 3] - box[:, 1]
-        box = box[np.logical_and(box_w > 1, box_h > 1)]  # discard invalid box
-        if len(box) > max_boxes:
-            box = box[:max_boxes]
-        box_data[:len(box)] = box
+    anchor_idxs = tf.cast(anchor_idxs, tf.int32)
 
-    return image_data, box_data
+    indexes = tf.TensorArray(tf.int32, 1, dynamic_size=True)
+    updates = tf.TensorArray(tf.float32, 1, dynamic_size=True)
+    idx = 0
+    for i in tf.range(N):
+        for j in tf.range(tf.shape(y_true)[1]):
+            if tf.equal(y_true[i][j][2], 0):
+                continue
+            anchor_eq = tf.equal(
+                anchor_idxs, tf.cast(y_true[i][j][5], tf.int32))
+
+            if tf.reduce_any(anchor_eq):
+                box = y_true[i][j][0:4]
+                box_xy = (y_true[i][j][0:2] + y_true[i][j][2:4]) / 2
+
+                anchor_idx = tf.cast(tf.where(anchor_eq), tf.int32)
+                grid_xy = tf.cast(box_xy // (1/grid_size), tf.int32)
+
+                # grid[y][x][anchor] = (tx, ty, bw, bh, obj, class)
+                indexes = indexes.write(
+                    idx, [i, grid_xy[1], grid_xy[0], anchor_idx[0][0]])
+                updates = updates.write(
+                    idx, [box[0], box[1], box[2], box[3], 1, y_true[i][j][4]])
+                idx += 1
+
+    # tf.print(indexes.stack())
+    # tf.print(updates.stack())
+
+    return tf.tensor_scatter_nd_update(y_true_out, indexes.stack(), updates.stack())
+
+
+def transform_targets(y_train, anchors, anchor_masks, size):
+    y_outs = []
+    grid_size = size // 32
+
+    # calculate anchor index for true boxes
+    anchors = tf.cast(anchors, tf.float32)
+    anchor_area = anchors[..., 0] * anchors[..., 1]
+    box_wh = y_train[..., 2:4] - y_train[..., 0:2]
+    box_wh = tf.tile(tf.expand_dims(box_wh, -2),
+                     (1, 1, tf.shape(anchors)[0], 1))
+    box_area = box_wh[..., 0] * box_wh[..., 1]
+    intersection = tf.minimum(box_wh[..., 0], anchors[..., 0]) * \
+        tf.minimum(box_wh[..., 1], anchors[..., 1])
+    iou = intersection / (box_area + anchor_area - intersection)
+    anchor_idx = tf.cast(tf.argmax(iou, axis=-1), tf.float32)
+    anchor_idx = tf.expand_dims(anchor_idx, axis=-1)
+
+    y_train = tf.concat([y_train, anchor_idx], axis=-1)
+
+    for anchor_idxs in anchor_masks:
+        y_outs.append(transform_targets_for_output(
+            y_train, grid_size, anchor_idxs))
+        grid_size *= 2
+
+    return tuple(y_outs)

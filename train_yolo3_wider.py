@@ -1,74 +1,101 @@
+import tensorflow as tf
 import numpy as np
-from bmstu.datasets.wider_faces import wider_dataset_annotations
-from bmstu.yolo3.train import get_anchors, create_model, data_generator
-from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
-from tensorflow.keras.optimizers import Adam
+import cv2
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint, TensorBoard
+from bmstu.yolo3.layers import yolo_v3, yolo_v3_tiny, yolo_anchors, yolo_anchor_masks, yolo_tiny_anchors, yolo_tiny_anchor_masks
+from bmstu.yolo3.losses import YoloLoss
+from bmstu.yolo3.utils import freeze_all, transform_images, transform_targets
+import tensorflow_datasets as tfds
 
 import argparse
 
-parser = argparse.ArgumentParser(description='Train WIDER YOLO')
-parser.add_argument('--root_dataset', default='D:/tensorflow_datasets/',
-                    help='path dataset ')
-parser.add_argument('--batch_size', default=5, type=int)
-parser.add_argument('--prepare_annotation', default=False, help='prepare annotation')
-parser.add_argument('--weights', default='model_data/yolo.dat', help='weights')
+parser = argparse.ArgumentParser()
+
+parser.add_argument('--tiny', default=False, type=bool, help='yolov3 or yolov3-tiny')
+parser.add_argument('--weights', default='./model_data/yolov3.tf', help='path to weights file')
+parser.add_argument('--classes', default='./model_data/coco_classes.txt', help='path to classes file')
+parser.add_argument('--dataset_path', default='D:\\tensorflow_datasets', help='path to download dataset')
+
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    root_path = args.root_dataset
-    annotation_train_path, annotation_test_path, annotation_val_path = \
-        wider_dataset_annotations(args.root_dataset, is_prepare_annotation=args.prepare_annotation)
+    size = 416
+    batch_size = 10
 
-    anchors_path = 'model_data/yolo_anchors.txt'
-    log_dir = 'logs/000/'
-    num_classes = 1
-    anchors = get_anchors(anchors_path)
+    if args.tiny:
+        model = yolo_v3_tiny(size, training=True, classes=1)
+        anchors = yolo_tiny_anchors
+        anchor_masks = yolo_tiny_anchor_masks
+    else:
+        model = yolo_v3(size, training=True, classes=1)
+        anchors = yolo_anchors
+        anchor_masks = yolo_anchor_masks
 
-    input_shape = (416, 416)
+    train_dataset = tfds.load('wider_face', split='train', data_dir=args.dataset_path)
+    val_dataset = tfds.load('wider_face', split='validation', data_dir=args.dataset_path)
+    test_dataset = tfds.load('wider_face', split='test', data_dir=args.dataset_path)
 
-    model = create_model(input_shape, anchors, num_classes, freeze_body=2, weights_path=args.weights)
+    train_dataset = train_dataset.shuffle(buffer_size=512)
+    train_dataset = train_dataset.batch(batch_size)
+    train_dataset = train_dataset.map(lambda x, y: (transform_images(x, size),
+                                                    transform_targets(y, anchors, anchor_masks, size)))
+    train_dataset = train_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
-    logging = TensorBoard(log_dir=log_dir)
-    checkpoint = ModelCheckpoint(log_dir + 'ep{epoch:03d}-loss{loss:.3f}-val_loss{val_loss:.3f}.h5', monitor='val_loss',
-                                 save_weights_only=True, save_best_only=True, period=3)
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=3, verbose=1)
-    early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1)
+    val_dataset = val_dataset.batch(batch_size)
+    val_dataset = val_dataset.map(lambda x, y: (transform_images(x, size),
+                                                transform_targets(y, anchors, anchor_masks, size)))
 
-    val_split = 0.1
+    # # Configure the model for transfer learning
+    # if FLAGS.transfer == 'none':
+    #     pass  # Nothing to do
+    # elif FLAGS.transfer in ['darknet', 'no_output']:
+    #     # Darknet transfer is a special case that works
+    #     # with incompatible number of classes
+    #
+    #     # reset top layers
+    #     if FLAGS.tiny:
+    #         model_pretrained = YoloV3Tiny(
+    #             FLAGS.size, training=True, classes=FLAGS.weights_num_classes or FLAGS.num_classes)
+    #     else:
+    #         model_pretrained = YoloV3(
+    #             FLAGS.size, training=True, classes=FLAGS.weights_num_classes or FLAGS.num_classes)
+    #     model_pretrained.load_weights(FLAGS.weights)
+    #
+    #     if FLAGS.transfer == 'darknet':
+    #         model.get_layer('yolo_darknet').set_weights(
+    #             model_pretrained.get_layer('yolo_darknet').get_weights())
+    #         freeze_all(model.get_layer('yolo_darknet'))
+    #
+    #     elif FLAGS.transfer == 'no_output':
+    #         for l in model.layers:
+    #             if not l.name.startswith('yolo_output'):
+    #                 l.set_weights(model_pretrained.get_layer(
+    #                     l.name).get_weights())
+    #                 freeze_all(l)
+    #
+    # else:
+    #     # All other transfer require matching classes
+    #     model.load_weights(FLAGS.weights)
+    #     if FLAGS.transfer == 'fine_tune':
+    #         # freeze darknet and fine tune other layers
+    #         darknet = model.get_layer('yolo_darknet')
+    #         freeze_all(darknet)
+    #     elif FLAGS.transfer == 'frozen':
+    #         # freeze everything
+    #         freeze_all(model)
 
-    with open(annotation_train_path) as f:
-        train_lines = f.readlines()
-    with open(annotation_val_path) as f:
-        val_lines = f.readlines()
-    np.random.seed(10101)
-    np.random.shuffle(train_lines)
-    np.random.shuffle(val_lines)
-    num_val = len(val_lines)
-    num_train = len(train_lines)
+    optimizer = tf.keras.optimizers.Adam(lr=1e-3)
+    loss = [YoloLoss(anchors[mask], classes=1) for mask in anchor_masks]
 
-    # TODO: вернуть для тренировки на базе натренированной сети
-    # if True:
-    #     model.compile(optimizer=Adam(lr=1e-3), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-    #     batch_size = 10
-    #     print(f'Train on {num_train} samples, val on {num_val} samples, with batch size {batch_size}.')
-    #     model.fit_generator(generator=data_generator(train_lines, batch_size, input_shape, anchors, num_classes),
-    #                         steps_per_epoch=max(1, num_train // batch_size),
-    #                         validation_data=data_generator(val_lines, batch_size, input_shape, anchors, num_classes),
-    #                         validation_steps=max(1, num_val // batch_size),
-    #                         epochs=50,
-    #                         initial_epoch=0,
-    #                         callbacks=[logging, checkpoint])
-    #     model.save_weights(log_dir + 'trained_weights_stage_1.h5')
+    model.compile(optimizer=optimizer, loss=loss)
+    callbacks = [
+        ReduceLROnPlateau(verbose=1),
+        EarlyStopping(patience=3, verbose=1),
+        ModelCheckpoint('checkpoints/yolov3_train_{epoch}.tf', verbose=1, save_weights_only=True),
+        TensorBoard(log_dir='logs')
+    ]
 
-    model.compile(optimizer=Adam(lr=1e-4), loss={'yolo_loss': lambda y_true, y_pred: y_pred})
-    print('Unfreeze all of the layers.')
-    batch_size = args.batch_size
-    print(f'Train on {num_train} samples, val on {num_val} samples, with batch size {batch_size}.')
-    model.fit_generator(generator=data_generator(train_lines, batch_size, input_shape, anchors, num_classes),
-                        steps_per_epoch=max(1, num_train // batch_size),
-                        validation_data=data_generator(val_lines, batch_size, input_shape, anchors, num_classes),
-                        validation_steps=max(1, num_val // batch_size),
-                        epochs=50,
-                        initial_epoch=0,
-                        callbacks=[logging, checkpoint, reduce_lr, early_stopping])
-    model.save_weights(log_dir + 'trained_weights_final.h5')
+    history = model.fit(train_dataset,
+                        epochs=10,
+                        callbacks=callbacks,
+                        validation_data=val_dataset)
