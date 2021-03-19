@@ -112,13 +112,13 @@ def yolo_output(x_in, filters, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
     x = darknet_conv(x, filters * 2, 3)
     x = darknet_conv(x, anchors * (classes + 5), 1, batch_norm=False)
-    x = Lambda(lambda x: tf.reshape(x, (-1, tf.shape(x)[1], tf.shape(x)[2],
-                                        anchors, classes + 5)))(x)
+    x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2],
+                                            anchors, classes + 5)))(x)
     return tf.keras.Model(inputs, x, name=name)(x_in)
 
 
 def yolo_v3(size=None, channels=3, anchors=yolo_anchors,
-           masks=yolo_anchor_masks, classes=80, training=False):
+            masks=yolo_anchor_masks, classes=80, training=False):
     x = inputs = Input([size, size, channels], name='input')
 
     x_36, x_61, x = darknet(name='yolo_darknet')(x)
@@ -135,21 +135,21 @@ def yolo_v3(size=None, channels=3, anchors=yolo_anchors,
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')
 
-    boxes_0 = Lambda(lambda x: yolo_boxes(x, anchors[masks[0]], classes),
+    boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes),
                      name='yolo_boxes_0')(output_0)
-    boxes_1 = Lambda(lambda x: yolo_boxes(x, anchors[masks[1]], classes),
+    boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes),
                      name='yolo_boxes_1')(output_1)
-    boxes_2 = Lambda(lambda x: yolo_boxes(x, anchors[masks[2]], classes),
+    boxes_2 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[2]], classes),
                      name='yolo_boxes_2')(output_2)
 
-    outputs = Lambda(lambda x: yolo_nms(x, anchors, masks, classes),
+    outputs = Lambda(lambda inp: yolo_nms(inp, anchors, masks, classes),
                      name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
 
     return Model(inputs, outputs, name='yolov3')
 
 
 def yolo_v3_tiny(size=None, channels=3, anchors=yolo_tiny_anchors,
-               masks=yolo_tiny_anchor_masks, classes=80, training=False):
+                 masks=yolo_tiny_anchor_masks, classes=80, training=False):
     x = inputs = Input([size, size, channels], name='input')
 
     x_8, x = darknet_tiny(name='yolo_darknet')(x)
@@ -163,10 +163,10 @@ def yolo_v3_tiny(size=None, channels=3, anchors=yolo_tiny_anchors,
     if training:
         return Model(inputs, (output_0, output_1), name='yolov3')
 
-    boxes_0 = Lambda(lambda x: yolo_boxes(x, anchors[masks[0]], classes),
+    boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes),
                      name='yolo_boxes_0')(output_0)
-    boxes_1 = Lambda(lambda x: yolo_boxes(x, anchors[masks[1]], classes),
+    boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes),
                      name='yolo_boxes_1')(output_1)
-    outputs = Lambda(lambda x: yolo_nms(x, anchors, masks, classes),
+    outputs = Lambda(lambda inp: yolo_nms(inp, anchors, masks, classes),
                      name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
     return Model(inputs, outputs, name='yolov3_tiny')
