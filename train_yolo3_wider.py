@@ -14,7 +14,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--tiny', default=False, type=bool, help='yolov3 or yolov3-tiny')
 parser.add_argument('--weights', default='./model_data/yolov3.tf', help='path to weights file')
 parser.add_argument('--classes', default='./model_data/coco_classes.txt', help='path to classes file')
-parser.add_argument('--dataset_path', default='D:/tensorflow_datasets', help='path to download dataset')
+parser.add_argument('--dataset_path', default='D:\\tensorflow_datasets', help='path to download dataset')
 
 
 if __name__ == '__main__':
