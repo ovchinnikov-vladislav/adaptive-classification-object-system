@@ -7,9 +7,17 @@
 <?import javafx.scene.layout.*?>
 
 <?import javafx.scene.image.ImageView?>
-<AnchorPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
-            fx:controller="bmstu.dynamic.simulator.controller.SimulationController">
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bmstu.dynamic.simulator.controller.SimulationController"
+          visible="false">
+    <rowConstraints>
+        <RowConstraints/>
+    </rowConstraints>
+    <columnConstraints>
+        <ColumnConstraints/>
+    </columnConstraints>
+
     <ImageView fx:id="imageView">
     </ImageView>
-</AnchorPane>
+</GridPane>
