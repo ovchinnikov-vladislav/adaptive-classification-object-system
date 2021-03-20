@@ -6,6 +6,7 @@ from flask import Flask, render_template, Response, make_response
 from urllib import request
 import time
 import streamlink
+from flask_ngrok import run_with_ngrok
 
 
 class VideoCamera:
@@ -50,7 +51,7 @@ camera = VideoCamera()
 
 if __name__ == '__main__':
     app = Flask(__name__, template_folder='templates/')
-
+    run_with_ngrok(app)
 
     @app.route('/shot.jpg')
     def shot():
