@@ -9,14 +9,15 @@
 <?import javafx.scene.control.SeparatorMenuItem?>
 <GridPane xmlns="http://javafx.com/javafx"
           xmlns:fx="http://javafx.com/fxml"
-          fx:controller="bmstu.dynamic.simulator.controller.MainController">
+          fx:controller="bmstu.dynamic.simulator.controller.MainController"
+          stylesheets="@../style/main.css">
     <rowConstraints>
-        <RowConstraints minHeight="10" />
-        <RowConstraints vgrow="ALWAYS" />
-        <RowConstraints minHeight="30" />
+        <RowConstraints minHeight="10"/>
+        <RowConstraints vgrow="ALWAYS"/>
+        <RowConstraints minHeight="30"/>
     </rowConstraints>
     <columnConstraints>
-        <ColumnConstraints hgrow="ALWAYS" />
+        <ColumnConstraints hgrow="ALWAYS"/>
     </columnConstraints>
 
     <fx:include fx:id="machineLearningPane" source="ml.fxml" GridPane.rowIndex="1"/>

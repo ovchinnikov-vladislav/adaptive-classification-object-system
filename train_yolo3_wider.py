@@ -36,8 +36,8 @@ if __name__ == '__main__':
 
     train_dataset = train_dataset.shuffle(buffer_size=512)
     train_dataset = train_dataset.batch(batch_size)
-    train_dataset = train_dataset.map(lambda x, y: (transform_images(x, size),
-                                                    transform_targets(y, anchors, anchor_masks, size)))
+    train_dataset = train_dataset.map(lambda x: (transform_images(x['image'], size),
+                                                 transform_targets(x['faces']['bbox'], anchors, anchor_masks, size)))
     train_dataset = train_dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
     val_dataset = val_dataset.batch(batch_size)

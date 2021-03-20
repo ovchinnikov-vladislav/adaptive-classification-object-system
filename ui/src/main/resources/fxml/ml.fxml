@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<GridPane xmlns="http://javafx.com/javafx"
+          xmlns:fx="http://javafx.com/fxml"
+          fx:controller="bmstu.dynamic.simulator.controller.MLController"
+          visible="false">
+    <rowConstraints>
+        <RowConstraints minHeight="15"/>
+        <RowConstraints minHeight="30"/>
+        <RowConstraints minHeight="10"/>
+        <RowConstraints vgrow="ALWAYS"/>
+        <RowConstraints minHeight="15"/>
+    </rowConstraints>
+    <columnConstraints>
+        <ColumnConstraints minWidth="15"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+        <ColumnConstraints minWidth="15"/>
+    </columnConstraints>
+    <Label styleClass="titlePane" text="Обучение модели" GridPane.columnIndex="1" GridPane.rowIndex="1"
+           GridPane.halignment="CENTER"/>
+    <Separator GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+    <GridPane GridPane.columnIndex="1" GridPane.rowIndex="3">
+        <rowConstraints>
+            <RowConstraints vgrow="ALWAYS"/>
+            <RowConstraints minHeight="10"/>
+            <RowConstraints minHeight="50"/>
+        </rowConstraints>
+        <columnConstraints>
+            <ColumnConstraints hgrow="ALWAYS"/>
+        </columnConstraints>
+        <TextArea GridPane.columnIndex="0" GridPane.rowIndex="0" editable="false"
+                  disable="true" focusTraversable="false"/>
+    </GridPane>
+</GridPane>

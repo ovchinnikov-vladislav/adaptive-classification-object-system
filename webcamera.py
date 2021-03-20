@@ -64,8 +64,41 @@ def detect_video_ipcam(yolo, video_path):
     # bytes = b''
     while True:
         im = Image.open(request.urlopen(video_path))
+        im = cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR)
         image = yolo.detect_image(im)
-        result = np.asarray(image)
+        # result = np.asarray(image)
+        # curr_time = timer()
+        # exec_time = curr_time - prev_time
+        # prev_time = curr_time
+        # accum_time = accum_time + exec_time
+        # curr_fps = curr_fps + 1
+        # if accum_time > 1:
+        #     accum_time = accum_time - 1
+        #     fps = "FPS: " + str(curr_fps)
+        #     curr_fps = 0
+        # cv2.putText(result, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+        #             fontScale=0.50, color=(255, 0, 0), thickness=2)
+        # cv2.imshow("result", result)
+        cv2.namedWindow("result", cv2.WINDOW_NORMAL)
+        cv2.imshow("result", image)
+       #  cv2.imwrite('shot.jpg', result)
+
+        if cv2.waitKey(1) == 27:
+            break
+
+
+def detect_video_ipcam_print_image(yolo, video_path):
+    accum_time = 0
+    curr_fps = 0
+    fps = "FPS: ??"
+    prev_time = timer()
+    # bytes = b''
+    while True:
+        im = Image.open(request.urlopen(video_path))
+        im = cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR)
+        image, result = yolo.detect_image(im)
+        print(result)
+        # result = np.asarray(image)
         curr_time = timer()
         exec_time = curr_time - prev_time
         prev_time = curr_time
@@ -75,10 +108,11 @@ def detect_video_ipcam(yolo, video_path):
             accum_time = accum_time - 1
             fps = "FPS: " + str(curr_fps)
             curr_fps = 0
-        cv2.putText(result, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
+        cv2.putText(image, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=0.50, color=(255, 0, 0), thickness=2)
-        cv2.imshow("result", result)
-       #  cv2.imwrite('shot.jpg', result)
+        cv2.namedWindow("result", cv2.WINDOW_NORMAL)
+        cv2.imshow("result", image)
+        cv2.imwrite('shot.jpg', image)
 
         if cv2.waitKey(1) == 27:
             break
@@ -110,6 +144,7 @@ if __name__ == '__main__':
    #
    yolo = YoloModel()
    #  detect_video_webcam(yolo, streams["360p"].url)
-   # detect_video_ipcam(yolo, 'http://192.168.43.1:8080/shot.jpg')
-   detect_video_webcam(yolo, 0)
+   # detect_video_ipcam(yolo, 'http://192.168.0.16:8080/shot.jpg')
+   # detect_video_webcam(yolo, 'rtsp://192.168.0.16:5554/out.h264')
    #  detect_video_webcam(yolo, 'rtsp://10.75.118.98:5554/out.h264')
+   detect_video_ipcam_print_image(yolo, 'http://192.168.0.16:8080/shot.jpg')
