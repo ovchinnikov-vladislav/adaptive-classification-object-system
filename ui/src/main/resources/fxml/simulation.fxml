@@ -29,7 +29,7 @@
            GridPane.halignment="CENTER"/>
     <Separator GridPane.columnIndex="1" GridPane.rowIndex="2"/>
     <TextArea GridPane.columnIndex="1" GridPane.rowIndex="3" editable="false" disable="true" focusTraversable="false"/>
-    <ImageView fx:id="videoImageView" GridPane.columnIndex="1" GridPane.rowIndex="3" visible="false"/>
+    <ImageView fx:id="videoImageView" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
 
     <TextArea fx:id="logsTextArea" GridPane.columnIndex="1" GridPane.rowIndex="5" editable="false" disable="true" focusTraversable="false"/>
 </GridPane>

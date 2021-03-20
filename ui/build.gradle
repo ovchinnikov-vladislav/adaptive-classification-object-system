@@ -11,7 +11,7 @@ plugins {
     id 'edu.sc.seis.launch4j' version '2.4.6' // для создания exe
     id 'application' // запуск приложения
 
-    id 'org.openjfx.javafxplugin' version '0.0.9' // для подключения javafx
+  //  id 'org.openjfx.javafxplugin' version '0.0.9' // для подключения javafx
 }
 
 repositories {
@@ -19,139 +19,140 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.openpnp:opencv:4.5.1-2'
     testImplementation 'junit:junit:4.13'
 }
 
-project.ext.version = '1.0-SNAPSHOT'
-project.ext.name = 'javafx-gradle-template'
-project.ext.mainClassName = 'bmstu.dynamic.simulator.App'
-
-// Определение класса с входной точкой в приложение
-application {
-    mainClassName = project.ext.mainClassName
-}
-
-// Подключение необходимых модулей javafx + версия библиотеки javafx
-javafx {
-    version = "14"
-    modules = ["javafx.controls", "javafx.fxml"]
-}
-
-// Установка имени собираемого архива jar проекта
-jar {
-    archiveBaseName.set(project.ext.name as String)
-}
-
-// Сборка jar со всеми классами других либ, т.е. получаем так называемый flatJar (толстый Jar)
-// TODO: Данная стандия в данный момент работает некорректно (JAR-файл собирается, программа не запускается)
-task packageToJarWithDependencies(type: Jar) {
-    manifest {
-        attributes 'Main-Class': project.ext.mainClassName
-    }
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}
-
-packageToJarWithDependencies.dependsOn build
-
-// Копирование всех подгруженных зависимостей в папку libs проекта
-task copyDependencies(type: Copy) {
-    from(configurations.runtimeClasspath)
-    into project.file("$buildDir/libs/libs")
-}
-
-// Сборка jar + установка в class-path манифеста путей к либам, находящимся в папке libs,
-// которая находится в корне с собираемым jar
-task packageToJarAndLibs(type: Jar) {
-    manifest {
-        def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
-        def classPathResult = 'libs/' + classPathArray.join(' libs/')
-
-        attributes 'Main-Class': project.ext.mainClassName
-        attributes 'Class-Path': classPathResult
-    }
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : null } }
-    with jar
-}
-
-packageToJarAndLibs.dependsOn(build, copyDependencies)
-
-// Копирование целевого Jar в папку bin
-task copyJarToBin(type: Copy) {
-    from file("$buildDir/libs/" + (project.ext.name as String) + ".jar")
-    into file("$buildDir/bin")
-}
-
-// Указывать в этой стандии в зависимости от требований - либо packageToJarAndLibs, либо packageToJarWithDependencies
-copyJarToBin.dependsOn packageToJarAndLibs
-
-// Сборка exe с помощью Launch4J для исполнения в Windows
-task packageWithExe(type: Launch4jLibraryTask) {
-    def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
-    def classPathResult = 'libs/' + classPathArray.join(';libs/')
-
-    headerType = "gui"
-    libraryDir = "libs"
-    outputDir = "bin"
-    mainClassName = project.ext.mainClassName
-    outfile = (project.ext.name as String) + '.exe'
-    version = project.ext.version
-
-    List<String> opts = new ArrayList<>()
-    opts.add('--module-path')
-    opts.add(classPathResult)
-    opts.add('--add-modules')
-    opts.add(javafx.modules.join(","))
-
-    jvmOptions = opts
-    // icon = "${projectDir}/src/main/resources/images/icon.ico"
-    jar = "../libs/" + (project.ext.name as String) + ".jar"
-
-}
-
-packageWithExe.dependsOn copyJarToBin
-
-// Построение скриптов для запуска в Windows (bat) и Unix (sh)
-task packageWithScripts(type: CreateStartScripts) {
-
-    outputDir = file('build/bin')
-    applicationName = project.ext.name
-    classpath = null
-
-    def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
-    def classPathResult = 'libs/' + classPathArray.join(';libs/')
-
-    List<String> opts = new ArrayList<>()
-    if (classPathResult.trim() != 'libs/') {
-        opts.add('--module-path')
-        opts.add(classPathResult)
-    }
-    opts.add('--add-modules')
-    opts.add(javafx.modules.join(","))
-
-    defaultJvmOpts = opts
-    mainClass.set('-jar ' + (project.ext.name as String) + '.jar')
-}
-
-packageWithScripts.dependsOn copyJarToBin
-
-// Выполнение всех стадий для упаковки приложения в исполняемые файлы
-task packageAll {
-    doLast {
-        Path path = Paths.get("$buildDir/bin/libs/" + (project.ext.name as String) + '.jar')
-        if (Files.exists(path)) {
-            Files.delete(path)
-        }
-    }
-}
-
-packageAll.dependsOn(packageWithExe, packageWithScripts)
-
-sourceSets {
-    main {
-        output.resourcesDir = "$buildDir/classes/java/main"
-    }
-    test {
-        output.resourcesDir = "$buildDir/classes/java/test"
-    }
-}
+//project.ext.version = '1.0-SNAPSHOT'
+//project.ext.name = 'javafx-gradle-template'
+//project.ext.mainClassName = 'bmstu.dynamic.simulator.App'
+//
+//// Определение класса с входной точкой в приложение
+//application {
+//    mainClassName = project.ext.mainClassName
+//}
+//
+//// Подключение необходимых модулей javafx + версия библиотеки javafx
+//javafx {
+//    version = "14"
+//    modules = ["javafx.controls", "javafx.fxml", "javafx.swing"]
+//}
+//
+//// Установка имени собираемого архива jar проекта
+//jar {
+//    archiveBaseName.set(project.ext.name as String)
+//}
+//
+//// Сборка jar со всеми классами других либ, т.е. получаем так называемый flatJar (толстый Jar)
+//// TODO: Данная стандия в данный момент работает некорректно (JAR-файл собирается, программа не запускается)
+//task packageToJarWithDependencies(type: Jar) {
+//    manifest {
+//        attributes 'Main-Class': project.ext.mainClassName
+//    }
+//    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+//    with jar
+//}
+//
+//packageToJarWithDependencies.dependsOn build
+//
+//// Копирование всех подгруженных зависимостей в папку libs проекта
+//task copyDependencies(type: Copy) {
+//    from(configurations.runtimeClasspath)
+//    into project.file("$buildDir/libs/libs")
+//}
+//
+//// Сборка jar + установка в class-path манифеста путей к либам, находящимся в папке libs,
+//// которая находится в корне с собираемым jar
+//task packageToJarAndLibs(type: Jar) {
+//    manifest {
+//        def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
+//        def classPathResult = 'libs/' + classPathArray.join(' libs/')
+//
+//        attributes 'Main-Class': project.ext.mainClassName
+//        attributes 'Class-Path': classPathResult
+//    }
+//    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : null } }
+//    with jar
+//}
+//
+//packageToJarAndLibs.dependsOn(build, copyDependencies)
+//
+//// Копирование целевого Jar в папку bin
+//task copyJarToBin(type: Copy) {
+//    from file("$buildDir/libs/" + (project.ext.name as String) + ".jar")
+//    into file("$buildDir/bin")
+//}
+//
+//// Указывать в этой стандии в зависимости от требований - либо packageToJarAndLibs, либо packageToJarWithDependencies
+//copyJarToBin.dependsOn packageToJarAndLibs
+//
+//// Сборка exe с помощью Launch4J для исполнения в Windows
+//task packageWithExe(type: Launch4jLibraryTask) {
+//    def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
+//    def classPathResult = 'libs/' + classPathArray.join(';libs/')
+//
+//    headerType = "gui"
+//    libraryDir = "libs"
+//    outputDir = "bin"
+//    mainClassName = project.ext.mainClassName
+//    outfile = (project.ext.name as String) + '.exe'
+//    version = project.ext.version
+//
+//    List<String> opts = new ArrayList<>()
+//    opts.add('--module-path')
+//    opts.add(classPathResult)
+//    opts.add('--add-modules')
+//    opts.add(javafx.modules.join(","))
+//
+//    jvmOptions = opts
+//    // icon = "${projectDir}/src/main/resources/images/icon.ico"
+//    jar = "../libs/" + (project.ext.name as String) + ".jar"
+//
+//}
+//
+//packageWithExe.dependsOn copyJarToBin
+//
+//// Построение скриптов для запуска в Windows (bat) и Unix (sh)
+//task packageWithScripts(type: CreateStartScripts) {
+//
+//    outputDir = file('build/bin')
+//    applicationName = project.ext.name
+//    classpath = null
+//
+//    def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
+//    def classPathResult = 'libs/' + classPathArray.join(';libs/')
+//
+//    List<String> opts = new ArrayList<>()
+//    if (classPathResult.trim() != 'libs/') {
+//        opts.add('--module-path')
+//        opts.add(classPathResult)
+//    }
+//    opts.add('--add-modules')
+//    opts.add(javafx.modules.join(","))
+//
+//    defaultJvmOpts = opts
+//    mainClass.set('-jar ' + (project.ext.name as String) + '.jar')
+//}
+//
+//packageWithScripts.dependsOn copyJarToBin
+//
+//// Выполнение всех стадий для упаковки приложения в исполняемые файлы
+//task packageAll {
+//    doLast {
+//        Path path = Paths.get("$buildDir/bin/libs/" + (project.ext.name as String) + '.jar')
+//        if (Files.exists(path)) {
+//            Files.delete(path)
+//        }
+//    }
+//}
+//
+//packageAll.dependsOn(packageWithExe, packageWithScripts)
+//
+//sourceSets {
+//    main {
+//        output.resourcesDir = "$buildDir/classes/java/main"
+//    }
+//    test {
+//        output.resourcesDir = "$buildDir/classes/java/test"
+//    }
+//}
