@@ -80,4 +80,4 @@ if __name__ == '__main__':
                    b'Content-Type: image/jpeg\r\n\r\n' + frame +
                    b'\r\n\r\n')
 
-    app.run(host='localhost', port='5000')
+    app.run()
