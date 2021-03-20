@@ -14,6 +14,7 @@
     <rowConstraints>
         <RowConstraints minHeight="15"/>
         <RowConstraints minHeight="30"/>
+        <RowConstraints minHeight="10"/>
         <RowConstraints vgrow="ALWAYS"/>
         <RowConstraints minHeight="15"/>
         <RowConstraints minHeight="50"/>
@@ -24,12 +25,11 @@
         <ColumnConstraints hgrow="ALWAYS"/>
         <ColumnConstraints minWidth="15"/>
     </columnConstraints>
-    <Label text="Результат обучения" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.halignment="CENTER"/>
+    <Label styleClass="titlePane" text="Результат обучения" GridPane.columnIndex="1" GridPane.rowIndex="1"
+           GridPane.halignment="CENTER"/>
+    <Separator GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+    <TextArea GridPane.columnIndex="1" GridPane.rowIndex="3" editable="false" disable="true" focusTraversable="false"/>
+    <ImageView fx:id="videoImageView" GridPane.columnIndex="1" GridPane.rowIndex="3" visible="false"/>
 
-    <StackPane style="-fx-border-color: black; -fx-background-color: white" GridPane.columnIndex="1" GridPane.rowIndex="2">
-        <ImageView fx:id="imageView" GridPane.columnIndex="1" GridPane.rowIndex="2" visible="false">
-        </ImageView>
-    </StackPane>
-
-    <TextArea fx:id="logsDetection" GridPane.columnIndex="1" GridPane.rowIndex="4" editable="false"/>
+    <TextArea fx:id="logsTextArea" GridPane.columnIndex="1" GridPane.rowIndex="5" editable="false" disable="true" focusTraversable="false"/>
 </GridPane>

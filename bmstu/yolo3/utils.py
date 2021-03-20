@@ -156,7 +156,6 @@ def broadcast_iou(box_1, box_2):
 
 def draw_outputs(img, outputs, class_names, colors):
     boxes, scores, classes, nums = outputs
-    boxes, scores, classes, nums = boxes[0], scores[0], classes[0], nums[0]
     wh = np.flip(img.shape[0:2])
     img = Image.fromarray(img)
     font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
@@ -263,6 +262,7 @@ def transform_targets_for_output(y_true, grid_size, anchor_idxs):
 def transform_targets(y_train, anchors, anchor_masks, size):
     y_outs = []
     grid_size = size // 32
+    print(y_train[..., 2:4])
 
     # calculate anchor index for true boxes
     anchors = tf.cast(anchors, tf.float32)

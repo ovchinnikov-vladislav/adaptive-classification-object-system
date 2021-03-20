@@ -11,9 +11,11 @@
 <?import javafx.scene.chart.NumberAxis?>
 <GridPane xmlns="http://javafx.com/javafx"
           xmlns:fx="http://javafx.com/fxml"
-          fx:controller="bmstu.dynamic.simulator.controller.StatController" visible="false">
+          fx:controller="bmstu.dynamic.simulator.controller.StatController"
+          visible="false">
     <rowConstraints>
         <RowConstraints minHeight="15"/>
+        <RowConstraints minHeight="10"/>
         <RowConstraints minHeight="30"/>
         <RowConstraints vgrow="ALWAYS"/>
         <RowConstraints minHeight="15"/>
@@ -23,8 +25,10 @@
         <ColumnConstraints hgrow="ALWAYS"/>
         <ColumnConstraints minWidth="15"/>
     </columnConstraints>
-    <Label text="Статистика последнего обучения" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.halignment="CENTER"/>
-    <GridPane GridPane.columnIndex="1" GridPane.rowIndex="2">
+    <Label styleClass="titlePane" text="Статистика последнего обучения" GridPane.columnIndex="1" GridPane.rowIndex="1"
+           GridPane.halignment="CENTER"/>
+    <Separator GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+    <GridPane GridPane.columnIndex="1" GridPane.rowIndex="3">
         <rowConstraints>
             <RowConstraints vgrow="ALWAYS"/>
             <RowConstraints minHeight="15"/>

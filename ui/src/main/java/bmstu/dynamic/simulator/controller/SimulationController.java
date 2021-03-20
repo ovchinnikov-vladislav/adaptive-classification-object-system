@@ -10,8 +10,8 @@ import java.io.File;
 
 public class SimulationController {
 
-    public ImageView imageView;
-    public TextArea logsDetection;
+    public ImageView videoImageView;
+    public TextArea logsTextArea;
 
     @FXML
     public void initialize() {
