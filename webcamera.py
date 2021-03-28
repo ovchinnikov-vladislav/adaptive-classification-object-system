@@ -34,8 +34,7 @@ def detect_video_webcam(yolo, video_path, output_path=""):
     while True:
         return_value, frame = vid.read()
         # image = Image.fromarray(frame)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image = yolo.detect_image(frame)
+        image, detections = yolo.detect_image(frame)
         # result = np.asarray(image)
         # curr_time = timer()
         # exec_time = curr_time - prev_time
@@ -144,7 +143,8 @@ if __name__ == '__main__':
     # detect_video_ipcam(yolo, 'http://192.168.0.16:8080/shot.jpg')
     # detect_video_webcam(yolo, 'rtsp://192.168.0.16:5554/out.h264')
     #  detect_video_webcam(yolo, 'rtsp://10.75.118.98:5554/out.h264')
-    detect_video_ipcam_print_image(yolo, 'http://192.168.0.16:8080/shot.jpg')
+    detect_video_webcam(yolo, 0)
+    # detect_video_ipcam_print_image(yolo, 'http://192.168.0.16:8080/shot.jpg')
     # img = Image.open('416x416.jpg')
     # img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
     #
