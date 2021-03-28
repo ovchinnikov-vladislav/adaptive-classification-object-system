@@ -5,12 +5,12 @@ from PIL import Image
 from urllib import request
 from timeit import default_timer as timer
 from libs.yolo3.model import YoloModel
+import time
 
 
-def face_localization(yolo, frame):
-    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    im_pil = Image.fromarray(img)
-    r_image = yolo.detect_image(im_pil)
+def image_detection(yolo, image):
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    r_image, object_detection = yolo.detect_image(img)
     numpy_image = np.array(r_image)
     return cv2.cvtColor(numpy_image, cv2.COLOR_RGB2BGR)
 
@@ -76,8 +76,9 @@ def detect_video_ipcam(yolo, video_path):
             curr_fps = 0
         cv2.putText(result, text=fps, org=(3, 15), fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                     fontScale=0.50, color=(255, 0, 0), thickness=2)
-        cv2.imshow("result", result)
-       #  cv2.imwrite('shot.jpg', result)
+        cv2.namedWindow("result", cv2.WINDOW_NORMAL)
+        cv2.imshow("result", image)
+        #  cv2.imwrite('shot.jpg', image)
 
         if cv2.waitKey(1) == 27:
             break

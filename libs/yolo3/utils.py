@@ -23,6 +23,27 @@ YOLOV3_TINY_LAYER_LIST = [
 ]
 
 
+class ObjectDetection:
+    def __init__(self, clazz, box, score):
+        self.clazz = clazz
+        self.box = box
+        self.score = score
+
+    def get_class(self):
+        return self.clazz
+
+    def get_box(self):
+        return self.box
+
+    def get_score(self):
+        return self.score
+
+    def __repr__(self):
+        return f'ObjectDetection[class = {self.clazz}, box = {self.box}, score = {self.score}]'
+
+    def __str__(self):
+        return f'ObjectDetection[class = {self.clazz}, box = {self.box}, score = {self.score}]'
+
 
 def yolo_boxes(pred, anchors, classes):
     # pred: (batch_size, grid, grid, anchors, (x, y, w, h, obj, ...classes))
@@ -50,7 +71,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, anchors, masks, classes, yolo_max_boxes=100, yolo_iou_threshold=0.5, yolo_score_threshold=0.5):
+def yolo_nms(outputs, anchors, masks, classes, yolo_max_boxes=30, yolo_iou_threshold=0.5, yolo_score_threshold=0.5):
     # boxes, conf, type
     b, c, t = [], [], []
 
@@ -154,20 +175,18 @@ def broadcast_iou(box_1, box_2):
     return int_area / (box_1_area + box_2_area - int_area)
 
 
-def draw_outputs(img, outputs, class_names, colors):
+def analyze_outputs(img, outputs, class_names, colors):
     boxes, scores, classes, nums = outputs
-    boxes, scores, classes, nums = boxes[0], scores[0], classes[0], nums[0]
     wh = np.flip(img.shape[0:2])
     img = Image.fromarray(img)
     font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
                               size=np.floor(3e-2 * img.size[1] + 0.5).astype('int32'))
     thickness = (img.size[0] + img.size[1]) // 300
+    object_detection = []
     for i in range(nums):
         predicted_class = class_names[int(classes[i])]
         box = boxes[i]
         score = scores[i]
-        if score < 0.7:
-            continue
 
         label = '{} {:.2f}'.format(predicted_class, score)
         draw = ImageDraw.Draw(img)
@@ -181,6 +200,7 @@ def draw_outputs(img, outputs, class_names, colors):
         else:
             text_origin = np.array([x1, y1 + 1])
 
+        object_detection.append(ObjectDetection(class_names[int(classes[i])], (x1, y1, x2, y2), scores[i]))
         # My kingdom for a good redistributable image drawing library.
         for j in range(thickness):
             draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=colors[int(classes[i])])
@@ -188,7 +208,7 @@ def draw_outputs(img, outputs, class_names, colors):
         draw.text(text_origin, label, fill=(0, 0, 0), font=font)
         del draw
 
-    return np.asarray(img)
+    return np.asarray(img), object_detection
 
 
 def draw_labels(x, y, class_names):
@@ -263,6 +283,7 @@ def transform_targets_for_output(y_true, grid_size, anchor_idxs):
 def transform_targets(y_train, anchors, anchor_masks, size):
     y_outs = []
     grid_size = size // 32
+    print(y_train[..., 2:4])
 
     # calculate anchor index for true boxes
     anchors = tf.cast(anchors, tf.float32)

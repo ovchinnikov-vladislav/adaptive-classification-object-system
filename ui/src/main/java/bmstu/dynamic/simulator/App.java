@@ -8,12 +8,13 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.opencv.core.Core;
 
 public class App extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(App.class.getResource("/main.fxml"));
+        Parent root = FXMLLoader.load(App.class.getResource("/fxml/main.fxml"));
 
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
@@ -22,6 +23,8 @@ public class App extends Application {
     }
 
     public static void main(String[] args) {
+        nu.pattern.OpenCV.loadShared();
+        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         launch(args);
     }
 }

@@ -10,8 +10,6 @@ plugins {
     id 'idea'
     id 'edu.sc.seis.launch4j' version '2.4.6' // для создания exe
     id 'application' // запуск приложения
-
-    id 'org.openjfx.javafxplugin' version '0.0.9' // для подключения javafx
 }
 
 repositories {
@@ -19,22 +17,17 @@ repositories {
 }
 
 dependencies {
+    implementation 'org.openpnp:opencv:4.5.1-2'
     testImplementation 'junit:junit:4.13'
 }
 
 project.ext.version = '1.0-SNAPSHOT'
-project.ext.name = 'javafx-gradle-template'
+project.ext.name = 'ui-adaptive-classification'
 project.ext.mainClassName = 'bmstu.dynamic.simulator.App'
 
 // Определение класса с входной точкой в приложение
 application {
     mainClassName = project.ext.mainClassName
-}
-
-// Подключение необходимых модулей javafx + версия библиотеки javafx
-javafx {
-    version = "14"
-    modules = ["javafx.controls", "javafx.fxml"]
 }
 
 // Установка имени собираемого архива jar проекта
@@ -97,13 +90,6 @@ task packageWithExe(type: Launch4jLibraryTask) {
     outfile = (project.ext.name as String) + '.exe'
     version = project.ext.version
 
-    List<String> opts = new ArrayList<>()
-    opts.add('--module-path')
-    opts.add(classPathResult)
-    opts.add('--add-modules')
-    opts.add(javafx.modules.join(","))
-
-    jvmOptions = opts
     // icon = "${projectDir}/src/main/resources/images/icon.ico"
     jar = "../libs/" + (project.ext.name as String) + ".jar"
 
@@ -121,15 +107,6 @@ task packageWithScripts(type: CreateStartScripts) {
     def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
     def classPathResult = 'libs/' + classPathArray.join(';libs/')
 
-    List<String> opts = new ArrayList<>()
-    if (classPathResult.trim() != 'libs/') {
-        opts.add('--module-path')
-        opts.add(classPathResult)
-    }
-    opts.add('--add-modules')
-    opts.add(javafx.modules.join(","))
-
-    defaultJvmOpts = opts
     mainClass.set('-jar ' + (project.ext.name as String) + '.jar')
 }
 
