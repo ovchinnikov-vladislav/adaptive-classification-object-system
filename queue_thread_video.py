@@ -2,7 +2,7 @@ import queue
 import cv2
 import numpy as np
 import time
-from bmstu.yolo3.model import YoloModel
+from libs.yolo3.model import YoloModel
 import threading
 from urllib import request
 from PIL import Image
@@ -14,7 +14,6 @@ q = queue.Queue()
 def thread_input_image(video_path, yolo):
     while True:
         im = Image.open(request.urlopen(video_path))
-        im = cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR)
         img, info_det = yolo.detect_image(im)
         print(info_det)
         q.put(img)

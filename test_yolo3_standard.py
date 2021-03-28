@@ -1,4 +1,4 @@
-from bmstu.yolo3.model import YoloModel
+from libs.yolo3.model import YoloModel
 from PIL import Image
 
 

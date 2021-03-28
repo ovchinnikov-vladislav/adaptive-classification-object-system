@@ -1,5 +1,5 @@
 import tensorflow as tf
-from bmstu.capsnets.layers.basic import Length, PrimaryCapsule2D, Capsule, Decoder
+from libs.capsnets.layers.basic import Length, PrimaryCapsule2D, Capsule, Decoder
 from tensorflow.keras.layers import Input, Conv2D
 from tensorflow.keras import Model
 

@@ -2,9 +2,9 @@ import cv2
 import colorsys
 import tensorflow as tf
 import numpy as np
-from bmstu.yolo3.utils import transform_images, analyze_outputs
+from libs.yolo3.utils import transform_images, analyze_outputs
 
-from bmstu.yolo3.layers import yolo_v3, yolo_v3_tiny
+from libs.yolo3.layers import yolo_v3, yolo_v3_tiny
 
 
 class YoloModel:
@@ -33,7 +33,8 @@ class YoloModel:
         boxes, scores, classes, nums = self.yolo.predict(img)
         boxes, scores, classes, nums = boxes[0], scores[0], classes[0], nums[0]
 
-        img, object_detection = analyze_outputs(np.array(image), (boxes, scores, classes, nums),
+        img = np.array(image)
+        img, object_detection = analyze_outputs(img, (boxes, scores, classes, nums),
                                                 self.class_names, self.colors)
 
         return img, object_detection
