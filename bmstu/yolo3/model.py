@@ -11,7 +11,7 @@ class YoloModel:
     def __init__(self, num_classes=80,
                  weights='./model_data/yolov3.tf',
                  classes='./model_data/coco_classes.txt',
-                 size=416):
+                 size=320):
         self.yolo = yolo_v3(classes=num_classes)
         self.yolo.make_predict_function()
         self.yolo.load_weights(weights).expect_partial()
