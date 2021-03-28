@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import (Concatenate, Input, Lambda, UpSampling2D)
 from libs.yolo3.utils import yolo_boxes, yolo_nms
-from libs.darknet53.layers import darknet_conv, darknet53, darknet_tiny_leaky
+from libs.darknet53.layers import darknet_conv, darknet53, darknet53_tiny
 
 yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90),
                          (156, 198), (373, 326)], np.float32) / 416
@@ -92,7 +92,7 @@ def yolo_v3_tiny(size=None, channels=3, anchors=yolo_tiny_anchors,
                  masks=yolo_tiny_anchor_masks, classes=80, training=False):
     x = inputs = Input([size, size, channels], name='input')
 
-    x_8, x = darknet_tiny_leaky(name='yolo_darknet')(x)
+    x_8, x = darknet53_tiny(name='yolo_darknet')(x)
 
     x = yolo_conv_tiny(x, 256, name='yolo_conv_0')
     output_0 = yolo_output(x, 256, len(masks[0]), classes, name='yolo_output_0')
