@@ -4,8 +4,8 @@ import patoolib
 import pandas as pd
 import numpy as np
 import math
-import libs.datasets.utls as utils
-import libs.dynamic_images.utls as du
+import bmstu.datasets.utls as utils
+import bmstu.dynamic_images.utls as du
 import cv2
 import shutil
 

@@ -4,8 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import (Add, Concatenate, Conv2D, Input, Lambda, LeakyReLU, MaxPool2D, UpSampling2D,
                                      ZeroPadding2D, BatchNormalization)
 from tensorflow.keras.regularizers import l2
-from libs.yolo3.utils import yolo_boxes, yolo_nms
-from libs.capsnets.models.basic import PrimaryCapsule2D, Capsule
+from bmstu.yolo3.utils import yolo_boxes, yolo_nms
 
 yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90),
                          (156, 198), (373, 326)], np.float32) / 416
@@ -112,10 +111,7 @@ def yolo_conv_tiny(x_in, filters, name=None):
 def yolo_output(x_in, filters, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
     x = darknet_conv(x, filters * 2, 3)
-    x = PrimaryCapsule2D(num_capsules=8, dim_capsules=16, kernel_size=9, strides=2)(x)
-    x = Capsule(num_capsules=classes+5, dim_capsules=np.size(anchors) ** 2, routings=3)(x)
-    # x = Length()(x)
-
+    x = darknet_conv(x, anchors * (classes + 5), 1, batch_norm=False)
     x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2],
                                             anchors, classes + 5)))(x)
     return tf.keras.Model(inputs, x, name=name)(x_in)
@@ -150,10 +146,6 @@ def yolo_v3(size=None, channels=3, anchors=yolo_anchors,
                      name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
 
     return Model(inputs, outputs, name='yolov3')
-
-
-if __name__ == '__main__':
-    yolo_v3(size=416, classes=80).summary(line_length=400)
 
 
 def yolo_v3_tiny(size=None, channels=3, anchors=yolo_tiny_anchors,

@@ -6,7 +6,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<?import javafx.geometry.Insets?>
 <GridPane xmlns="http://javafx.com/javafx"
           xmlns:fx="http://javafx.com/fxml"
           fx:controller="bmstu.dynamic.simulator.controller.MLController"
@@ -14,8 +13,6 @@
     <rowConstraints>
         <RowConstraints minHeight="15"/>
         <RowConstraints minHeight="30"/>
-        <RowConstraints minHeight="10"/>
-        <RowConstraints minHeight="15"/>
         <RowConstraints minHeight="10"/>
         <RowConstraints vgrow="ALWAYS"/>
         <RowConstraints minHeight="15"/>
@@ -28,8 +25,7 @@
     <Label styleClass="titlePane" text="Обучение модели" GridPane.columnIndex="1" GridPane.rowIndex="1"
            GridPane.halignment="CENTER"/>
     <Separator GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-    <Button text="Конфигуратор модели" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-    <GridPane GridPane.columnIndex="1" GridPane.rowIndex="5">
+    <GridPane GridPane.columnIndex="1" GridPane.rowIndex="3">
         <rowConstraints>
             <RowConstraints vgrow="ALWAYS"/>
             <RowConstraints minHeight="10"/>
@@ -40,13 +36,5 @@
         </columnConstraints>
         <TextArea GridPane.columnIndex="0" GridPane.rowIndex="0" editable="false"
                   disable="true" focusTraversable="false"/>
-        <FlowPane GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.halignment="CENTER" alignment="CENTER">
-            <Button text="Запустить обучение">
-                <FlowPane.margin>
-                    <Insets right="25.0"/>
-                </FlowPane.margin>
-            </Button>
-            <Button text="Прервать обучение"/>
-        </FlowPane>
     </GridPane>
 </GridPane>
