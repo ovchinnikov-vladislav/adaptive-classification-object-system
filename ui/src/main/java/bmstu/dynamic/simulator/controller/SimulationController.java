@@ -18,21 +18,21 @@ public class SimulationController {
     public ImageView videoImageView;
     public TextArea logsTextArea;
 
-    private final VideoCapture capture = new VideoCapture();
+//    private final VideoCapture capture = new VideoCapture();
 
     @FXML
     public void initialize() {
-        capture.open(0);
-        videoImageView.setPreserveRatio(true);
-        if (capture.isOpened()) {
-            Runnable frameGrabber = () -> {
-                Mat frame = grabFrame();
-                Image imageToShow = OpenCVUtils.mat2Image(frame);
-                OpenCVUtils.onFXThread(videoImageView.imageProperty(), imageToShow);
-            };
-            ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
-            timer.scheduleAtFixedRate(frameGrabber, 0, 33, TimeUnit.MILLISECONDS);
-        }
+//        capture.open(0);
+//        videoImageView.setPreserveRatio(true);
+//        if (capture.isOpened()) {
+//            Runnable frameGrabber = () -> {
+//                Mat frame = grabFrame();
+//                Image imageToShow = OpenCVUtils.mat2Image(frame);
+//                OpenCVUtils.onFXThread(videoImageView.imageProperty(), imageToShow);
+//            };
+//            ScheduledExecutorService timer = Executors.newSingleThreadScheduledExecutor();
+//            timer.scheduleAtFixedRate(frameGrabber, 0, 33, TimeUnit.MILLISECONDS);
+//        }
 
 
 //        Thread thread = new Thread(() -> {
@@ -46,28 +46,28 @@ public class SimulationController {
 //        thread.start();
     }
 
-    private Mat grabFrame() {
-        // init everything
-        Mat frame = new Mat();
-
-        // check if the capture is open
-        if (this.capture.isOpened()) {
-            try {
-                // read the current frame
-                this.capture.read(frame);
-
-                // if the frame is not empty, process it
-                if (!frame.empty()) {
-                    Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BGR2RGB);
-                }
-
-            } catch (Exception e) {
-                // log the error
-                System.err.println("Exception during the image elaboration: " + e);
-            }
-        }
-
-        return frame;
-    }
+//    private Mat grabFrame() {
+//        // init everything
+//        Mat frame = new Mat();
+//
+//        // check if the capture is open
+//        if (this.capture.isOpened()) {
+//            try {
+//                // read the current frame
+//                this.capture.read(frame);
+//
+//                // if the frame is not empty, process it
+//                if (!frame.empty()) {
+//                    Imgproc.cvtColor(frame, frame, Imgproc.COLOR_BGR2RGB);
+//                }
+//
+//            } catch (Exception e) {
+//                // log the error
+//                System.err.println("Exception during the image elaboration: " + e);
+//            }
+//        }
+//
+//        return frame;
+//    }
 
 }
