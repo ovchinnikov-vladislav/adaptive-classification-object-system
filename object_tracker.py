@@ -25,7 +25,7 @@ def output(img, tracks, colors):
         predicted_class = track.get_class()
         bbox = track.to_tlbr()
 
-        label = f'{predicted_class} - {track.track_id}'
+        label = f'{predicted_class} - {track.track_id} - {track.score}'
         draw = ImageDraw.Draw(img)
         label_size = draw.textsize(label, font)
 
