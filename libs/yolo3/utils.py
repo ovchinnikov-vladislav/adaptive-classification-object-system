@@ -202,9 +202,11 @@ def analyze_outputs(img, outputs, class_names, colors):
 
         object_detection.append(ObjectDetection(class_names[int(classes[i])], (x1, y1, x2, y2), scores[i]))
         # My kingdom for a good redistributable image drawing library.
+        color = colors[int(classes[i])]
+        print(color)
         for j in range(thickness):
-            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=colors[int(classes[i])])
-        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=colors[int(classes[i])])
+            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=color)
+        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=color)
         draw.text(text_origin, label, fill=(0, 0, 0), font=font)
         del draw
 
