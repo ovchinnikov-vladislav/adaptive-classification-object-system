@@ -1,9 +1,9 @@
 import numpy as np
 from tensorflow.keras import optimizers
 from tensorflow.keras import callbacks
-from libs.capsnets import losses
-from libs.capsnets.models.basic import caps_net
-from libs import utls
+from bmstu.capsnets import losses
+from bmstu.capsnets.models.basic import caps_net
+from bmstu import utls
 import argparse
 
 parser = argparse.ArgumentParser()

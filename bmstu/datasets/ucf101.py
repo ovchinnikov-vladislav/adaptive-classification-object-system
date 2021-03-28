@@ -4,7 +4,7 @@ import patoolib
 import pandas as pd
 import numpy as np
 import math
-import libs.datasets.utls as utils
+import bmstu.datasets.utls as utils
 
 
 def __download_ucf101(data_dir_path):

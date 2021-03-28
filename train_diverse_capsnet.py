@@ -1,8 +1,8 @@
-from libs import utls
-from libs.capsnets.models import diverse
+from bmstu import utls
+from bmstu.capsnets.models import diverse
 from tensorflow.keras import callbacks, optimizers
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from libs.capsnets.losses import margin_loss
+from bmstu.capsnets.losses import margin_loss
 import numpy as np
 import argparse
 

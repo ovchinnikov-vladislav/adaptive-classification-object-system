@@ -2,45 +2,42 @@ import queue
 import cv2
 import numpy as np
 import time
-from libs.yolo3.model import YoloModel
+from bmstu.yolo3.model import YoloModel
 import threading
 from urllib import request
 from PIL import Image
 
 
-inputQ = queue.Queue()
-outputQ = queue.Queue()
+q = queue.Queue()
 
 
-def thread_input_image(video_path):
+def thread_input_image(video_path, yolo):
     while True:
         im = Image.open(request.urlopen(video_path))
-        inputQ.put(np.array(im))
+        im = cv2.cvtColor(np.array(im), cv2.COLOR_RGB2BGR)
+        img, info_det = yolo.detect_image(im)
+        print(info_det)
+        q.put(img)
+      #  print('input: ', q.qsize())
 
 
-def thread_process_image(yolo):
+def thread_output_image():
     while True:
-        if inputQ.qsize() >= 50:
-            while not inputQ.empty():
-                image = inputQ.get()
-                img, info_det = yolo.detect_image(np.array(image))
-                outputQ.put(img)
-
-
-if __name__ == '__main__':
-    yolo = YoloModel()
-    inputThread = threading.Thread(target=thread_input_image, args=('http://192.168.0.16:8080/shot.jpg', ))
-    inputThread.start()
-    processThread = threading.Thread(target=thread_process_image, args=(yolo, ))
-    processThread.start()
-    while True:
-        if outputQ.qsize() >= 100:
-            while not outputQ.empty():
-                image = outputQ.get()
+        if q.qsize() >= 400:
+            while not q.empty():
+                image = q.get()
                 cv2.namedWindow("result", cv2.WINDOW_NORMAL)
                 cv2.imshow("result", image)
                 if cv2.waitKey(1) == 27:
                     break
                 time.sleep(0.02)
+
+
+if __name__ == '__main__':
+    yolo = YoloModel()
+    inputThread = threading.Thread(target=thread_input_image, args=('http://192.168.0.16:8080/shot.jpg', yolo))
+    inputThread.start()
+    outputThread = threading.Thread(target=thread_output_image)
+    outputThread.start()
 
 

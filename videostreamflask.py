@@ -1,6 +1,6 @@
 import cv2
 from PIL import Image
-from libs.yolo3.model import YoloModel
+from bmstu.yolo3.model import YoloModel
 import numpy as np
 from flask import Flask, render_template, Response, make_response
 from urllib import request

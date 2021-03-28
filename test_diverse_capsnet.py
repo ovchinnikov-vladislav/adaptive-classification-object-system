@@ -1,5 +1,5 @@
-from libs import utls
-from libs.capsnets.models import diverse
+from bmstu import utls
+from bmstu.capsnets.models import diverse
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse

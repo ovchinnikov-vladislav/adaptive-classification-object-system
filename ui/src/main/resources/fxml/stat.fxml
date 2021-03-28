@@ -39,29 +39,37 @@
             <ColumnConstraints minWidth="15"/>
             <ColumnConstraints hgrow="ALWAYS"/>
         </columnConstraints>
-        <LineChart title="Потери на этапах обучения и проверки" GridPane.rowIndex="0" GridPane.columnIndex="0">
+        <LineChart title="LineChart 1" GridPane.rowIndex="0" GridPane.columnIndex="0">
             <xAxis>
-                <CategoryAxis label="Эпохи"/>
+                <CategoryAxis label="x"/>
             </xAxis>
             <yAxis>
-                <NumberAxis label="Потери"/>
+                <NumberAxis label="y"/>
             </yAxis>
         </LineChart>
-        <LineChart title="Точность на этапах обучения и проверки" GridPane.rowIndex="0" GridPane.columnIndex="2">
+        <LineChart title="LineChart 2" GridPane.rowIndex="0" GridPane.columnIndex="2">
             <xAxis>
-                <CategoryAxis label="Эпохи"/>
+                <CategoryAxis label="x"/>
             </xAxis>
             <yAxis>
-                <NumberAxis label="Точность"/>
+                <NumberAxis label="y"/>
             </yAxis>
         </LineChart>
-        <FlowPane orientation="VERTICAL" GridPane.rowIndex="2" GridPane.columnIndex="0">
-            <Label text="Матрица ошибок" />
-        </FlowPane>
-        <FlowPane orientation="VERTICAL" GridPane.rowIndex="2" GridPane.columnIndex="2">
-            <Label text="Время обучения: "/>
-            <Label text="Количество примеров для тренировочной выборки: "/>
-            <Label text="Количество примеров для тестовой выборки: "/>
-        </FlowPane>
+        <LineChart title="LineChart 3" GridPane.rowIndex="2" GridPane.columnIndex="0">
+            <xAxis>
+                <CategoryAxis label="x"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis label="y"/>
+            </yAxis>
+        </LineChart>
+        <LineChart title="LineChart 4" GridPane.rowIndex="2" GridPane.columnIndex="2">
+            <xAxis>
+                <CategoryAxis label="x"/>
+            </xAxis>
+            <yAxis>
+                <NumberAxis label="y"/>
+            </yAxis>
+        </LineChart>
     </GridPane>
 </GridPane>

@@ -6,8 +6,7 @@ import tensorflow_datasets as tfds
 def _prepare_annotation(filename, path, dataset):
     with open(filename, 'w') as file:
         for example in dataset:
-            file_path = example['image/filename'].numpy().decode()
-            string = os.path.join(path, file_path)
+            string = path + example['image/filename'].numpy().decode()
             height, width, _ = example['image'].shape
             bbox = example['faces']['bbox'].numpy()
             bboxs = ''
@@ -21,9 +20,9 @@ def _prepare_annotation(filename, path, dataset):
 
 
 def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
-    train_path = os.path.join(root_path, 'wider_face', 'WIDER_train', 'images')
-    test_path = os.path.join(root_path, 'wider_face', 'WIDER_test', 'images')
-    val_path = os.path.join(root_path, 'wider_face', 'WIDER_val', 'images')
+    train_path = f'{root_path}wider_face/WIDER_train/images/'
+    test_path = f'{root_path}wider_face/WIDER_test/images/'
+    val_path = f'{root_path}wider_face/WIDER_val/images/'
     train_ds = tfds.load('wider_face', split='train', data_dir=root_path)
     val_ds = tfds.load('wider_face', split='validation', data_dir=root_path)
     test_ds = tfds.load('wider_face', split='test', data_dir=root_path)
@@ -57,9 +56,9 @@ def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
                     shutil.move(os.path.join(root_path, 'downloads', d, 'WIDER_val'),
                                 os.path.join(root_path, 'wider_face', 'WIDER_val'))
 
-    ann_train_path = os.path.join('model_data', 'wider_face_train_annotation.txt')
-    ann_test_path = os.path.join('model_data', 'wider_face_test_annotation.txt')
-    ann_val_path = os.path.join('model_data', 'wider_face_val_annotation.txt')
+    ann_train_path = 'model_data/wider_face_train_annotation.txt'
+    ann_test_path = 'model_data/wider_face_test_annotation.txt'
+    ann_val_path = 'model_data/wider_face_val_annotation.txt'
 
     if is_prepare_annotation:
         _prepare_annotation(ann_train_path, train_path, train_ds)
