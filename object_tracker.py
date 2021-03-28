@@ -2,6 +2,8 @@ import cv2
 import tensorflow as tf
 import time
 import numpy as np
+import colorsys
+import random
 import matplotlib.pyplot as plt
 from libs.yolo3.utils import transform_images, convert_boxes
 from libs.deepsort import preprocessing, nn_matching
@@ -9,6 +11,41 @@ from libs.deepsort.detection import Detection
 from libs.deepsort.tracker import Tracker
 from libs.deepsort.box_encoder import create_box_encoder
 from libs.yolo3.layers import yolo_v3
+from PIL import Image, ImageFont, ImageDraw
+
+
+def output(img, tracks, colors):
+    img = Image.fromarray(img)
+    font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
+                              size=np.floor(3e-2 * img.size[1] + 0.5).astype('int32'))
+    thickness = (img.size[0] + img.size[1]) // 300
+    for track in tracks:
+        if not track.is_confirmed() or track.time_since_update > 1:
+            continue
+        predicted_class = track.get_class()
+        bbox = track.to_tlbr()
+
+        label = f'{predicted_class} - {track.track_id}'
+        draw = ImageDraw.Draw(img)
+        label_size = draw.textsize(label, font)
+
+        x1, y1 = bbox[0], bbox[1]
+        x2, y2 = bbox[2], bbox[3]
+
+        if y1 - label_size[1] >= 0:
+            text_origin = np.array([x1, y1 - label_size[1]])
+        else:
+            text_origin = np.array([x1, y1 + 1])
+
+        # My kingdom for a good redistributable image drawing library.
+        color = colors[track.get_class_id()]
+        for j in range(thickness):
+            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=color)
+        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=color)
+        draw.text(text_origin, label, fill=(0, 0, 0), font=font)
+        del draw
+
+    return np.asarray(img)
 
 
 if __name__ == '__main__':
@@ -28,7 +65,11 @@ if __name__ == '__main__':
 
     class_names = [c.strip() for c in open('./model_data/coco_classes.txt').readlines()]
 
-    vid = cv2.VideoCapture('http://192.168.0.16:8080/video')
+    vid = cv2.VideoCapture(0)
+
+    hsv_tuples = [(x / len(class_names), 1., 1.) for x in range(len(class_names))]
+    colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
+    colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
 
     fps = 0.0
     count = 0
@@ -48,13 +89,9 @@ if __name__ == '__main__':
         names = np.array(names)
         converted_boxes = convert_boxes(img, boxes[0])
         features = encoder(img, converted_boxes)
-        detections = [Detection(bbox, score, class_name, feature)
-                      for bbox, score, class_name, feature
-                      in zip(converted_boxes, scores[0], names, features)]
-
-        # initialize color map
-        cmap = plt.get_cmap('tab20b')
-        colors = [cmap(i)[:3] for i in np.linspace(0, 1, 20)]
+        detections = [Detection(bbox, score, class_name, int(class_id), feature)
+                      for bbox, score, class_name, class_id, feature
+                      in zip(converted_boxes, scores[0], names, classes, features)]
 
         # run non-maxima suppresion
         boxs = np.array([d.tlwh for d in detections])
@@ -67,24 +104,12 @@ if __name__ == '__main__':
         tracker.predict()
         tracker.update(detections)
 
-        for track in tracker.tracks:
-            if not track.is_confirmed() or track.time_since_update > 1:
-                continue
-            bbox = track.to_tlbr()
-            class_name = track.get_class()
-            color = colors[int(track.track_id) % len(colors)]
-            color = [i * 255 for i in color]
-            cv2.rectangle(img, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])), color, 2)
-            cv2.rectangle(img, (int(bbox[0]), int(bbox[1] - 30)),
-                          (int(bbox[0]) + (len(class_name) + len(str(track.track_id))) * 17,
-                           int(bbox[1])), color, -1)
-            cv2.putText(img, class_name + "-" + str(track.track_id),
-                        (int(bbox[0]), int(bbox[1] - 10)),
-                        0, 0.75, (255, 255, 255), 2)
+        img = output(img, tracker.tracks, colors)
 
         fps = (fps + (1. / (time.time() - t1))) / 2
-        cv2.putText(img, "FPS: {:.2f}".format(fps), (0, 30),
-                    cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)
+        # cv2.putText(img, "FPS: {:.2f}".format(fps), (0, 30),
+        #             cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)
+        cv2.namedWindow("output", cv2.WINDOW_NORMAL)
         cv2.imshow('output', img)
 
         # press q to quit
