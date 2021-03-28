@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name='bmstu-ovchinnikov-capsnets',
+setup(name='libs-ovchinnikov-capsnets',
       version='0.0.3-alpha',
       description='В данной библиотеке находятся вспомогательные классы и функции для реализации и использования'
                   'различных архитектур капсульных сетей',

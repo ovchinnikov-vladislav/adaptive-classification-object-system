@@ -1,4 +1,4 @@
-from bmstu.yolo3.utils import yolo_boxes, broadcast_iou
+from libs.yolo3.utils import yolo_boxes, broadcast_iou
 from tensorflow.keras.losses import binary_crossentropy, sparse_categorical_crossentropy
 import tensorflow as tf
 

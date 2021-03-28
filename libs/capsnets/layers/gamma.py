@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import activations
-from bmstu.capsnets.utls import squash
+from libs.capsnets.utls import squash
 import numpy as np
 
 

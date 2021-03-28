@@ -2,9 +2,9 @@ import cv2
 import colorsys
 import tensorflow as tf
 import numpy as np
-from bmstu.yolo3.utils import transform_images, draw_outputs
+from libs.yolo3.utils import transform_images, draw_outputs
 
-from bmstu.yolo3.layers import yolo_v3, yolo_v3_tiny
+from libs.yolo3.layers import yolo_v3, yolo_v3_tiny
 
 
 class YoloModel:

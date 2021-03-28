@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from urllib import request
 from timeit import default_timer as timer
-from bmstu.yolo3.model import YoloModel
+from libs.yolo3.model import YoloModel
 
 
 def face_localization(yolo, frame):
@@ -34,7 +34,6 @@ def detect_video_webcam(yolo, video_path, output_path=""):
     while True:
         return_value, frame = vid.read()
         # image = Image.fromarray(frame)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image = yolo.detect_image(frame)
         # result = np.asarray(image)
         # curr_time = timer()
@@ -64,7 +63,7 @@ def detect_video_ipcam(yolo, video_path):
     # bytes = b''
     while True:
         im = Image.open(request.urlopen(video_path))
-        image = yolo.detect_image(im)
+        image = yolo.detect_image(np.array(im))
         result = np.asarray(image)
         curr_time = timer()
         exec_time = curr_time - prev_time
@@ -110,6 +109,7 @@ if __name__ == '__main__':
    #
    yolo = YoloModel()
    #  detect_video_webcam(yolo, streams["360p"].url)
-   # detect_video_ipcam(yolo, 'http://192.168.43.1:8080/shot.jpg')
-   detect_video_webcam(yolo, 0)
+   # detect_video_ipcam(yolo, 'http://192.168.0.16:8080/shot.jpg')
+   # detect_video_webcam(yolo, 0)
+   # detect_video_webcam(yolo, "http://192.168.0.16:8080/video")
    #  detect_video_webcam(yolo, 'rtsp://10.75.118.98:5554/out.h264')

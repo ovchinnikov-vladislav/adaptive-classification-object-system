@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import activations
 from functools import reduce
-from bmstu.capsnets.vos_utils import em_routing, em_routing_cond, create_coords_mat
+from libs.capsnets.vos_utils import em_routing, em_routing_cond, create_coords_mat
 
 
 class PrimaryCapsule3D(tf.keras.layers.Layer):

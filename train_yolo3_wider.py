@@ -2,9 +2,9 @@ import tensorflow as tf
 import numpy as np
 import cv2
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint, TensorBoard
-from bmstu.yolo3.layers import yolo_v3, yolo_v3_tiny, yolo_anchors, yolo_anchor_masks, yolo_tiny_anchors, yolo_tiny_anchor_masks
-from bmstu.yolo3.losses import YoloLoss
-from bmstu.yolo3.utils import freeze_all, transform_images, transform_targets
+from libs.yolo3.layers import yolo_v3, yolo_v3_tiny, yolo_anchors, yolo_anchor_masks, yolo_tiny_anchors, yolo_tiny_anchor_masks
+from libs.yolo3.losses import YoloLoss
+from libs.yolo3.utils import freeze_all, transform_images, transform_targets
 import tensorflow_datasets as tfds
 
 import argparse
