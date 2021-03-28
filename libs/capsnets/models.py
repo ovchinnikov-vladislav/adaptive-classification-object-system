@@ -1,15 +1,15 @@
 import tensorflow as tf
-import bmstu.capsnets.layers.basic as basic_layers
-import bmstu.capsnets.layers.segment as segment_layers
-import bmstu.layers as common_layers
-import bmstu.capsnets.layers.gamma as gamma_layers
-import bmstu.capsnets.layers.matrix as matrix_layers
-import bmstu.capsnets.metrics.gamma as gamma_metrics
-import bmstu.capsnets.metrics.matrix as matrix_metrics
+import libs.capsnets.layers.basic as basic_layers
+import libs.capsnets.layers.segment as segment_layers
+import libs.layers as common_layers
+import libs.capsnets.layers.gamma as gamma_layers
+import libs.capsnets.layers.matrix as matrix_layers
+import libs.capsnets.metrics.gamma as gamma_metrics
+import libs.capsnets.metrics.matrix as matrix_metrics
 from tensorflow.keras import activations, metrics
-from bmstu.capsnets import losses
-from bmstu.utls import pgd
-from bmstu import utls
+from libs.capsnets import losses
+from libs.utls import pgd
+from libs import utls
 
 
 class MatrixCapsNet:

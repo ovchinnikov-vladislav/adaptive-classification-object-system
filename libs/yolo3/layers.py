@@ -4,7 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import (Add, Concatenate, Conv2D, Input, Lambda, LeakyReLU, MaxPool2D, UpSampling2D,
                                      ZeroPadding2D, BatchNormalization)
 from tensorflow.keras.regularizers import l2
-from bmstu.yolo3.utils import yolo_boxes, yolo_nms
+from libs.yolo3.utils import yolo_boxes, yolo_nms
 
 yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90),
                          (156, 198), (373, 326)], np.float32) / 416
