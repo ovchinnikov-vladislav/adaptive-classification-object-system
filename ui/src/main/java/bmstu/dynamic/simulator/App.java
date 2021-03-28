@@ -23,8 +23,6 @@ public class App extends Application {
     }
 
     public static void main(String[] args) {
-        nu.pattern.OpenCV.loadShared();
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         launch(args);
     }
 }

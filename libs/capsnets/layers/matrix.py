@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras import layers, activations
-from bmstu.capsnets.em_utils import kernel_tile, mat_transform, em_routing
+from libs.capsnets.em_utils import kernel_tile, mat_transform, em_routing
 
 
 class PrimaryCapsule2D(layers.Layer):

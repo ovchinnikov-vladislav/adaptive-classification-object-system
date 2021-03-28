@@ -1,5 +1,5 @@
-from bmstu import utls
-from bmstu.capsnets.models.basic import caps_net
+from libs import utls
+from libs.capsnets.models.basic import caps_net
 import numpy as np
 from PIL import Image
 import argparse

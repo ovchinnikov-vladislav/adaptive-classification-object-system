@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from urllib import request
 from timeit import default_timer as timer
-from bmstu.yolo3.model import YoloModel
+from libs.yolo3.model import YoloModel
 import time
 
 
