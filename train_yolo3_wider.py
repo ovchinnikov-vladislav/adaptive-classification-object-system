@@ -47,7 +47,7 @@ if __name__ == '__main__':
     # # Configure the model for transfer learning
     # if FLAGS.transfer == 'none':
     #     pass  # Nothing to do
-    # elif FLAGS.transfer in ['darknet', 'no_output']:
+    # elif FLAGS.transfer in ['darknet53', 'no_output']:
     #     # Darknet transfer is a special case that works
     #     # with incompatible number of classes
     #
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     #             FLAGS.size, training=True, classes=FLAGS.weights_num_classes or FLAGS.num_classes)
     #     model_pretrained.load_weights(FLAGS.weights)
     #
-    #     if FLAGS.transfer == 'darknet':
+    #     if FLAGS.transfer == 'darknet53':
     #         model.get_layer('yolo_darknet').set_weights(
     #             model_pretrained.get_layer('yolo_darknet').get_weights())
     #         freeze_all(model.get_layer('yolo_darknet'))
@@ -76,9 +76,9 @@ if __name__ == '__main__':
     #     # All other transfer require matching classes
     #     model.load_weights(FLAGS.weights)
     #     if FLAGS.transfer == 'fine_tune':
-    #         # freeze darknet and fine tune other layers
-    #         darknet = model.get_layer('yolo_darknet')
-    #         freeze_all(darknet)
+    #         # freeze darknet53 and fine tune other layers
+    #         darknet53 = model.get_layer('yolo_darknet')
+    #         freeze_all(darknet53)
     #     elif FLAGS.transfer == 'frozen':
     #         # freeze everything
     #         freeze_all(model)
