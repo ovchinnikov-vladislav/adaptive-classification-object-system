@@ -91,8 +91,7 @@ def detect_video_ipcam_print_image(yolo, video_path):
     fps = "FPS: ??"
     while True:
         im = Image.open(request.urlopen(video_path))
-        im = np.array(im)
-
+        im = cv2.cvtColor(np.array(im), cv2.COLOR_BGR2RGB)
         t1 = time.time()
         image, result = yolo.detect_image(im)
         t2 = time.time()
@@ -127,12 +126,6 @@ def get_video(video_path):
 
 
 if __name__ == '__main__':
-    import tensorflow as tf
-
-    physical_devices = tf.config.experimental.list_physical_devices('GPU')
-    for physical_device in physical_devices:
-        tf.config.experimental.set_memory_growth(physical_device, True)
-
     #  video_id = 'ENvmK1x0ZTc'
     #  url = f'https://www.youtube.com/watch?v={video_id}'
 
