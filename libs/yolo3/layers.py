@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import (Concatenate, Input, Lambda, UpSampling2D)
 from libs.yolo3.utils import yolo_boxes, yolo_nms
-from libs.darknet53.layers import darknet_conv_leaky, darknet_leaky, darknet_tiny_leaky
+from libs.darknet53.layers import darknet_conv, darknet53, darknet_tiny_leaky
 
 yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90),
                          (156, 198), (373, 326)], np.float32) / 416
@@ -17,7 +17,7 @@ def yolo_conv_input_tuple(x_in, filters):
     x, x_skip = inputs
 
     # concat with skip connection
-    x = darknet_conv_leaky(x, filters, 1)
+    x = darknet_conv(x, filters, 1)
     x = UpSampling2D(2)(x)
     x = Concatenate()([x, x_skip])
 
@@ -30,11 +30,11 @@ def yolo_conv(x_in, filters, name=None):
     else:
         x = inputs = Input(x_in.shape[1:])
 
-    x = darknet_conv_leaky(x, filters, 1)
-    x = darknet_conv_leaky(x, filters * 2, 3)
-    x = darknet_conv_leaky(x, filters, 1)
-    x = darknet_conv_leaky(x, filters * 2, 3)
-    x = darknet_conv_leaky(x, filters, 1)
+    x = darknet_conv(x, filters, 1)
+    x = darknet_conv(x, filters * 2, 3)
+    x = darknet_conv(x, filters, 1)
+    x = darknet_conv(x, filters * 2, 3)
+    x = darknet_conv(x, filters, 1)
     return Model(inputs, x, name=name)(x_in)
 
 
@@ -43,15 +43,15 @@ def yolo_conv_tiny(x_in, filters, name=None):
         x, inputs = yolo_conv_input_tuple(x_in, filters)
     else:
         x = inputs = Input(x_in.shape[1:])
-        x = darknet_conv_leaky(x, filters, 1)
+        x = darknet_conv(x, filters, 1)
 
     return Model(inputs, x, name=name)(x_in)
 
 
 def yolo_output(x_in, filters, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
-    x = darknet_conv_leaky(x, filters * 2, 3)
-    x = darknet_conv_leaky(x, anchors * (classes + 5), 1, batch_norm=False)
+    x = darknet_conv(x, filters * 2, 3)
+    x = darknet_conv(x, anchors * (classes + 5), 1, batch_norm=False)
     x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2],
                                             anchors, classes + 5)))(x)
     return tf.keras.Model(inputs, x, name=name)(x_in)
@@ -61,7 +61,7 @@ def yolo_v3(size=None, channels=3, anchors=yolo_anchors,
             masks=yolo_anchor_masks, classes=80, training=False):
     x = inputs = Input([size, size, channels], name='input')
 
-    x_36, x_61, x = darknet_leaky(name='yolo_darknet')(x)
+    x_36, x_61, x = darknet53(name='yolo_darknet')(x)
 
     x = yolo_conv(x, 512, name='yolo_conv_0')
     output_0 = yolo_output(x, 512, len(masks[0]), classes, name='yolo_output_0')
