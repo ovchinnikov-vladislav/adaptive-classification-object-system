@@ -168,3 +168,4 @@ def nms(model_ouputs, input_shape, num_class, iou_threshold=0.413, score_thresho
         score_threshold=score_threshold,  # # Minimum confidence that counts as a valid detection.
     )
     return nmsed_boxes, nmsed_scores, nmsed_classes, valid_detections
+
