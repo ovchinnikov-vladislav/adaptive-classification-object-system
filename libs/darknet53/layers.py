@@ -87,8 +87,8 @@ def darknet53_tiny(name=None):
     return tf.keras.Model(inputs, (x_8, x), name=name)
 
 
-def cspdarknet53(name=None):
-    x = inputs = Input([None, None, 3])
+def cspdarknet53(inputs, name=None):
+    x = inputs
 
     x = darknet_conv(x, 32, 3)
     x = darknet_conv(x, 64, 3, down_sampling=True)
@@ -127,7 +127,3 @@ def cspdarknet53(name=None):
     route2 = darknet_conv(x, 512, 1)
     return tf.keras.Model(inputs, [route0, route1, route2], name=name)
 
-
-if __name__ == '__main__':
-    darknet = cspdarknet53()
-    darknet.summary()

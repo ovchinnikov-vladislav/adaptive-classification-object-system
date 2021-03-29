@@ -45,6 +45,50 @@ class ObjectDetection:
         return f'ObjectDetection[class = {self.clazz}, box = {self.box}, score = {self.score}]'
 
 
+def load_weights(model, weights_file_path):
+    conv_layer_size = 110
+    conv_output_idxs = [93, 101, 109]
+    with open(weights_file_path, 'rb') as file:
+        major, minor, revision, seen, _ = np.fromfile(file, dtype=np.int32, count=5)
+
+        bn_idx = 0
+        for conv_idx in range(conv_layer_size):
+            conv_layer_name = f'conv2d_{conv_idx}' if conv_idx > 0 else 'conv2d'
+            bn_layer_name = f'batch_normalization_{bn_idx}' if bn_idx > 0 else 'batch_normalization'
+
+            conv_layer = model.get_layer(conv_layer_name)
+            filters = conv_layer.filters
+            kernel_size = conv_layer.kernel_size[0]
+            input_dims = conv_layer.input_shape[-1]
+
+            if conv_idx not in conv_output_idxs:
+                # darknet bn layer weights: [beta, gamma, mean, variance]
+                bn_weights = np.fromfile(file, dtype=np.float32, count=4 * filters)
+                # tf bn layer weights: [gamma, beta, mean, variance]
+                bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]]
+                bn_layer = model.get_layer(bn_layer_name)
+                bn_idx += 1
+            else:
+                conv_bias = np.fromfile(file, dtype=np.float32, count=filters)
+
+            # darknet shape: (out_dim, input_dims, height, width)
+            # tf shape: (height, width, input_dims, out_dim)
+            conv_shape = (filters, input_dims, kernel_size, kernel_size)
+            conv_weights = np.fromfile(file, dtype=np.float32, count=np.product(conv_shape))
+            conv_weights = conv_weights.reshape(conv_shape).transpose([2, 3, 1, 0])
+
+            if conv_idx not in conv_output_idxs:
+                conv_layer.set_weights([conv_weights])
+                bn_layer.set_weights(bn_weights)
+            else:
+                conv_layer.set_weights([conv_weights, conv_bias])
+
+        if len(file.read()) == 0:
+            print('all weights read')
+        else:
+            print(f'failed to read  all weights, # of unread weights: {len(file.read())}')
+
+
 def yolo_boxes(pred, anchors, classes):
     # pred: (batch_size, grid, grid, anchors, (x, y, w, h, obj, ...classes))
     grid_size = tf.shape(pred)[1:3]
@@ -203,7 +247,6 @@ def analyze_outputs(img, outputs, class_names, colors):
         object_detection.append(ObjectDetection(class_names[int(classes[i])], (x1, y1, x2, y2), scores[i]))
         # My kingdom for a good redistributable image drawing library.
         color = colors[int(classes[i])]
-        print(color)
         for j in range(thickness):
             draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=color)
         draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=color)
