@@ -18,3 +18,4 @@ yolov3.tf*
 yolov3-tiny.tf*
 *.weights
 checkpoint*
+test_data

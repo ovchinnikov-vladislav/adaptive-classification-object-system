@@ -61,27 +61,17 @@ if __name__ == '__main__':
 
     size = 416
     num_classes = 80
-    from libs.yolo4.layers import yolov4_neck, yolov4_head, yolo_xyscale, yolo_anchors, nms
+    from libs.yolo4.layers import yolo_v4
     from libs.yolo4.utils import load_weights
 
-    input_layer = tf.keras.layers.Input([size, size, 3])
-    yolov4_output = yolov4_neck(input_layer, num_classes)
-    yolo_model = tf.keras.models.Model(input_layer, yolov4_output)
-    load_weights(yolo_model, './model_data/yolov4.weights')
-    anchors = np.array(yolo_anchors).reshape((3, 3, 2))
-    # Build inference model
-    yolov4_output = yolov4_head(yolov4_output, num_classes, anchors, yolo_xyscale)
-    # output: [boxes, scores, classes, valid_detections]
-    yolo = tf.keras.models.Model(input_layer,
-                                 nms(yolov4_output, [size, size, 3], num_classes,
-                                     iou_threshold=0.413,
-                                     score_threshold=0.3))
-    # yolo = yolo_v3()
+    yolo = yolo_v4()
+    yolo.summary()
+    load_weights(yolo, './model_data/yolov4.weights')
     # yolo.load_weights('./model_data/yolov3.tf')
 
     class_names = [c.strip() for c in open('./model_data/coco_classes.txt').readlines()]
 
-    vid = cv2.VideoCapture(0)
+    vid = cv2.VideoCapture('./test_data/test.mp4')
 
     hsv_tuples = [(x / len(class_names), 1., 1.) for x in range(len(class_names))]
     colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))

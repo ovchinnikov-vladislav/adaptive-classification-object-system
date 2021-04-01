@@ -52,11 +52,34 @@ def load_weights(model, weights_file_path):
         major, minor, revision, seen, _ = np.fromfile(file, dtype=np.int32, count=5)
 
         bn_idx = 0
+
+        yolo_darknet = model.get_layer('yolo_darknet')
+        yolo_output_0 = model.get_layer('yolo_output_0')
+        yolo_output_1 = model.get_layer('yolo_output_1')
+        yolo_output_2 = model.get_layer('yolo_output_2')
         for conv_idx in range(conv_layer_size):
             conv_layer_name = f'conv2d_{conv_idx}' if conv_idx > 0 else 'conv2d'
             bn_layer_name = f'batch_normalization_{bn_idx}' if bn_idx > 0 else 'batch_normalization'
 
-            conv_layer = model.get_layer(conv_layer_name)
+            try:
+                conv_layer = yolo_darknet.get_layer(conv_layer_name)
+                model_load = yolo_darknet
+            except:
+                try:
+                    conv_layer = yolo_output_0.get_layer(conv_layer_name)
+                    model_load = yolo_output_0
+                except:
+                    try:
+                        conv_layer = yolo_output_1.get_layer(conv_layer_name)
+                        model_load = yolo_output_1
+                    except:
+                        try:
+                            conv_layer = yolo_output_2.get_layer(conv_layer_name)
+                            model_load = yolo_output_2
+                        except:
+                            conv_layer = model.get_layer(conv_layer_name)
+                            model_load = model
+
             filters = conv_layer.filters
             kernel_size = conv_layer.kernel_size[0]
             input_dims = conv_layer.input_shape[-1]
@@ -66,7 +89,7 @@ def load_weights(model, weights_file_path):
                 bn_weights = np.fromfile(file, dtype=np.float32, count=4 * filters)
                 # tf bn layer weights: [gamma, beta, mean, variance]
                 bn_weights = bn_weights.reshape((4, filters))[[1, 0, 2, 3]]
-                bn_layer = model.get_layer(bn_layer_name)
+                bn_layer = model_load.get_layer(bn_layer_name)
                 bn_idx += 1
             else:
                 conv_bias = np.fromfile(file, dtype=np.float32, count=filters)
@@ -213,9 +236,9 @@ def broadcast_iou(box_1, box_2):
                        tf.maximum(box_1[..., 1], box_2[..., 1]), 0)
     int_area = int_w * int_h
     box_1_area = (box_1[..., 2] - box_1[..., 0]) * \
-        (box_1[..., 3] - box_1[..., 1])
+                 (box_1[..., 3] - box_1[..., 1])
     box_2_area = (box_2[..., 2] - box_2[..., 0]) * \
-        (box_2[..., 3] - box_2[..., 1])
+                 (box_2[..., 3] - box_2[..., 1])
     return int_area / (box_1_area + box_2_area - int_area)
 
 
@@ -310,7 +333,7 @@ def transform_targets_for_output(y_true, grid_size, anchor_idxs):
                 box_xy = (y_true[i][j][0:2] + y_true[i][j][2:4]) / 2
 
                 anchor_idx = tf.cast(tf.where(anchor_eq), tf.int32)
-                grid_xy = tf.cast(box_xy // (1/grid_size), tf.int32)
+                grid_xy = tf.cast(box_xy // (1 / grid_size), tf.int32)
 
                 # grid[y][x][anchor] = (tx, ty, bw, bh, obj, class)
                 indexes = indexes.write(
@@ -338,7 +361,7 @@ def transform_targets(y_train, anchors, anchor_masks, size):
                      (1, 1, tf.shape(anchors)[0], 1))
     box_area = box_wh[..., 0] * box_wh[..., 1]
     intersection = tf.minimum(box_wh[..., 0], anchors[..., 0]) * \
-        tf.minimum(box_wh[..., 1], anchors[..., 1])
+                   tf.minimum(box_wh[..., 1], anchors[..., 1])
     iou = intersection / (box_area + anchor_area - intersection)
     anchor_idx = tf.cast(tf.argmax(iou, axis=-1), tf.float32)
     anchor_idx = tf.expand_dims(anchor_idx, axis=-1)

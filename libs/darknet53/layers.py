@@ -87,8 +87,8 @@ def darknet53_tiny(name=None):
     return tf.keras.Model(inputs, (x_8, x), name=name)
 
 
-def cspdarknet53(inputs, name=None):
-    x = inputs
+def cspdarknet53(name=None):
+    x = inputs = Input([None, None, 3])
 
     x = darknet_conv(x, 32, 3)
     x = darknet_conv(x, 64, 3, down_sampling=True)
