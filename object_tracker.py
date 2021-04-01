@@ -17,15 +17,15 @@ from PIL import Image, ImageFont, ImageDraw
 def output(img, tracks, colors):
     img = Image.fromarray(img)
     font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
-                              size=np.floor(3e-2 * img.size[1] + 0.5).astype('int32'))
-    thickness = (img.size[0] + img.size[1]) // 300
+                              size=np.floor(img.size[1] / 80).astype('int32'))
+    thickness = 2
     for track in tracks:
         if not track.is_confirmed() or track.time_since_update > 1:
             continue
         predicted_class = track.get_class()
         bbox = track.to_tlbr()
 
-        label = f'{predicted_class} - {track.track_id} - {track.score}'
+        label = f'{predicted_class} - №{track.track_id} - {track.score:.2f}'
         draw = ImageDraw.Draw(img)
         label_size = draw.textsize(label, font)
 
@@ -35,14 +35,15 @@ def output(img, tracks, colors):
         if y1 - label_size[1] >= 0:
             text_origin = np.array([x1, y1 - label_size[1]])
         else:
-            text_origin = np.array([x1, y1 + 1])
+            text_origin = np.array([x1, y1 + 5])
 
         # My kingdom for a good redistributable image drawing library.
-        color = colors[track.get_class_id()]
+        color = colors[int(track.track_id) % len(colors)]
+        color = [int(i * 255) for i in color]
         for j in range(thickness):
-            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=color)
-        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=color)
-        draw.text(text_origin, label, fill=(0, 0, 0), font=font)
+            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=tuple(color))
+        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=tuple(color))
+        draw.text(text_origin, label, fill=(255, 255, 255), font=font)
         del draw
 
     return np.asarray(img)
@@ -68,8 +69,8 @@ if __name__ == '__main__':
     yolov4_output = yolov4_neck(input_layer, num_classes)
     yolo_model = tf.keras.models.Model(input_layer, yolov4_output)
     load_weights(yolo_model, './model_data/yolov4.weights')
-    anchors = np.array(yolo_anchors).reshape((3, 3, 2))
     # Build inference model
+    anchors = np.array(yolo_anchors).reshape((3, 3, 2))
     yolov4_output = yolov4_head(yolov4_output, num_classes, anchors, yolo_xyscale)
     # output: [boxes, scores, classes, valid_detections]
     yolo = tf.keras.models.Model(input_layer,
@@ -81,11 +82,7 @@ if __name__ == '__main__':
 
     class_names = [c.strip() for c in open('./model_data/coco_classes.txt').readlines()]
 
-    vid = cv2.VideoCapture(0)
-
-    hsv_tuples = [(x / len(class_names), 1., 1.) for x in range(len(class_names))]
-    colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-    colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
+    vid = cv2.VideoCapture('test.mp4')
 
     fps = 0.0
     count = 0
@@ -116,6 +113,9 @@ if __name__ == '__main__':
         indices = preprocessing.non_max_suppression(boxs, classes, nms_max_overlap, scores)
         detections = [detections[i] for i in indices]
 
+        cmap = plt.get_cmap('tab20b')
+        colors = [cmap(i)[:3] for i in np.linspace(0, 1, 20)]
+
         # call the tracker
         tracker.predict()
         tracker.update(detections)
@@ -129,5 +129,5 @@ if __name__ == '__main__':
         cv2.imshow('output', img)
 
         # press q to quit
-        if cv2.waitKey(1) == ord('q'):
+        if cv2.waitKey(1) == 27:
             break
