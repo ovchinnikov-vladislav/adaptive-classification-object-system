@@ -12,20 +12,22 @@ from libs.deepsort.tracker import Tracker
 from libs.deepsort.box_encoder import create_box_encoder
 from libs.yolo3.layers import yolo_v3
 from PIL import Image, ImageFont, ImageDraw
+from libs.yolo4.layers import yolo_v4
+from libs.yolo4.utils import load_weights
 
 
 def output(img, tracks, colors):
     img = Image.fromarray(img)
     font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
-                              size=np.floor(3e-2 * img.size[1] + 0.5).astype('int32'))
-    thickness = (img.size[0] + img.size[1]) // 300
+                              size=np.floor(img.size[1] / 80).astype('int32'))
+    thickness = 2
     for track in tracks:
         if not track.is_confirmed() or track.time_since_update > 1:
             continue
         predicted_class = track.get_class()
         bbox = track.to_tlbr()
 
-        label = f'{predicted_class} - {track.track_id} - {track.score}'
+        label = f'{predicted_class} - №{track.track_id} - {track.score:.2f}'
         draw = ImageDraw.Draw(img)
         label_size = draw.textsize(label, font)
 
@@ -35,14 +37,15 @@ def output(img, tracks, colors):
         if y1 - label_size[1] >= 0:
             text_origin = np.array([x1, y1 - label_size[1]])
         else:
-            text_origin = np.array([x1, y1 + 1])
+            text_origin = np.array([x1, y1 + 5])
 
         # My kingdom for a good redistributable image drawing library.
-        color = colors[track.get_class_id()]
+        color = colors[int(track.track_id) % len(colors)]
+        color = [int(i * 255) for i in color]
         for j in range(thickness):
-            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=color)
-        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=color)
-        draw.text(text_origin, label, fill=(0, 0, 0), font=font)
+            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=tuple(color))
+        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=tuple(color))
+        draw.text(text_origin, label, fill=(255, 255, 255), font=font)
         del draw
 
     return np.asarray(img)
@@ -61,27 +64,21 @@ if __name__ == '__main__':
 
     size = 416
     num_classes = 80
-    from libs.yolo4.layers import yolo_v4
-    from libs.yolo4.utils import load_weights
 
     yolo = yolo_v4()
-    yolo.summary()
-    load_weights(yolo, './model_data/yolov4.weights')
+    yolo.load_weights('./model_data/yolov4.tf')
+    # yolo = yolo_v3()
     # yolo.load_weights('./model_data/yolov3.tf')
 
     class_names = [c.strip() for c in open('./model_data/coco_classes.txt').readlines()]
 
-    vid = cv2.VideoCapture('./test_data/test.mp4')
-
-    hsv_tuples = [(x / len(class_names), 1., 1.) for x in range(len(class_names))]
-    colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-    colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), colors))
+    vid = cv2.VideoCapture('test_data/test.mp4')
 
     fps = 0.0
     count = 0
     while True:
         _, img = vid.read()
-
+        img = cv2.resize(img, (1920, 1080))
         img_in = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_in = tf.expand_dims(img_in, 0)
         img_in = transform_images(img_in, 416)
@@ -106,6 +103,9 @@ if __name__ == '__main__':
         indices = preprocessing.non_max_suppression(boxs, classes, nms_max_overlap, scores)
         detections = [detections[i] for i in indices]
 
+        cmap = plt.get_cmap('tab20b')
+        colors = [cmap(i)[:3] for i in np.linspace(0, 1, 20)]
+
         # call the tracker
         tracker.predict()
         tracker.update(detections)
@@ -119,5 +119,5 @@ if __name__ == '__main__':
         cv2.imshow('output', img)
 
         # press q to quit
-        if cv2.waitKey(1) == ord('q'):
+        if cv2.waitKey(1) == 27:
             break

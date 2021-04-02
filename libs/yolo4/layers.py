@@ -7,7 +7,7 @@ from libs.darknet53.layers import darknet_conv, cspdarknet53
 
 
 yolo_anchors = np.array([(12, 16), (19, 36), (40, 28), (36, 75), (76, 55), (72, 146), (142, 110),
-                         (192, 243), (459, 401)], np.float32) / 608
+                         (192, 243), (459, 401)], np.float32) / 416
 yolo_anchor_masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
 yolo_xyscale = [1.2, 1.1, 1.05]
 
