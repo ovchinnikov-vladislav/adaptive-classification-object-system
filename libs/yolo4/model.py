@@ -3,7 +3,7 @@ import colorsys
 import tensorflow as tf
 import numpy as np
 from libs.yolo4.utils import transform_images, analyze_outputs, load_weights
-from libs.yolo4.layers import yolov4_neck, yolov4_head, nms, yolo_anchors, yolo_xyscale
+from libs.yolo4.layers import yolo_v4
 
 
 class YoloModel:
@@ -11,18 +11,8 @@ class YoloModel:
                  weights='./model_data/yolov4.weights',
                  classes='./model_data/coco_classes.txt',
                  size=416):
-        input_layer = tf.keras.layers.Input([size, size, 3])
-        yolov4_output = yolov4_neck(input_layer, num_classes)
-        self.yolo_model = tf.keras.models.Model(input_layer, yolov4_output)
-        load_weights(self.yolo_model, weights)
-        self.anchors = np.array(yolo_anchors).reshape((3, 3, 2))
-        # Build inference model
-        yolov4_output = yolov4_head(yolov4_output, num_classes, self.anchors, yolo_xyscale)
-        # output: [boxes, scores, classes, valid_detections]
-        self.yolo = tf.keras.models.Model(input_layer,
-                                          nms(yolov4_output, [size, size, 3], num_classes,
-                                              iou_threshold=0.413,
-                                              score_threshold=0.3))
+        self.yolo = yolo_v4(classes=num_classes)
+        load_weights(self.yolo, weights)
 
         self.class_names = [c.strip() for c in open(classes).readlines()]
         self.size = size

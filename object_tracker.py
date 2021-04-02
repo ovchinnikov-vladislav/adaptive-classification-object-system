@@ -12,6 +12,8 @@ from libs.deepsort.tracker import Tracker
 from libs.deepsort.box_encoder import create_box_encoder
 from libs.yolo3.layers import yolo_v3
 from PIL import Image, ImageFont, ImageDraw
+from libs.yolo4.layers import yolo_v4
+from libs.yolo4.utils import load_weights
 
 
 def output(img, tracks, colors):
@@ -62,21 +64,9 @@ if __name__ == '__main__':
 
     size = 416
     num_classes = 80
-    from libs.yolo4.layers import yolov4_neck, yolov4_head, yolo_xyscale, yolo_anchors, nms
-    from libs.yolo4.utils import load_weights
 
-    input_layer = tf.keras.layers.Input([size, size, 3])
-    yolov4_output = yolov4_neck(input_layer, num_classes)
-    yolo_model = tf.keras.models.Model(input_layer, yolov4_output)
-    load_weights(yolo_model, './model_data/yolov4.weights')
-    # Build inference model
-    anchors = np.array(yolo_anchors).reshape((3, 3, 2))
-    yolov4_output = yolov4_head(yolov4_output, num_classes, anchors, yolo_xyscale)
-    # output: [boxes, scores, classes, valid_detections]
-    yolo = tf.keras.models.Model(input_layer,
-                                 nms(yolov4_output, [size, size, 3], num_classes,
-                                     iou_threshold=0.413,
-                                     score_threshold=0.3))
+    yolo = yolo_v4()
+    yolo.load_weights('./model_data/yolov4.tf')
     # yolo = yolo_v3()
     # yolo.load_weights('./model_data/yolov3.tf')
 
@@ -88,7 +78,7 @@ if __name__ == '__main__':
     count = 0
     while True:
         _, img = vid.read()
-
+        img = cv2.resize(img, (1920, 1080))
         img_in = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_in = tf.expand_dims(img_in, 0)
         img_in = transform_images(img_in, 416)

@@ -36,7 +36,7 @@ class Tracker:
 
     """
 
-    def __init__(self, metric, max_iou_distance=0.7, max_age=30, n_init=3):
+    def __init__(self, metric, max_iou_distance=0.7, max_age=30, n_init=3, num_classes=80):
         self.metric = metric
         self.max_iou_distance = max_iou_distance
         self.max_age = max_age
@@ -44,7 +44,10 @@ class Tracker:
 
         self.kf = kalman_filter.KalmanFilter()
         self.tracks = []
-        self._next_id = 1
+
+        self.counter_classes = []
+        for i in range(num_classes):
+            self.counter_classes.append(1)
 
     def predict(self):
         """Propagate track state distributions one time step forward.
@@ -129,6 +132,7 @@ class Tracker:
     def _initiate_track(self, detection):
         mean, covariance = self.kf.initiate(detection.to_xyah())
         class_name = detection.get_class()
-        self.tracks.append(Track(mean, covariance, self._next_id, self.n_init, self.max_age, detection.confidence,
+        self.tracks.append(Track(mean, covariance, self.counter_classes[detection.get_class_id()],
+                                 self.n_init, self.max_age, detection.confidence,
                                  detection.feature, class_name, detection.get_class_id()))
-        self._next_id += 1
+        self.counter_classes[detection.get_class_id()] += 1
