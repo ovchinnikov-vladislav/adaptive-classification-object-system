@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 from urllib import request
 from timeit import default_timer as timer
-from libs.yolo4.model import YoloModel
+from libs.yolo3.model import YoloModel
 import time
 
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     # detect_video_ipcam(yolo, 'http://192.168.0.16:8080/shot.jpg')
     # detect_video_webcam(yolo, 'rtsp://192.168.0.16:5554/out.h264')
     #  detect_video_webcam(yolo, 'rtsp://10.75.118.98:5554/out.h264')
-    detect_video_webcam(yolo, 0)
+    detect_video_webcam(yolo, 'test_data/test.mp4')
     # detect_video_ipcam_print_image(yolo, 'http://192.168.0.16:8080/shot.jpg')
     # img = Image.open('416x416.jpg')
     # img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)

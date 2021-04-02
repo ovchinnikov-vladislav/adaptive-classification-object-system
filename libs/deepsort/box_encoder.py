@@ -1,4 +1,3 @@
-# vim: expandtab:ts=4:sw=4
 import os
 import errno
 import argparse
@@ -72,17 +71,14 @@ def extract_image_patch(image, bbox, patch_shape):
 
 class ImageEncoder(object):
 
-    def __init__(self, checkpoint_filename, input_name="images",
-                 output_name="features"):
+    def __init__(self, checkpoint_filename, input_name="images", output_name="features"):
         self.session = tf.Session()
         with tf.gfile.GFile(checkpoint_filename, "rb") as file_handle:
             graph_def = tf.GraphDef()
             graph_def.ParseFromString(file_handle.read())
         tf.import_graph_def(graph_def, name="net")
-        self.input_var = tf.get_default_graph().get_tensor_by_name(
-            "%s:0" % input_name)
-        self.output_var = tf.get_default_graph().get_tensor_by_name(
-            "%s:0" % output_name)
+        self.input_var = tf.get_default_graph().get_tensor_by_name("%s:0" % input_name)
+        self.output_var = tf.get_default_graph().get_tensor_by_name("%s:0" % output_name)
 
         assert len(self.output_var.get_shape()) == 2
         assert len(self.input_var.get_shape()) == 4
@@ -91,9 +87,8 @@ class ImageEncoder(object):
 
     def __call__(self, data_x, batch_size=32):
         out = np.zeros((len(data_x), self.feature_dim), np.float32)
-        _run_in_batches(
-            lambda x: self.session.run(self.output_var, feed_dict=x),
-            {self.input_var: data_x}, out, batch_size)
+        _run_in_batches(lambda x: self.session.run(self.output_var, feed_dict=x),
+                        {self.input_var: data_x}, out, batch_size)
         return out
 
 
@@ -108,8 +103,7 @@ def create_box_encoder(model_filename, input_name="images",
             patch = extract_image_patch(image, box, image_shape[:2])
             if patch is None:
                 print("WARNING: Failed to extract image patch: %s." % str(box))
-                patch = np.random.uniform(
-                    0., 255., image_shape).astype(np.uint8)
+                patch = np.random.uniform(0., 255., image_shape).astype(np.uint8)
             image_patches.append(patch)
         image_patches = np.asarray(image_patches)
         return image_encoder(image_patches, batch_size)
@@ -207,8 +201,7 @@ def parse_args():
 def main():
     args = parse_args()
     encoder = create_box_encoder(args.model, batch_size=32)
-    generate_detections(encoder, args.mot_dir, args.output_dir,
-                        args.detection_dir)
+    generate_detections(encoder, args.mot_dir, args.output_dir,args.detection_dir)
 
 
 if __name__ == "__main__":

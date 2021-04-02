@@ -13,14 +13,13 @@ from libs.deepsort.box_encoder import create_box_encoder
 from libs.yolo3.layers import yolo_v3
 from PIL import Image, ImageFont, ImageDraw
 from libs.yolo4.layers import yolo_v4
-from libs.yolo4.utils import load_weights
 
 
 def output(img, tracks, colors):
     img = Image.fromarray(img)
     font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
-                              size=np.floor(img.size[1] / 80).astype('int32'))
-    thickness = 2
+                              size=np.floor((3e-2 * img.size[1] + 0.5) / 2).astype('int32'))
+    thickness = 1
     for track in tracks:
         if not track.is_confirmed() or track.time_since_update > 1:
             continue
@@ -65,10 +64,10 @@ if __name__ == '__main__':
     size = 416
     num_classes = 80
 
-    yolo = yolo_v4()
-    yolo.load_weights('./model_data/yolov4.tf')
-    # yolo = yolo_v3()
-    # yolo.load_weights('./model_data/yolov3.tf')
+    # yolo = yolo_v4(size=size, classes=num_classes)
+    # yolo.load_weights('./model_data/yolov4.tf')
+    yolo = yolo_v3()
+    yolo.load_weights('./model_data/yolov3.tf')
 
     class_names = [c.strip() for c in open('./model_data/coco_classes.txt').readlines()]
 
@@ -81,7 +80,7 @@ if __name__ == '__main__':
         img = cv2.resize(img, (1920, 1080))
         img_in = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img_in = tf.expand_dims(img_in, 0)
-        img_in = transform_images(img_in, 416)
+        img_in = transform_images(img_in, size)
 
         t1 = time.time()
         boxes, scores, classes, nums = yolo.predict(img_in)
@@ -94,7 +93,8 @@ if __name__ == '__main__':
         features = encoder(img, converted_boxes)
         detections = [Detection(bbox, score, class_name, int(class_id), feature)
                       for bbox, score, class_name, class_id, feature
-                      in zip(converted_boxes, scores[0], names, classes, features)]
+                      in zip(converted_boxes, scores[0], names, classes, features)
+                      if class_name == 'человек']
 
         # run non-maxima suppresion
         boxs = np.array([d.tlwh for d in detections])
@@ -113,8 +113,8 @@ if __name__ == '__main__':
         img = output(img, tracker.tracks, colors)
 
         fps = (fps + (1. / (time.time() - t1))) / 2
-        # cv2.putText(img, "FPS: {:.2f}".format(fps), (0, 30),
-        #             cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)
+        cv2.putText(img, "FPS: {:.2f}".format(fps), (0, 30),
+                    cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)
         cv2.namedWindow("output", cv2.WINDOW_NORMAL)
         cv2.imshow('output', img)
 

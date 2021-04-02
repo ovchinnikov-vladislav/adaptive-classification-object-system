@@ -247,8 +247,8 @@ def analyze_outputs(img, outputs, class_names, colors):
     wh = np.flip(img.shape[0:2])
     img = Image.fromarray(img)
     font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
-                              size=np.floor(3e-2 * img.size[1] + 0.5).astype('int32'))
-    thickness = (img.size[0] + img.size[1]) // 300
+                              size=np.floor((3e-2 * img.size[1] + 0.5) / 2).astype('int32'))
+    thickness = 1
     object_detection = []
     for i in range(nums):
         predicted_class = class_names[int(classes[i])]
@@ -288,9 +288,7 @@ def draw_labels(x, y, class_names):
         x1y1 = tuple((np.array(boxes[i][0:2]) * wh).astype(np.int32))
         x2y2 = tuple((np.array(boxes[i][2:4]) * wh).astype(np.int32))
         img = cv2.rectangle(img, x1y1, x2y2, (255, 0, 0), 2)
-        img = cv2.putText(img, class_names[classes[i]],
-                          x1y1, cv2.FONT_HERSHEY_COMPLEX_SMALL,
-                          1, (0, 0, 255), 2)
+        img = cv2.putText(img, class_names[classes[i]], x1y1, cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)
     return img
 
 
