@@ -8,11 +8,11 @@ from libs.yolo4.layers import yolo_v4
 
 class YoloModel:
     def __init__(self, num_classes=80,
-                 weights='./model_data/yolov4.weights',
+                 weights='./model_data/yolov4.tf',
                  classes='./model_data/coco_classes.txt',
                  size=416):
-        self.yolo = yolo_v4(classes=num_classes)
-        load_weights(self.yolo, weights)
+        self.yolo = yolo_v4(size=size, classes=num_classes)
+        self.yolo.load_weights(weights)
 
         self.class_names = [c.strip() for c in open(classes).readlines()]
         self.size = size
