@@ -65,26 +65,26 @@ class Capsule(layers.Layer):
 
         u_ji_hat = tf.map_fn(lambda x: tf.matmul(self.w, x), elems=u_i)  # u_j|i_hat = Wij * u_i
 
-        # for all capsule i in layer l and capsule j in layer(l + 1): b_ij <- 0
+        # for all capsule i in layer i and capsule j in layer(i + 1): b_ij <- 0
         b_ij = tf.zeros(shape=[tf.shape(u_ji_hat)[0], self.num_capsules, inputs.shape[1], 1, 1])  # b_ij <- 0
 
         assert self.routings > 0, 'The routings should be > 0.'
         v_j = None
         # for r iterations do
         for i in range(self.routings):
-            # for all capsule i in layer l: c_i <- softmax(b_i)
+            # for all capsule i in layer i: c_i <- softmax(b_i)
             c_i = tf.nn.softmax(b_ij, axis=1)
 
-            # for all capsule j in layer (l + 1): s_j <- Sum_i (c_ij * u_j|i_hat)
+            # for all capsule j in layer (i + 1): s_j <- Sum_i (c_ij * u_j|i_hat)
             s_j = tf.multiply(c_i, u_ji_hat)  # c_ij * u_j|i_hat
             s_j = tf.reduce_sum(s_j, axis=2, keepdims=True)  # s_j <- Sum_i (c_ij * u_j|i_hat)
 
-            # for all capsule j in layer (l + 1): v_j <- squash(s_j)
+            # for all capsule j in layer (i + 1): v_j <- squash(s_j)
             v_j = squash(s_j, axis=-2)  # v_j <- squash(s_j)
 
             # Небольшая оптимизация по причине того, что финальным тензором является v_j <- squash(s_j)
             if i < self.routings - 1:
-                # for all capsule i in layer l and capsule j in layer (l + 1): b_ij <- b_ij + u_j|i_hat * v_j
+                # for all capsule i in layer i and capsule j in layer (i + 1): b_ij <- b_ij + u_j|i_hat * v_j
                 outputs_tiled = tf.tile(v_j, [1, 1, inputs.shape[1], 1, 1])
                 agreement = tf.matmul(u_ji_hat, outputs_tiled, transpose_a=True)  # u_j|i_hat * v_j
                 b_ij = tf.add(b_ij, agreement)  # b_ij <- b_ij + u_j|i_hat * v_j
