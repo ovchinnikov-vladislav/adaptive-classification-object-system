@@ -6,7 +6,7 @@ import tensorflow_datasets as tfds
 def _prepare_annotation(filename, path, dataset):
     with open(filename, 'w') as file:
         for example in dataset:
-            string = path + example['image/filename'].numpy().decode()
+            string = os.path.join(path, example['image/filename'].numpy().decode())
             height, width, _ = example['image'].shape
             bbox = example['faces']['bbox'].numpy()
             bboxs = ''
