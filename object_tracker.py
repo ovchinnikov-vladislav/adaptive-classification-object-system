@@ -13,6 +13,7 @@ from libs.deepsort.box_encoder import create_box_encoder
 from libs.yolo3.layers import yolo_v3
 from PIL import Image, ImageFont, ImageDraw
 from libs.yolo4.layers import yolo_v4
+from libs.yolo3.utils import get_anchors
 
 
 def output(img, tracks, colors):
@@ -63,10 +64,12 @@ if __name__ == '__main__':
 
     size = 416
     num_classes = 80
+    anchors = get_anchors('./model_data/yolo_anchors.txt')
 
     # yolo = yolo_v4(size=size, classes=num_classes)
     # yolo.load_weights('./model_data/yolov4.tf')
-    yolo = yolo_v3()
+
+    yolo = yolo_v3(anchors, size, channels=3, classes=num_classes)
     yolo.load_weights('./model_data/yolov3.tf')
 
     class_names = [c.strip() for c in open('./model_data/coco_classes.txt').readlines()]

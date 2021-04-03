@@ -7,9 +7,7 @@ from libs.darknet53.layers import darknet_conv, darknet53, darknet53_tiny
 
 yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90),
                          (156, 198), (373, 326)], np.float32) / 416
-yolo_anchor_masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
 yolo_tiny_anchors = np.array([(10, 14), (23, 27), (37, 58), (81, 82), (135, 169), (344, 319)], np.float32) / 416
-yolo_tiny_anchor_masks = np.array([[3, 4, 5], [0, 1, 2]])
 
 
 def yolo_conv_input_tuple(x_in, filters):
@@ -52,15 +50,14 @@ def yolo_output(x_in, filters, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
     x = darknet_conv(x, filters * 2, 3)
     x = darknet_conv(x, anchors * (classes + 5), 1, batch_norm=False)
-    x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2],
-                                            anchors, classes + 5)))(x)
+    x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2], anchors, classes + 5)))(x)
     return tf.keras.Model(inputs, x, name=name)(x_in)
 
 
-def yolo_v3(size=None, channels=3, anchors=yolo_anchors,
-            masks=yolo_anchor_masks, classes=80, training=False):
-    x = inputs = Input([size, size, channels], name='input')
+def yolo_v3(anchors, size, channels, classes, training=False):
+    masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
 
+    x = inputs = Input([size, size, channels], name='input')
     x_36, x_61, x = darknet53(name='yolo_darknet')(x)
 
     x = yolo_conv(x, 512, name='yolo_conv_0')
@@ -75,12 +72,9 @@ def yolo_v3(size=None, channels=3, anchors=yolo_anchors,
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')
 
-    boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes),
-                     name='yolo_boxes_0')(output_0)
-    boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes),
-                     name='yolo_boxes_1')(output_1)
-    boxes_2 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[2]], classes),
-                     name='yolo_boxes_2')(output_2)
+    boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes), name='yolo_boxes_0')(output_0)
+    boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
+    boxes_2 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[2]], classes), name='yolo_boxes_2')(output_2)
 
     outputs = Lambda(lambda inp: yolo_nms(inp, anchors, masks, classes),
                      name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
@@ -88,8 +82,9 @@ def yolo_v3(size=None, channels=3, anchors=yolo_anchors,
     return Model(inputs, outputs, name='yolov3')
 
 
-def yolo_v3_tiny(size=None, channels=3, anchors=yolo_tiny_anchors,
-                 masks=yolo_tiny_anchor_masks, classes=80, training=False):
+def yolo_v3_tiny(anchors, size, channels, classes, training=False):
+    masks = np.array([[3, 4, 5], [0, 1, 2]])
+
     x = inputs = Input([size, size, channels], name='input')
 
     x_8, x = darknet53_tiny(name='yolo_darknet')(x)
@@ -103,10 +98,7 @@ def yolo_v3_tiny(size=None, channels=3, anchors=yolo_tiny_anchors,
     if training:
         return Model(inputs, (output_0, output_1), name='yolov3')
 
-    boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes),
-                     name='yolo_boxes_0')(output_0)
-    boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes),
-                     name='yolo_boxes_1')(output_1)
-    outputs = Lambda(lambda inp: yolo_nms(inp, anchors, masks, classes),
-                     name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
+    boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes), name='yolo_boxes_0')(output_0)
+    boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
+    outputs = Lambda(lambda inp: yolo_nms(inp, anchors, masks, classes), name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
     return Model(inputs, outputs, name='yolov3_tiny')

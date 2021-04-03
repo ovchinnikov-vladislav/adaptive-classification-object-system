@@ -1,9 +1,7 @@
-import cv2
 import colorsys
 import tensorflow as tf
 import numpy as np
-from libs.yolo3.utils import transform_images, analyze_outputs
-
+from libs.yolo3.utils import transform_images, analyze_outputs, get_anchors
 from libs.yolo3.layers import yolo_v3, yolo_v3_tiny
 
 
@@ -11,8 +9,10 @@ class YoloModel:
     def __init__(self, num_classes=80,
                  weights='./model_data/yolov3.tf',
                  classes='./model_data/coco_classes.txt',
+                 anchors_path='./model_data/yolo_anchors.txt',
                  size=416):
-        self.yolo = yolo_v3(classes=num_classes)
+        anchors = get_anchors(anchors_path)
+        self.yolo = yolo_v3(anchors, size=size, channels=3, classes=num_classes)
         self.yolo.make_predict_function()
         self.yolo.load_weights(weights).expect_partial()
         self.class_names = [c.strip() for c in open(classes).readlines()]
