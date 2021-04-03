@@ -17,6 +17,7 @@ parser.add_argument('--batch_size', default=32, type=int, help='batch size')
 parser.add_argument('--size', default=416, type=int, help='size image')
 parser.add_argument('--channels', default=3, type=int, help='channels')
 parser.add_argument('--training_path', default='./', help='training data path')
+parser.add_argument('--update_annotation', default=True, type=bool, help='update annotation path to files')
 
 
 if __name__ == '__main__':
@@ -44,7 +45,7 @@ if __name__ == '__main__':
                                         arguments={'anchors': anchors, 'num_classes': num_classes,
                                                    'ignore_thresh': 0.5})([*model_body.output, *y_true_input])
     model = tf.keras.Model([model_body.input, *y_true_input], model_loss)
-    ann_train_path, ann_test_path, ann_val_path = wider_dataset_annotations(args.dataset_path, True)
+    ann_train_path, ann_test_path, ann_val_path = wider_dataset_annotations(args.dataset_path, args.update_annotation)
 
     with open(ann_train_path) as f:
         train_lines = f.readlines()

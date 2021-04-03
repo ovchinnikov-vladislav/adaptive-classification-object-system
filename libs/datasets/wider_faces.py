@@ -56,9 +56,9 @@ def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
                     shutil.move(os.path.join(root_path, 'downloads', d, 'WIDER_val'),
                                 os.path.join(root_path, 'wider_face', 'WIDER_val'))
 
-    ann_train_path = 'model_data/wider_face_train_annotation.txt'
-    ann_test_path = 'model_data/wider_face_test_annotation.txt'
-    ann_val_path = 'model_data/wider_face_val_annotation.txt'
+    ann_train_path = './model_data/wider_face_train_annotation.txt'
+    ann_test_path = './model_data/wider_face_test_annotation.txt'
+    ann_val_path = './model_data/wider_face_val_annotation.txt'
 
     if is_prepare_annotation:
         _prepare_annotation(ann_train_path, train_path, train_ds)
