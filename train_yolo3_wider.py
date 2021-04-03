@@ -44,7 +44,7 @@ if __name__ == '__main__':
                                         arguments={'anchors': anchors, 'num_classes': num_classes,
                                                    'ignore_thresh': 0.5})([*model_body.output, *y_true_input])
     model = tf.keras.Model([model_body.input, *y_true_input], model_loss)
-    ann_train_path, ann_test_path, ann_val_path = wider_dataset_annotations(args.dataset_path, False)
+    ann_train_path, ann_test_path, ann_val_path = wider_dataset_annotations(args.dataset_path, True)
 
     with open(ann_train_path) as f:
         train_lines = f.readlines()
