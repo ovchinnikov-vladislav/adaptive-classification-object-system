@@ -20,7 +20,6 @@ parser.add_argument('--training_path', default='./', help='training data path')
 parser.add_argument('--update_annotation', default=True, type=bool, help='update annotation path to files')
 parser.add_argument('--epochs', default=100, type=int, help='epochs number')
 
-
 if __name__ == '__main__':
     args = parser.parse_args()
     size = args.size
@@ -69,12 +68,12 @@ if __name__ == '__main__':
         TensorBoard(log_dir='logs')
     ]
 
-    history = model.fit_generator(data_generator_wrapper(train_lines, batch_size, input_shape, anchors, num_classes),
-                                  steps_per_epoch=max(1, num_train // batch_size),
-                                  validation_data=data_generator_wrapper(val_lines, batch_size, input_shape,
-                                                                         anchors, num_classes),
-                                  validation_steps=max(1, num_val // batch_size),
-                                  epochs=epochs,
-                                  initial_epoch=0,
-                                  callbacks=callbacks)
+    history = model.fit(data_generator_wrapper(train_lines, batch_size, input_shape, anchors, num_classes),
+                        steps_per_epoch=max(1, num_train // batch_size),
+                        validation_data=data_generator_wrapper(val_lines, batch_size, input_shape,
+                                                               anchors, num_classes),
+                        validation_steps=max(1, num_val // batch_size),
+                        epochs=epochs,
+                        initial_epoch=0,
+                        callbacks=callbacks)
     model.save_weights(f'{training_path}/yolov3_wider.tf')
