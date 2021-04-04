@@ -18,11 +18,13 @@ parser.add_argument('--size', default=416, type=int, help='size image')
 parser.add_argument('--channels', default=3, type=int, help='channels')
 parser.add_argument('--training_path', default='./', help='training data path')
 parser.add_argument('--update_annotation', default=True, type=bool, help='update annotation path to files')
+parser.add_argument('--epochs', default=100, type=int, help='epochs number')
 
 
 if __name__ == '__main__':
     args = parser.parse_args()
     size = args.size
+    epochs = args.epochs
     batch_size = args.batch_size
     channels = args.channels
     class_names = get_classes(args.classes)
@@ -72,7 +74,7 @@ if __name__ == '__main__':
                                   validation_data=data_generator_wrapper(val_lines, batch_size, input_shape,
                                                                          anchors, num_classes),
                                   validation_steps=max(1, num_val // batch_size),
-                                  epochs=100,
+                                  epochs=epochs,
                                   initial_epoch=0,
                                   callbacks=callbacks)
     model.save_weights(f'{training_path}/yolov3_wider.tf')
