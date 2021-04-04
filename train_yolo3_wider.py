@@ -1,7 +1,7 @@
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint, TensorBoard
 from libs.yolo3.layers import (yolo_v3, yolo_v3_tiny)
 from libs.yolo3.losses import yolo_loss
-from libs.yolo3.utils import get_classes, get_anchors, data_generator_wrapper
+from libs.yolo3.utils import get_anchors, data_generator_wrapper
 from libs.datasets.wider_faces import wider_dataset_annotations
 import tensorflow as tf
 import argparse
@@ -40,6 +40,7 @@ if __name__ == '__main__':
     else:
         anchors = get_anchors('./model_data/yolo_anchors.txt')
         model_body = yolo_v3(anchors, size=size, channels=channels, classes=1, training=True)
+    model_body.load_weights('/content/drive/MyDrive/Colab/Yolo3_Wider/checkpoints/yolov3_train_12.tf')
 
     num_anchors = len(anchors)
     y_true_input = [tf.keras.layers.Input(shape=(size // {0: 32, 1: 16, 2: 8}[i], size // {0: 32, 1: 16, 2: 8}[i],
@@ -76,6 +77,6 @@ if __name__ == '__main__':
                                                                anchors, num_classes),
                         validation_steps=max(1, num_val // batch_size),
                         epochs=args.epochs,
-                        initial_epoch=0,
+                        initial_epoch=12,
                         callbacks=callbacks)
     model.save_weights(f'{training_path}/yolov3_wider.tf')
