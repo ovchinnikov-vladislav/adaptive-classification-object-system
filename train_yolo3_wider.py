@@ -26,9 +26,10 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     epochs = args.epochs
     channels = args.channels
-    class_names = get_classes(args.classes)
+    class_names = ['face']
     training_path = args.training_path
     update_annotation = True if args.update_annotation == 1 else False
+    pretrained = True if args.pretrained == 1 else False
     num_classes = len(class_names)
 
     input_shape = (size, size)

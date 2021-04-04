@@ -72,7 +72,7 @@ if __name__ == '__main__':
     yolo = yolo_v3(anchors, size, channels=3, classes=num_classes)
     yolo.load_weights('./model_data/yolov3.tf')
 
-    class_names = [c.strip() for c in open('./model_data/coco_classes.txt').readlines()]
+    class_names = [c.strip() for c in open('model_data/coco_classes_ru.txt').readlines()]
 
     vid = cv2.VideoCapture('test_data/test.mp4')
 
