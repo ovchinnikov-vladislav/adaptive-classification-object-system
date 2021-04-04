@@ -17,17 +17,18 @@ parser.add_argument('--batch_size', default=32, type=int, help='batch size')
 parser.add_argument('--size', default=416, type=int, help='size image')
 parser.add_argument('--channels', default=3, type=int, help='channels')
 parser.add_argument('--training_path', default='./', help='training data path')
-parser.add_argument('--update_annotation', default=True, type=bool, help='update annotation path to files')
+parser.add_argument('--update_annotation', default=1, type=int, help='update annotation path to files')
 parser.add_argument('--epochs', default=100, type=int, help='epochs number')
 
 if __name__ == '__main__':
     args = parser.parse_args()
     size = args.size
-    epochs = args.epochs
     batch_size = args.batch_size
+    epochs = args.epochs
     channels = args.channels
     class_names = get_classes(args.classes)
     training_path = args.training_path
+    update_annotation = True if args.update_annotation == 1 else False
     num_classes = len(class_names)
 
     input_shape = (size, size)
@@ -46,7 +47,7 @@ if __name__ == '__main__':
                                         arguments={'anchors': anchors, 'num_classes': num_classes,
                                                    'ignore_thresh': 0.5})([*model_body.output, *y_true_input])
     model = tf.keras.Model([model_body.input, *y_true_input], model_loss)
-    ann_train_path, ann_test_path, ann_val_path = wider_dataset_annotations(args.dataset_path, args.update_annotation)
+    ann_train_path, ann_test_path, ann_val_path = wider_dataset_annotations(args.dataset_path, update_annotation)
 
     with open(ann_train_path) as f:
         train_lines = f.readlines()
@@ -73,7 +74,7 @@ if __name__ == '__main__':
                         validation_data=data_generator_wrapper(val_lines, batch_size, input_shape,
                                                                anchors, num_classes),
                         validation_steps=max(1, num_val // batch_size),
-                        epochs=epochs,
+                        epochs=args.epochs,
                         initial_epoch=0,
                         callbacks=callbacks)
     model.save_weights(f'{training_path}/yolov3_wider.tf')
