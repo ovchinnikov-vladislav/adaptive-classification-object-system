@@ -1,9 +1,11 @@
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint, TensorBoard
 from libs.yolo3.layers import (yolo_v3, yolo_v3_tiny)
 from libs.yolo3.losses import yolo_loss
+from libs.yolo3.losses import YoloLoss
 from libs.yolo3.utils import get_anchors, data_generator_wrapper
 from libs.datasets.wider_faces import wider_dataset_annotations
 import tensorflow as tf
+import numpy as np
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -36,19 +38,23 @@ if __name__ == '__main__':
 
     if args.tiny:
         anchors = get_anchors('./model_data/tiny_yolo_anchors.txt')
+        masks = np.array([[3, 4, 5], [0, 1, 2]])
         model_body = yolo_v3_tiny(anchors, size=size, channels=channels, classes=1, training=True)
     else:
         anchors = get_anchors('./model_data/yolo_anchors.txt')
+        masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
         model_body = yolo_v3(anchors, size=size, channels=channels, classes=1, training=True)
-    model_body.load_weights('/content/drive/MyDrive/Colab/Yolo3_Wider/checkpoints/yolov3_train_12.tf')
 
     num_anchors = len(anchors)
-    y_true_input = [tf.keras.layers.Input(shape=(size // {0: 32, 1: 16, 2: 8}[i], size // {0: 32, 1: 16, 2: 8}[i],
-                                                 num_anchors // 3, num_classes + 5)) for i in range(3)]
-    model_loss = tf.keras.layers.Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
-                                        arguments={'anchors': anchors, 'num_classes': num_classes,
-                                                   'ignore_thresh': 0.5})([*model_body.output, *y_true_input])
-    model = tf.keras.Model([model_body.input, *y_true_input], model_loss)
+    # y_true_input = [tf.keras.layers.Input(shape=(size // {0: 32, 1: 16, 2: 8}[i], size // {0: 32, 1: 16, 2: 8}[i],
+    #                                              num_anchors // 3, num_classes + 5)) for i in range(3)]
+    # model_loss = tf.keras.layers.Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
+    #                                     arguments={'anchors': anchors, 'num_classes': num_classes,
+    #                                                'ignore_thresh': 0.5})([*model_body.output, *y_true_input])
+    # model = tf.keras.Model([model_body.input, *y_true_input], model_loss)
+    model = model_body
+    loss = [YoloLoss(anchors[mask], classes=num_classes) for mask in masks]
+
     ann_train_path, ann_test_path, ann_val_path = wider_dataset_annotations(args.dataset_path, update_annotation)
 
     with open(ann_train_path) as f:
@@ -63,7 +69,7 @@ if __name__ == '__main__':
 
     optimizer = tf.keras.optimizers.Adam(lr=1e-3)
 
-    model.compile(optimizer=optimizer, loss={'yolo_loss': lambda y_true, y_pred: y_pred})
+    model.compile(optimizer=optimizer, loss=loss)
     callbacks = [
         ReduceLROnPlateau(verbose=1),
         EarlyStopping(patience=3, verbose=1),

@@ -17,10 +17,7 @@ logs/
 log.*
 *.h5
 *.dat
-yolov3.tf*
-yolov3-tiny.tf*
-yolov4.tf*
-yolov4-tiny.tf*
+yolov*
 *.weights
 checkpoint*
 test_data

@@ -5,7 +5,6 @@ import tensorflow as tf
 import cv2
 from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 
-
 YOLOV3_LAYER_LIST = [
     'yolo_darknet',
     'yolo_conv_0',
@@ -232,20 +231,18 @@ def transform_targets_for_output(y_true, grid_size, anchor_idxs):
         for j in tf.range(tf.shape(y_true)[1]):
             if tf.equal(y_true[i][j][2], 0):
                 continue
-            anchor_eq = tf.equal(anchor_idxs, tf.cast(y_true[i][j][4], tf.int32))
+            anchor_eq = tf.equal(anchor_idxs, tf.cast(y_true[i][j][5], tf.int32))
 
             if tf.reduce_any(anchor_eq):
                 box = y_true[i][j][0:4]
                 box_xy = (y_true[i][j][0:2] + y_true[i][j][2:4]) / 2
 
                 anchor_idx = tf.cast(tf.where(anchor_eq), tf.int32)
-                grid_xy = tf.cast(box_xy // (1/grid_size), tf.int32)
+                grid_xy = tf.cast(box_xy // (1 / grid_size), tf.int32)
 
                 # grid[y][x][anchor] = (tx, ty, bw, bh, obj, class)
-                indexes = indexes.write(
-                    idx, [i, grid_xy[1], grid_xy[0], anchor_idx[0][0]])
-                updates = updates.write(
-                    idx, [box[0], box[1], box[2], box[3], 1, y_true[i][j][4]])
+                indexes = indexes.write(idx, [i, grid_xy[1], grid_xy[0], anchor_idx[0][0]])
+                updates = updates.write(idx, [box[0], box[1], box[2], box[3], 1, y_true[i][j][4]])
                 idx += 1
 
     # tf.print(indexes.stack())
@@ -259,23 +256,17 @@ def transform_targets(y_train, anchors, anchor_masks, size):
     grid_size = size // 32
 
     # calculate anchor index for true boxes
-    anchors = tf.cast(anchors, tf.float32)
+    anchors = tf.cast(anchors, tf.float64)
     anchor_area = anchors[..., 0] * anchors[..., 1]
     box_wh = y_train[..., 2:4] - y_train[..., 0:2]
-    box_wh = tf.tile(tf.expand_dims(box_wh, -2),
-                     (1, 1, tf.shape(anchors)[0], 1))
+    box_wh = tf.tile(tf.expand_dims(box_wh, -2), (1, 1, tf.shape(anchors)[0], 1))
     box_area = box_wh[..., 0] * box_wh[..., 1]
-    intersection = tf.minimum(box_wh[..., 0], anchors[..., 0]) * \
-        tf.minimum(box_wh[..., 1], anchors[..., 1])
+    intersection = tf.minimum(box_wh[..., 0], anchors[..., 0]) * tf.minimum(box_wh[..., 1], anchors[..., 1])
     iou = intersection / (box_area + anchor_area - intersection)
-    anchor_idx = tf.cast(tf.argmax(iou, axis=-1), tf.float32)
+    anchor_idx = tf.cast(tf.argmax(iou, axis=-1), tf.float64)
     anchor_idx = tf.expand_dims(anchor_idx, axis=-1)
 
-    print(y_train.shape)
-    print(anchor_idx.shape)
-
     y_train = tf.concat([y_train, anchor_idx], axis=-1)
-    print(y_train.shape)
 
     for anchor_idxs in anchor_masks:
         y_outs.append(transform_targets_for_output(y_train, grid_size, anchor_idxs))
@@ -318,90 +309,28 @@ def rand(a=0, b=1):
     return np.random.rand() * (b - a) + a
 
 
-def get_random_data(annotation_line, input_shape, random=True, max_boxes=20, jitter=.3, hue=.1, sat=1.5, val=1.5,
-                    proc_img=True):
+def get_random_data(annotation_line, input_shape, random=False, max_boxes=20, jitter=.3,
+                    hue=.1, sat=1.5, val=1.5, proc_img=True):
     line = annotation_line.split()
     image = Image.open(line[0])
     iw, ih = image.size
     h, w = input_shape
-    # print(line[0])
-    box = np.array([np.array(list(map(int, box.split(',')))) for box in line[1:]])
-
-    if not random:
-        # resize image
-        scale = min(w / iw, h / ih)
-        nw = int(iw * scale)
-        nh = int(ih * scale)
-        dx = (w - nw) // 2
-        dy = (h - nh) // 2
-        image_data = 0
-        if proc_img:
-            image = image.resize((nw, nh), Image.BICUBIC)
-            new_image = Image.new('RGB', (w, h), (128, 128, 128))
-            new_image.paste(image, (dx, dy))
-            image_data = np.array(new_image) / 255.
-
-        # correct boxes
-        box_data = np.zeros((max_boxes, 5))
-        if len(box) > 0:
-            np.random.shuffle(box)
-            if len(box) > max_boxes: box = box[:max_boxes]
-            box[:, [0, 2]] = box[:, [0, 2]] * scale + dx
-            box[:, [1, 3]] = box[:, [1, 3]] * scale + dy
-            box_data[:len(box)] = box
-
-        return image_data, box_data
+    box = np.array([np.array(list(map(float, box.split(',')))) for box in line[1:]])
 
     # resize image
-    new_ar = w / h * rand(1 - jitter, 1 + jitter) / rand(1 - jitter, 1 + jitter)
-    scale = rand(.25, 2)
-    if new_ar < 1:
-        nh = int(scale * h)
-        nw = int(nh * new_ar)
-    else:
-        nw = int(scale * w)
-        nh = int(nw / new_ar)
-    image = image.resize((nw, nh), Image.BICUBIC)
-
-    # place image
-    dx = int(rand(0, w - nw))
-    dy = int(rand(0, h - nh))
-    new_image = Image.new('RGB', (w, h), (128, 128, 128))
-    new_image.paste(image, (dx, dy))
-    image = new_image
-
-    # flip image or not
-    flip = rand() < .5
-    if flip: image = image.transpose(Image.FLIP_LEFT_RIGHT)
-
-    # distort image
-    hue = rand(-hue, hue)
-    sat = rand(1, sat) if rand() < .5 else 1 / rand(1, sat)
-    val = rand(1, val) if rand() < .5 else 1 / rand(1, val)
-    x = rgb_to_hsv(np.array(image) / 255.)
-    x[..., 0] += hue
-    x[..., 0][x[..., 0] > 1] -= 1
-    x[..., 0][x[..., 0] < 0] += 1
-    x[..., 1] *= sat
-    x[..., 2] *= val
-    x[x > 1] = 1
-    x[x < 0] = 0
-    image_data = hsv_to_rgb(x)  # numpy array, 0 to 1
+    image_data = 0
+    if proc_img:
+        new_image = tf.image.resize(np.array(image), (w, h))
+        image_data = np.array(new_image) / 255.
 
     # correct boxes
     box_data = np.zeros((max_boxes, 5))
     if len(box) > 0:
         np.random.shuffle(box)
-        box[:, [0, 2]] = box[:, [0, 2]] * nw / iw + dx
-        box[:, [1, 3]] = box[:, [1, 3]] * nh / ih + dy
-        if flip: box[:, [0, 2]] = w - box[:, [2, 0]]
-        box[:, 0:2][box[:, 0:2] < 0] = 0
-        box[:, 2][box[:, 2] > w] = w
-        box[:, 3][box[:, 3] > h] = h
-        box_w = box[:, 2] - box[:, 0]
-        box_h = box[:, 3] - box[:, 1]
-        box = box[np.logical_and(box_w > 1, box_h > 1)]  # discard invalid box
-        if len(box) > max_boxes: box = box[:max_boxes]
+        if len(box) > max_boxes:
+            box = box[:max_boxes]
+        box[:, [0, 2]] = box[:, [0, 2]] / iw
+        box[:, [1, 3]] = box[:, [1, 3]] / ih
         box_data[:len(box)] = box
 
     return image_data, box_data
@@ -479,8 +408,8 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
             i = (i + 1) % n
         image_data = np.array(image_data)
         box_data = np.array(box_data)
-        y_true = preprocess_true_boxes(box_data, input_shape, anchors, num_classes)
-        yield [image_data, *y_true], np.zeros(batch_size)
+        y_true = transform_targets(box_data, anchors, np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]]), input_shape[0])
+        yield [image_data, y_true], np.zeros(batch_size)
 
 
 def data_generator_wrapper(annotation_lines, batch_size, input_shape, anchors, num_classes):
