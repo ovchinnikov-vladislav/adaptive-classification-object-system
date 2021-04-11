@@ -9,11 +9,11 @@ from tensorflow.keras.optimizers import Adam
 from libs.capsnets.losses import margin_loss
 
 
-def residual_block(x):
-    y = Conv2D(32, 3, activation=tf.nn.relu, padding='same')(x)
-    y = Conv2D(32, 3, activation=tf.nn.relu, padding='same')(y)
+def residual_block(x, filters=32, kernels=3):
+    y = Conv2D(filters, kernels, activation=tf.nn.relu, padding='same')(x)
+    y = Conv2D(filters, kernels, activation=tf.nn.relu, padding='same')(y)
 
-    x = Conv2D(32, 1, padding='same')(x)
+    x = Conv2D(filters, 1, padding='same')(x)
     return Add()([y, x])
 
 
@@ -28,6 +28,7 @@ def res_caps_v1_net(shape, num_classes, routings):
     x = residual_block(x)
     x = residual_block(x)
     x = residual_block(x)
+
     _, capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=9, strides=2)(x)
     capsules = Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)(capsules)
     output = Length()(capsules)
@@ -54,34 +55,19 @@ def res_caps_v1_net(shape, num_classes, routings):
 def res_caps_v2_net(shape, num_classes, routings):
     input_capsnet = Input(shape=shape)
 
-    x = residual_block(input_capsnet)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
+    x = residual_block(input_capsnet, filters=128)
+    x = residual_block(x, filters=128)
+    x = residual_block(x, filters=128)
     x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=9, strides=2)
 
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
+    x = residual_block(x, filters=64)
+    x = residual_block(x, filters=64)
+    x = residual_block(x, filters=64)
     x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=6, strides=2)
 
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
-    x = residual_block(x)
+    x = residual_block(x, filters=32)
+    x = residual_block(x, filters=32)
+    x = residual_block(x, filters=32)
     x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])

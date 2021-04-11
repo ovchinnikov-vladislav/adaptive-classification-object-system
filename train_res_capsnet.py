@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', default=25, type=int)
 parser.add_argument('--batch_size', default=32, type=int)
 parser.add_argument('--shift_fraction', default=0.1, type=float)
-parser.add_argument('--dataset', default='mnist', help='values: mnist, fashion_mnist, cifar10, cifar100')
+parser.add_argument('--dataset', default='cifar10', help='values: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--lr', default=0.003, type=float)
 parser.add_argument('--lr_decay', default=0.90, type=float)
 parser.add_argument('-r', '--routings', default=3, type=int)
@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
 
-    model = rescaps.res_caps_v2_net(shape=x_train.shape[1:],
+    model = rescaps.res_caps_v1_net(shape=x_train.shape[1:],
                                     num_classes=len(np.unique(np.argmax(y_train, 1))),
                                     routings=args.routings)
     model.summary()
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     tb = callbacks.TensorBoard(log_dir=args.save_dir + '/tensorboard-logs')
     checkpoint = callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', monitor='val_accuracy',
                                            save_best_only=True, save_weights_only=True, verbose=2)
-    lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
+  #  lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
 
     model.compile(optimizer=optimizers.Adam(lr=args.lr),
                   loss=margin_loss,
@@ -39,7 +39,7 @@ if __name__ == '__main__':
               batch_size=args.batch_size,
               epochs=args.epochs,
               validation_data=(x_test, y_test),
-              callbacks=[log, tb, checkpoint, lr_decay])
+              callbacks=[log, tb, checkpoint])
 
     # # Begin: Training with data augmentation ---------------------------------------------------------------------#
     # def train_generator(x, y, batch_size, shift_fraction=0.):
