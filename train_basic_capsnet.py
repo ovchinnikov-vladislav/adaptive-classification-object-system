@@ -7,14 +7,14 @@ from libs import utls
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', default=5)
-parser.add_argument('--batch_size', default=100)
-parser.add_argument('--routings', default=3)
+parser.add_argument('--epochs', default=5, type=int)
+parser.add_argument('--batch_size', default=100, type=int)
+parser.add_argument('--routings', default=3, type=int)
 parser.add_argument('--save_dir', default='./')
 parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
-parser.add_argument('--lr', default=0.001)
-parser.add_argument('--lr_decay', default=0.9)
-parser.add_argument('--lam_recon', default=0.392)
+parser.add_argument('--lr', default=0.001, type=float)
+parser.add_argument('--lr_decay', default=0.9, type=float)
+parser.add_argument('--lam_recon', default=0.392, type=float)
 
 if __name__ == '__main__':
     # CapsNet Mnist
