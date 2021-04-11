@@ -1,4 +1,5 @@
-from libs.capsnets.layers.basic import Capsule, PrimaryCapsule2D, Length, Decoder
+from libs.capsnets.layers.basic import Decoder
+from libs.capsnets.layers.residual import PrimaryCapsule2D, Capsule, bottleneck, res_block_caps, Length
 from tensorflow.keras.layers import Input, Conv2D, Add, BatchNormalization, LeakyReLU, Reshape
 from tensorflow.keras.models import Model
 import tensorflow as tf
@@ -44,24 +45,62 @@ def res_caps_v1_net(shape, num_classes, routings):
     return train_model, eval_model, manipulate_model
 
 
-def res_block_caps(x, routings, classes):
-    capsules = PrimaryCapsule2D(num_capsules=12, dim_capsules=8, kernel_size=9, strides=2)(x)
-    capsules = Capsule(num_capsules=classes, dim_capsules=6, routings=routings)(capsules)
-
-    return capsules, x
-
-
 def res_caps_v2_net(shape, num_classes, routings):
     input_capsnet = Input(shape=shape)
 
     x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(input_capsnet)
-    capsules_1, x = res_block_caps(x, routings, num_classes)
+    _, capsules_1 = res_block_caps(x, routings, num_classes)
 
     x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(x)
-    capsules_2, x = res_block_caps(x, routings, num_classes)
+    _, capsules_2 = res_block_caps(x, routings, num_classes)
 
     x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(x)
-    capsules_3, x = res_block_caps(x, routings, num_classes)
+    _, capsules_3 = res_block_caps(x, routings, num_classes)
+
+    capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
+
+    output = Length()(capsules)
+
+    model = Model(input_capsnet, output)
+
+    return model
+
+
+def res_caps_v3_net(shape, num_classes, routings):
+    input_capsnet = Input(shape=shape)
+
+    x = bottleneck(input_capsnet, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='hard_swish')
+
+    x, capsules_1 = res_block_caps(x, routings, num_classes)
+
+    x = bottleneck(input_capsnet, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='hard_swish')
+
+    x, capsules_2 = res_block_caps(x, routings, num_classes)
+
+    x = bottleneck(input_capsnet, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
+
+    x, capsules_3 = res_block_caps(x, routings, num_classes)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
@@ -86,8 +125,7 @@ if __name__ == '__main__':
     # compile the model
     model.compile(optimizer=Adam(lr=0.001),
                   loss=margin_loss,
-                  loss_weights=[1., 0.392],
-                  metrics='accuracy')
+                  metrics=['accuracy'])
 
-    model.fit(x_train, y_train, batch_size=100, epochs=25,
+    model.fit(x_train, y_train, batch_size=10, epochs=25,
               validation_data=(x_test, y_test))

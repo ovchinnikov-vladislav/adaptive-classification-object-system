@@ -20,9 +20,9 @@ if __name__ == '__main__':
 
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
 
-    model = rescaps.res_caps_v2_net(shape=x_train.shape[1:],
-                                                num_classes=len(np.unique(np.argmax(y_train, 1))),
-                                                routings=args.routings)
+    model = rescaps.res_caps_v3_net(shape=x_train.shape[1:],
+                                    num_classes=len(np.unique(np.argmax(y_train, 1))),
+                                    routings=args.routings)
     model.summary()
 
     log = callbacks.CSVLogger(args.save_dir + '/log.csv')
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     #                     callbacks=[log, tb, checkpoint, lr_decay])
 
     model.save_weights(f'{args.save_dir}/trained_diverse_capsnet_model_{args.dataset}.h5')
-    #eval_model.save_weights(f'{args.save_dir}/eval_diverse_capsnet_model_{args.dataset}.h5')
+    # eval_model.save_weights(f'{args.save_dir}/eval_diverse_capsnet_model_{args.dataset}.h5')
 
     print(f'Trained model saved to \'{args.save_dir}/trained_diverse_capsnet_model_{args.dataset}.h5\'')
     print(f'Evaluated model saved to \'{args.save_dir}/eval_diverse_capsnet_model_{args.dataset}.h5\'')
