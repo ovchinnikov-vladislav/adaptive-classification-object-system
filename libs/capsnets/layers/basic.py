@@ -96,13 +96,13 @@ class Capsule(layers.Layer):
 
 
 class Decoder(layers.Layer):
-    def __init__(self, num_classes, output_shape, **kwargs):
+    def __init__(self, num_classes, output_shape, dim=16, **kwargs):
         super(Decoder, self).__init__(**kwargs)
         self.num_classes = num_classes
         self.shape = output_shape
         self.masked = Mask()
         self.decoder = tf.keras.models.Sequential()
-        self.decoder.add(layers.Dense(512, activation='relu', input_dim=16 * self.num_classes))
+        self.decoder.add(layers.Dense(512, activation='relu', input_dim=dim * self.num_classes))
         self.decoder.add(layers.Dense(1024, activation='relu'))
         self.decoder.add(layers.Dense(np.prod(self.shape), activation='sigmoid'))
         self.decoder.add(layers.Reshape(target_shape=self.shape))

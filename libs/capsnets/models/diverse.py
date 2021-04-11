@@ -1,9 +1,6 @@
 from tensorflow.keras.layers import Lambda
-import numpy as np
-from tensorflow.keras import layers, models, optimizers
+from tensorflow.keras import layers, models
 from tensorflow.keras import backend as K
-from tensorflow.keras.utils import to_categorical
-import matplotlib.pyplot as plt
 from libs.capsnets.layers.diverse import Capsule, PrimaryCapsule2D, Length, bottleneck
 from tensorflow.keras.layers import Concatenate
 from libs.capsnets.utls import squash
@@ -129,7 +126,3 @@ def CapsNet(input_shape, num_classes, routings):
 
     return train_model, eval_model
 
-
-if __name__ == '__main__':
-    model, eval_model = CapsNet(input_shape=(32, 32, 3), num_classes=10, routings=3)
-    model.summary()
