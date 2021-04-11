@@ -20,42 +20,69 @@ def residual_block(x):
 def res_caps_v1_net(shape, num_classes, routings):
     input_capsnet = Input(shape=shape)
 
-    resnet_1 = residual_block(input_capsnet)
-    resnet_1 = residual_block(resnet_1)
-    resnet_1 = residual_block(resnet_1)
-
-    conv1 = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(resnet_1)
-    capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=9, strides=2)(conv1)
+    x = residual_block(input_capsnet)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    _, capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=9, strides=2)(x)
     capsules = Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)(capsules)
     output = Length()(capsules)
 
-    input_decoder = Input(shape=(num_classes,))
-    input_noise_decoder = Input(shape=(num_classes, 16))
+    # input_decoder = Input(shape=(num_classes,))
+    # input_noise_decoder = Input(shape=(num_classes, 16))
+    #
+    # train_model = Model([input_capsnet, input_decoder],
+    #                     [output, Decoder(num_classes=num_classes, output_shape=shape)([capsules, input_decoder])])
+    #
+    # eval_model = Model(input_capsnet, [output, Decoder(num_classes=num_classes, output_shape=shape)(capsules)])
+    #
+    # noised_digitcaps = Add()([capsules, input_noise_decoder])
+    # manipulate_model = Model([input_capsnet, input_decoder, input_noise_decoder],
+    #                          Decoder(num_classes=num_classes, output_shape=shape)([noised_digitcaps,
+    #                                                                                input_decoder]))
 
-    train_model = Model([input_capsnet, input_decoder],
-                        [output, Decoder(num_classes=num_classes, output_shape=shape)([capsules, input_decoder])])
+    #return train_model, eval_model, manipulate_model
 
-    eval_model = Model(input_capsnet, [output, Decoder(num_classes=num_classes, output_shape=shape)(capsules)])
-
-    noised_digitcaps = Add()([capsules, input_noise_decoder])
-    manipulate_model = Model([input_capsnet, input_decoder, input_noise_decoder],
-                             Decoder(num_classes=num_classes, output_shape=shape)([noised_digitcaps,
-                                                                                   input_decoder]))
-
-    return train_model, eval_model, manipulate_model
+    train_model = Model(input_capsnet, output)
+    return train_model
 
 
 def res_caps_v2_net(shape, num_classes, routings):
     input_capsnet = Input(shape=shape)
 
-    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(input_capsnet)
-    _, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
+    x = residual_block(input_capsnet)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=9, strides=2)
 
-    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(x)
-    _, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=6, strides=2)
 
-    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(x)
-    _, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=2)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x = residual_block(x)
+    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
