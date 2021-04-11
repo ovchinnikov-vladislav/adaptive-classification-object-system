@@ -26,3 +26,16 @@ def caps_net(shape, num_classes, routings):
                                                                                                    input_decoder]))
 
     return train_model, eval_model, manipulate_model
+
+
+def caps_net_without_decoder(shape, num_classes, routings):
+    input_capsnet = Input(shape=shape)
+
+    capsules = Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)(input_capsnet)
+    capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=9, strides=2)(capsules)
+    capsules = Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)(capsules)
+    output = Length()(capsules)
+
+    train_model = Model(input_capsnet, output)
+
+    return train_model
