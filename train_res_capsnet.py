@@ -32,14 +32,13 @@ if __name__ == '__main__':
     lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
 
     model.compile(optimizer=optimizers.Adam(lr=args.lr),
-                  loss=[margin_loss],
-                  loss_weights=[1.],
-                  metrics=['accuracy'])
+                  loss=margin_loss,
+                  metrics='accuracy')
 
-    model.fit(x_train, x_train,
-              epochs=args.epochs,
+    model.fit(x_train, y_train,
               batch_size=args.batch_size,
-              validation_data=[x_test, y_test],
+              epochs=args.epochs,
+              validation_data=(x_test, y_test),
               callbacks=[log, tb, checkpoint, lr_decay])
 
     # # Begin: Training with data augmentation ---------------------------------------------------------------------#
