@@ -78,9 +78,9 @@ def res_caps_v3_net(shape, num_classes, routings):
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='hard_swish')
 
-    x, capsules_1 = res_block_caps(x, routings, num_classes)
+    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x = bottleneck(input_capsnet, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
@@ -89,9 +89,9 @@ def res_caps_v3_net(shape, num_classes, routings):
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='hard_swish')
 
-    x, capsules_2 = res_block_caps(x, routings, num_classes)
+    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x = bottleneck(input_capsnet, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
@@ -100,7 +100,7 @@ def res_caps_v3_net(shape, num_classes, routings):
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
 
-    x, capsules_3 = res_block_caps(x, routings, num_classes)
+    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('cifar10')
     # define model
 
-    model = res_caps_v2_net(shape=x_train.shape[1:],
+    model = res_caps_v3_net(shape=x_train.shape[1:],
                             num_classes=len(np.unique(np.argmax(y_train, 1))),
                             routings=3)
 
@@ -127,5 +127,5 @@ if __name__ == '__main__':
                   loss=margin_loss,
                   metrics=['accuracy'])
 
-    model.fit(x_train, y_train, batch_size=10, epochs=25,
+    model.fit(x_train, y_train, batch_size=100, epochs=25,
               validation_data=(x_test, y_test))

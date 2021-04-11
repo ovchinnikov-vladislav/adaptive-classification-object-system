@@ -6,6 +6,7 @@ from tensorflow.keras.layers import BatchNormalization
 from libs.capsnets.utls import squash
 from libs.capsnets.layers import basic
 
+
 def bottleneck(inputs, filters, kernel, e, stride, activation):
     def _relu6(x):
         return tf.keras.backend.relu(x, max_value=6.0)
@@ -38,8 +39,8 @@ def bottleneck(inputs, filters, kernel, e, stride, activation):
     return tf.keras.layers.Concatenate(axis=-1)([inputs, x])
 
 
-def res_block_caps(x, routings, classes):
-    x, capsules = PrimaryCapsule2D(num_capsules=12, dim_capsules=8, kernel_size=9, strides=2)(x)
+def res_block_caps(x, routings, classes, kernel_size=9, strides=2):
+    x, capsules = PrimaryCapsule2D(num_capsules=12, dim_capsules=8, kernel_size=kernel_size, strides=strides)(x)
     capsules = Capsule(num_capsules=classes, dim_capsules=6, routings=routings)(capsules)
 
     return x, capsules
@@ -74,9 +75,10 @@ class PrimaryCapsule2D(layers.Layer):
                                   kernel_size=kernel_size,
                                   strides=strides,
                                   padding='valid')
+        self.batch = BatchNormalization(axis=-1)
 
     def call(self, inputs, **kwargs):
-        output = BatchNormalization(axis=-1)(inputs)
+        output = self.batch(inputs)
         output = layers.Activation('relu')(output)
         output = self.conv(output)
 
