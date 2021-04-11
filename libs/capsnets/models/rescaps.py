@@ -67,14 +67,16 @@ def res_caps_v2_net(shape, num_classes, routings):
 
     output = Length()(capsules)
 
-    input_decoder = Input(shape=(num_classes,))
+    # input_decoder = Input(shape=(num_classes,))
+    #
+    # train_model = Model([input_capsnet, input_decoder],
+    #                     [output, Decoder(num_classes=num_classes, output_shape=shape, dim=18)([capsules, input_decoder])])
+    #
+    # eval_model = Model(input_capsnet, [output, Decoder(num_classes=num_classes, output_shape=shape)(capsules)])
 
-    train_model = Model([input_capsnet, input_decoder],
-                        [output, Decoder(num_classes=num_classes, output_shape=shape, dim=18)([capsules, input_decoder])])
+    model = Model(input_capsnet, output)
 
-    eval_model = Model(input_capsnet, [output, Decoder(num_classes=num_classes, output_shape=shape)(capsules)])
-
-    return train_model, eval_model
+    return model
 
 
 if __name__ == '__main__':
@@ -82,7 +84,7 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('cifar10')
     # define model
 
-    model, eval_model = res_caps_v2_net(shape=x_train.shape[1:],
+    model = res_caps_v2_net(shape=x_train.shape[1:],
                                         num_classes=len(np.unique(np.argmax(y_train, 1))),
                                         routings=1)
 
