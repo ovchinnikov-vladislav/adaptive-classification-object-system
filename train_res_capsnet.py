@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
 
-    model = rescaps.res_caps_v1_net(shape=x_train.shape[1:],
+    model = rescaps.res_caps_v2_net(shape=x_train.shape[1:],
                                     num_classes=len(np.unique(np.argmax(y_train, 1))),
                                     routings=args.routings)
     model.summary()
