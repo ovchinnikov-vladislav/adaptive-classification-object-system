@@ -48,14 +48,14 @@ def res_caps_v1_net(shape, num_classes, routings):
 def res_caps_v2_net(shape, num_classes, routings):
     input_capsnet = Input(shape=shape)
 
-    x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(input_capsnet)
-    _, capsules_1 = res_block_caps(x, routings, num_classes)
+    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(input_capsnet)
+    _, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(x)
-    _, capsules_2 = res_block_caps(x, routings, num_classes)
+    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(x)
+    _, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(x)
-    _, capsules_3 = res_block_caps(x, routings, num_classes)
+    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(x)
+    _, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=2)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('cifar10')
     # define model
 
-    model = res_caps_v3_net(shape=x_train.shape[1:],
+    model = res_caps_v2_net(shape=x_train.shape[1:],
                             num_classes=len(np.unique(np.argmax(y_train, 1))),
                             routings=3)
 
