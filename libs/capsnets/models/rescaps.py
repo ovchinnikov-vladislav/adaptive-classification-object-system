@@ -58,10 +58,10 @@ def capsnet_3level(shape, num_classes, routings):
     x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(input_capsnet)
     x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(input_capsnet)
+    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(x)
     x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(input_capsnet)
+    x = Conv2D(32, (9, 9), padding='valid', activation=tf.nn.relu)(x)
     x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
