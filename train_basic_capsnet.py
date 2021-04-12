@@ -74,8 +74,11 @@ if __name__ == '__main__':
                   loss=losses.margin_loss,
                   metrics='accuracy')
 
-    model.fit(x_train, y_train, batch_size=args.batch_size, epochs=args.epochs,
-              validation_data=[x_test, y_test], callbacks=[log, tb, checkpoint, lr_decay])
+    model.fit(x_train, y_train,
+              batch_size=args.batch_size,
+              epochs=args.epochs,
+              validation_data=(x_test, y_test),
+              callbacks=[log, tb, checkpoint, lr_decay])
 
     model.save_weights(f'{args.save_dir}/trained_basic_capsnet_model_{args.dataset}.h5')
 
