@@ -29,7 +29,7 @@ if __name__ == '__main__':
     tb = callbacks.TensorBoard(log_dir=args.save_dir + '/tensorboard-logs')
     checkpoint = callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', monitor='val_accuracy',
                                            save_best_only=True, save_weights_only=True, verbose=2)
-  #  lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
+    lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
 
     model.compile(optimizer=optimizers.Adam(lr=args.lr),
                   loss=margin_loss,
