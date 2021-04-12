@@ -15,7 +15,7 @@ def relu_bn(inputs):
     return bn
 
 
-def residual_block(x, downsample, filters, kernel_size=3):
+def residual_block(x, filters, kernel_size=3, downsample=False):
     y = Conv2D(kernel_size=kernel_size,
                strides=(1 if not downsample else 2),
                filters=filters,
