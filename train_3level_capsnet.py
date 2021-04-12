@@ -2,7 +2,7 @@ import numpy as np
 from tensorflow.keras import optimizers
 from tensorflow.keras import callbacks
 from libs.capsnets import losses
-from libs.capsnets.models.rescaps import capsnet_3level
+from libs.capsnets.models.rescaps import capsnet_3level, res_capsnet_3level
 from libs import utls
 import argparse
 
@@ -56,9 +56,9 @@ if __name__ == '__main__':
     #
     # utls.plot_log(args.save_dir + '/log.csv', show=True)
 
-    model = capsnet_3level(shape=x_train.shape[1:],
-                           num_classes=len(np.unique(np.argmax(y_train, 1))),
-                           routings=args.routings)
+    model = res_capsnet_3level(shape=x_train.shape[1:],
+                               num_classes=len(np.unique(np.argmax(y_train, 1))),
+                               routings=args.routings)
 
     model.summary()
 
