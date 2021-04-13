@@ -415,7 +415,7 @@ def res50_caspnet_3level(shape, num_classes, routings):
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='c')
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='d')
 
-    _, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
+    _, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=1)
 
     x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
@@ -424,7 +424,7 @@ def res50_caspnet_3level(shape, num_classes, routings):
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
 
-    _, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=4, strides=2)
+    _, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
 
     x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
@@ -500,18 +500,18 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('cifar10')
     # define model
 
-    model = res50_caspnet_3level(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))), routings=3)
+    model = res50_caspnet_3level(shape=(224, 224, 3), num_classes=len(np.unique(np.argmax(y_train, 1))), routings=3)
     model.summary()
 
     # compile the model
-    model.compile(optimizer=Adam(lr=0.001),
-                  loss=margin_loss,
-                  metrics=['accuracy'])
+    # model.compile(optimizer=Adam(lr=0.001),
+    #               loss=margin_loss,
+    #               metrics=['accuracy'])
+    #
+    # model.fit(x_train, y_train, batch_size=100, epochs=25,
+    #           validation_data=(x_test, y_test))
 
-    model.fit(x_train, y_train, batch_size=100, epochs=25,
-              validation_data=(x_test, y_test))
-
-    # model = resnet50(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))))
+    # model = resnet50(shape=(224, 224, 3), num_classes=len(np.unique(np.argmax(y_train, 1))))
     #
     # model.summary()
 

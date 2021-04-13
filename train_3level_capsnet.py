@@ -1,21 +1,25 @@
 import numpy as np
+from keras.callbacks import Callback
 from keras_preprocessing.image import ImageDataGenerator
+from sklearn.metrics import classification_report
 from tensorflow.keras import optimizers
 from tensorflow.keras import callbacks
+from tensorflow.keras import metrics
 from libs.capsnets import losses
 from libs.capsnets.models.rescaps import capsnet_3level, res_capsnet_3level, res50_caspnet_3level
 from libs import utls
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', default=5, type=int)
+parser.add_argument('--epochs', default=1, type=int)
 parser.add_argument('--batch_size', default=100, type=int)
 parser.add_argument('--routings', default=1, type=int)
 parser.add_argument('--save_dir', default='./')
-parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
+parser.add_argument('--dataset', default='cifar10', help='value: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--lr_decay', default=0.9, type=float)
 parser.add_argument('--lam_recon', default=0.392, type=float)
+
 
 if __name__ == '__main__':
     # CapsNet Mnist
@@ -73,7 +77,9 @@ if __name__ == '__main__':
     # compile the model
     model.compile(optimizer=optimizers.Adam(lr=args.lr),
                   loss=losses.margin_loss,
-                  metrics='accuracy')
+                  metrics=['accuracy', metrics.Recall(), metrics.Precision(),
+                           metrics.FalsePositives(), metrics.FalseNegatives(),
+                           metrics.TruePositives(), metrics.TrueNegatives()])
 
     # Begin: Training with data augmentation ---------------------------------------------------------------------#
     def train_generator(x, y, batch_size, shift_fraction=0.):
