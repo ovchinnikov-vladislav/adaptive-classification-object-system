@@ -415,7 +415,7 @@ def res50_caspnet_3level(shape, num_classes, routings):
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='c')
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='d')
 
-    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=2)
+    _, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
     x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
@@ -424,13 +424,13 @@ def res50_caspnet_3level(shape, num_classes, routings):
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
 
-    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=2)
+    _, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=4, strides=2)
 
     x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
-    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=1)
+    _, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=2, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
@@ -441,13 +441,66 @@ def res50_caspnet_3level(shape, num_classes, routings):
     return model
 
 
+def resnet50(shape, num_classes):
+    input = Input(shape=shape)
+
+    if tf.keras.backend.image_data_format() == 'channels_last':
+        bn_axis = 3
+    else:
+        bn_axis = 1
+
+    x = tf.keras.layers.ZeroPadding2D((3, 3))(input)
+    x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1')(x)
+    x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
+    x = Activation('relu')(x)
+    x = tf.keras.layers.MaxPooling2D((3, 3), strides=(2, 2))(x)
+
+    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+
+    x = conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='b')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='c')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='d')
+
+    x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
+
+    x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
+    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+
+    #    x = AveragePooling2D((7, 7), name='avg_pool')(x)
+
+    # if include_top:
+    #     x = Flatten(name='flattenx')(x)
+    #     x = Dense(classes, activation='softmax', name='fc1000')(x)
+    # else:
+    #     if pooling == 'avg':
+    #         x = GlobalAveragePooling2D()(x)
+
+    # Create model.
+    model = Model(input, x, name='resnet50')
+
+    x = model.get_layer('res5a_branch2a').input
+    x = tf.keras.layers.GlobalAveragePooling2D(name='avg_pool')(x)
+    #    x = Dense(512, activation='relu',name='fc-1')(x)
+    x = tf.keras.layers.Dropout(0.5)(x)
+    out = tf.keras.layers.Dense(num_classes, activation='softmax', name='output_layer')(x)
+    return Model(inputs=input, outputs=out)
+
+
 if __name__ == '__main__':
     # load data
     (x_train, y_train), (x_test, y_test) = utls.load('cifar10')
     # define model
 
     model = res50_caspnet_3level(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))), routings=3)
-
     model.summary()
 
     # compile the model
@@ -457,3 +510,14 @@ if __name__ == '__main__':
 
     model.fit(x_train, y_train, batch_size=100, epochs=25,
               validation_data=(x_test, y_test))
+
+    # model = resnet50(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))))
+    #
+    # model.summary()
+
+    # model.compile(loss='binary_crossentropy',
+    #               optimizer=tf.keras.optimizers.SGD(lr=1e-3, momentum=0.8),
+    #               metrics=['accuracy'])
+    #
+    # model.fit(x_train, y_train, batch_size=100, epochs=25,
+    #           validation_data=(x_test, y_test))
