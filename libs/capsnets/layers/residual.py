@@ -39,9 +39,9 @@ def bottleneck(inputs, filters, kernel, e, stride, activation):
     return tf.keras.layers.Concatenate(axis=-1)([inputs, x])
 
 
-def res_block_caps(x, routings, classes, kernel_size=9, strides=2):
-    x, capsules = PrimaryCapsule2D(num_capsules=12, dim_capsules=8, kernel_size=kernel_size, strides=strides)(x)
-    capsules = Capsule(num_capsules=classes, dim_capsules=6, routings=routings)(capsules)
+def res_block_caps(x, routings, classes, kernel_size=9, strides=2, num_capsule=12, dim_capsule=6):
+    x, capsules = PrimaryCapsule2D(num_capsules=num_capsule, dim_capsules=8, kernel_size=kernel_size, strides=strides)(x)
+    capsules = Capsule(num_capsules=classes, dim_capsules=dim_capsule, routings=routings)(capsules)
 
     return x, capsules
 
