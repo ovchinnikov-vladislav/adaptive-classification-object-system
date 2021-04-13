@@ -1,6 +1,6 @@
 from libs.capsnets.layers.basic import Decoder
 from libs.capsnets.layers.residual import PrimaryCapsule2D, Capsule, bottleneck, res_block_caps, Length
-from tensorflow.keras.layers import Input, Conv2D, Add, BatchNormalization, LeakyReLU, Reshape, Concatenate
+from tensorflow.keras.layers import Input, Conv2D, Add, BatchNormalization, LeakyReLU, Reshape, Concatenate, Activation
 from tensorflow.keras.models import Model
 import tensorflow as tf
 from libs import utls
@@ -13,6 +13,85 @@ def relu_bn(inputs):
     relu = tf.keras.layers.ReLU()(inputs)
     bn = BatchNormalization()(relu)
     return bn
+
+
+def identity_block(input_tensor, kernel_size, filters, stage, block):
+    """The identity block is the block that has no conv layer at shortcut.
+    # Arguments
+        input_tensor: input tensor
+        kernel_size: defualt 3, the kernel size of middle conv layer at main path
+        filters: list of integers, the filterss of 3 conv layer at main path
+        stage: integer, current stage label, used for generating layer names
+        block: 'a','b'..., current block label, used for generating layer names
+    # Returns
+        Output tensor for the block.
+    """
+    filters1, filters2, filters3 = filters
+    if tf.keras.backend.image_data_format() == 'channels_last':
+        bn_axis = 3
+    else:
+        bn_axis = 1
+    conv_name_base = 'res' + str(stage) + block + '_branch'
+    bn_name_base = 'bn' + str(stage) + block + '_branch'
+
+    x = Conv2D(filters1, (1, 1), name=conv_name_base + '2a')(input_tensor)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters2, kernel_size,
+               padding='same', name=conv_name_base + '2b')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+
+    x = Add()([x, input_tensor])
+    x = Activation('relu')(x)
+    return x
+
+
+def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2)):
+    """conv_block is the block that has a conv layer at shortcut
+    # Arguments
+        input_tensor: input tensor
+        kernel_size: defualt 3, the kernel size of middle conv layer at main path
+        filters: list of integers, the filterss of 3 conv layer at main path
+        stage: integer, current stage label, used for generating layer names
+        block: 'a','b'..., current block label, used for generating layer names
+    # Returns
+        Output tensor for the block.
+    Note that from stage 3, the first conv layer at main path is with strides=(2,2)
+    And the shortcut should have strides=(2,2) as well
+    """
+    filters1, filters2, filters3 = filters
+    if tf.keras.backend.image_data_format() == 'channels_last':
+        bn_axis = 3
+    else:
+        bn_axis = 1
+    conv_name_base = 'res' + str(stage) + block + '_branch'
+    bn_name_base = 'bn' + str(stage) + block + '_branch'
+
+    x = Conv2D(filters1, (1, 1), strides=strides,
+               name=conv_name_base + '2a')(input_tensor)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters2, kernel_size, padding='same',
+               name=conv_name_base + '2b')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
+    x = Activation('relu')(x)
+
+    x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
+    x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+
+    shortcut = Conv2D(filters3, (1, 1), strides=strides,
+                      name=conv_name_base + '1')(input_tensor)
+    shortcut = BatchNormalization(axis=bn_axis, name=bn_name_base + '1')(shortcut)
+
+    x = Add()([x, shortcut])
+    x = Activation('relu')(x)
+    return x
 
 
 def residual_block(x, filters, kernel_size=3, downsample=False):
@@ -72,7 +151,7 @@ def res_caps_v1_net(shape, num_classes, routings):
     #                          Decoder(num_classes=num_classes, output_shape=shape)([noised_digitcaps,
     #                                                                                input_decoder]))
 
-    #return train_model, eval_model, manipulate_model
+    # return train_model, eval_model, manipulate_model
 
     train_model = Model(inputs, output)
     return train_model
@@ -104,50 +183,38 @@ def res_capsnet_3level(shape, num_classes, routings):
 
     num_filters = 32
 
-    t = BatchNormalization()(inputs)
-    t = Conv2D(kernel_size=3, strides=1, filters=num_filters, padding="same")(t)
-    t = relu_bn(t)
+    x = residual_block(inputs, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
 
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
+    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x, capsules_1 = res_block_caps(t, routings, num_classes, kernel_size=4, strides=2)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
 
-    t = BatchNormalization()(x)
-    t = Conv2D(kernel_size=3, strides=1, filters=num_filters, padding="same")(t)
-    t = relu_bn(t)
+    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
 
-    x, capsules_2 = res_block_caps(t, routings, num_classes, kernel_size=5, strides=2)
-
-    t = BatchNormalization()(x)
-    t = Conv2D(kernel_size=3, strides=1, filters=num_filters, padding="same")(t)
-    t = relu_bn(t)
-
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-    t = residual_block(t, downsample=False, filters=num_filters)
-
-    x, capsules_3 = res_block_caps(t, routings, num_classes, kernel_size=3, strides=1)
+    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
@@ -257,12 +324,129 @@ def capsnet_4level(shape, num_classes, routings):
     return train_model
 
 
+def residual_primary_caps_block(x, kernel_size=5, downsample=False):
+    _, capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=kernel_size, strides=1)(x)
+    _, capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=kernel_size, strides=1)(x)
+
+    if downsample:
+        _, capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=kernel_size, strides=1)(x)
+    out = Add()([x, capsules])
+    return out
+
+
+def res_primary_caps(shape, num_classes, routings):
+    input_capsnet = Input(shape=shape)
+
+    capsules = Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)(input_capsnet)
+    _, capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=9, strides=2)(capsules)
+    # x = residual_primary_caps_block(capsules)
+    # x = residual_primary_caps_block(x)
+    # x = residual_primary_caps_block(x)
+    # x = residual_primary_caps_block(x)
+    # x = residual_primary_caps_block(x)
+
+    capsules = Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)(capsules)
+    output = Length()(capsules)
+
+    train_model = Model(input_capsnet, output)
+
+    return train_model
+
+
+def res50_caps(shape, num_classes, routings):
+    input = Input(shape=shape)
+
+    if tf.keras.backend.image_data_format() == 'channels_last':
+        bn_axis = 3
+    else:
+        bn_axis = 1
+
+    x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1')(input)
+    x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
+    x = Activation('relu')(x)
+
+    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+
+    x = conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='b')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='c')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='d')
+
+    x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
+
+    x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
+    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+
+    _, capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=2, strides=2)(x)
+    capsules = Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)(capsules)
+    output = Length()(capsules)
+
+    train_model = Model(input, output)
+
+    return train_model
+
+
+def res50_caspnet_3level(shape, num_classes, routings):
+    input = Input(shape=shape)
+
+    if tf.keras.backend.image_data_format() == 'channels_last':
+        bn_axis = 3
+    else:
+        bn_axis = 1
+
+    x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1')(input)
+    x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
+    x = Activation('relu')(x)
+
+    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+
+    x = conv_block(x, 3, [128, 128, 512], stage=3, block='a')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='b')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='c')
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='d')
+
+    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=2)
+
+    x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
+
+    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=2)
+
+    x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
+    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
+    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+
+    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=1)
+
+    capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
+
+    output = Length()(capsules)
+
+    model = Model(input, output)
+
+    return model
+
+
 if __name__ == '__main__':
     # load data
     (x_train, y_train), (x_test, y_test) = utls.load('cifar10')
     # define model
 
-    model = res_capsnet_3level(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))), routings=3)
+    model = res50_caspnet_3level(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))), routings=3)
 
     model.summary()
 
