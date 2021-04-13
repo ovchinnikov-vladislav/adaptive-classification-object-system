@@ -402,33 +402,28 @@ def res50_caspnet_3level(shape, num_classes, routings):
     else:
         bn_axis = 1
 
-    x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1')(input)
+    x = Conv2D(32, (9, 9), strides=(2, 2), name='conv1')(input)
     x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     x = Activation('relu')(x)
 
-    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
-    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
-    x = identity_block(x, 3, [64, 64, 256], stage=2, block='c')
+    x = conv_block(x, 3, [16, 16, 64], stage=2, block='a', strides=(1, 1))
+    x = identity_block(x, 3, [16, 16, 64], stage=2, block='b')
+    x = identity_block(x, 3, [16, 16, 64], stage=2, block='c')
 
-    x = conv_block(x, 3, [128, 128, 512], stage=3, block='a')
-    x = identity_block(x, 3, [128, 128, 512], stage=3, block='b')
-    x = identity_block(x, 3, [128, 128, 512], stage=3, block='c')
-    x = identity_block(x, 3, [128, 128, 512], stage=3, block='d')
+    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=1)
 
-    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=2)
+    x = conv_block(x, 3, [32, 32, 128], stage=3, block='a')
+    x = identity_block(x, 3, [32, 32, 128], stage=3, block='b')
+    x = identity_block(x, 3, [32, 32, 128], stage=3, block='c')
+    x = identity_block(x, 3, [32, 32, 128], stage=3, block='d')
 
-    x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c')
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d')
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
+    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
 
-    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=2)
-
-    x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
-    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
-    x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
+    x = conv_block(x, 3, [64, 64, 256], stage=4, block='a')
+    x = identity_block(x, 3, [64, 64, 256], stage=4, block='b')
+    x = identity_block(x, 3, [64, 64, 256], stage=4, block='c')
+    x = identity_block(x, 3, [64, 64, 256], stage=4, block='d')
+    x = identity_block(x, 3, [64, 64, 256], stage=4, block='e')
 
     x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=1)
 
