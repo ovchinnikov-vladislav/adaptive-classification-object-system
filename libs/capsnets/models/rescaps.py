@@ -397,35 +397,23 @@ def res50_caps(shape, num_classes, routings):
 def res50_caspnet_3level(shape, num_classes, routings):
     input = Input(shape=shape)
 
-    if tf.keras.backend.image_data_format() == 'channels_last':
-        bn_axis = 3
-    else:
-        bn_axis = 1
+    x = conv_block(input, 3, [32, 32, 32], stage=1, block='a', strides=(1, 1))
+    x = identity_block(x, 3, [32, 32, 32], stage=1, block='b')
+    x = identity_block(x, 3, [32, 32, 32], stage=1, block='c')
+    x = identity_block(x, 3, [32, 32, 32], stage=1, block='d')
+    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x = Conv2D(32, (9, 9), strides=(2, 2), name='conv1')(input)
-    x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
-    x = Activation('relu')(x)
+    x = conv_block(input, 3, [32, 32, 32], stage=2, block='a', strides=(1, 1))
+    x = identity_block(x, 3, [32, 32, 32], stage=2, block='b')
+    x = identity_block(x, 3, [32, 32, 32], stage=2, block='c')
+    x = identity_block(x, 3, [32, 32, 32], stage=2, block='d')
+    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x = conv_block(x, 3, [16, 16, 64], stage=2, block='a', strides=(1, 1))
-    x = identity_block(x, 3, [16, 16, 64], stage=2, block='b')
-    x = identity_block(x, 3, [16, 16, 64], stage=2, block='c')
-
-    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=1, num_capsule=12)
-
-    x = conv_block(x, 3, [32, 32, 128], stage=3, block='a')
-    x = identity_block(x, 3, [32, 32, 128], stage=3, block='b')
-    x = identity_block(x, 3, [32, 32, 128], stage=3, block='c')
-    x = identity_block(x, 3, [32, 32, 128], stage=3, block='d')
-
-    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1, num_capsule=12)
-
-    x = conv_block(x, 3, [64, 64, 256], stage=4, block='a')
-    x = identity_block(x, 3, [64, 64, 256], stage=4, block='b')
-    x = identity_block(x, 3, [64, 64, 256], stage=4, block='c')
-    x = identity_block(x, 3, [64, 64, 256], stage=4, block='d')
-    x = identity_block(x, 3, [64, 64, 256], stage=4, block='e')
-
-    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=1, num_capsule=12)
+    x = conv_block(input, 3, [32, 32, 32], stage=3, block='a', strides=(1, 1))
+    x = identity_block(x, 3, [32, 32, 32], stage=3, block='b')
+    x = identity_block(x, 3, [32, 32, 32], stage=3, block='c')
+    x = identity_block(x, 3, [32, 32, 32], stage=3, block='d')
+    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
