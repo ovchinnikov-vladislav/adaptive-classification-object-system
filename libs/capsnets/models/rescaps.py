@@ -438,7 +438,7 @@ def res50_caspnet_3level(shape, num_classes, routings):
 
     input_decoder = Input(shape=(num_classes,))
 
-    decoder = Decoder(num_classes=num_classes, dim=18, output_shape=shape)([capsules, input_decoder])
+    decoder = Decoder(num_classes=num_classes, dim=18, output_shape=shape)
 
     train_model = Model([input, input_decoder],
                         [output, decoder([capsules, input_decoder])])
