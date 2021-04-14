@@ -88,7 +88,7 @@ def plot_to_image(figure):
 
 def plot_confusion_matrix(cm, class_names):
     figure = plt.figure(figsize=(8, 8))
-    plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('blue'))
+    plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('gray'))
     plt.title('Confusion matrix')
     plt.colorbar()
     tick_marks = np.arange(len(class_names))
