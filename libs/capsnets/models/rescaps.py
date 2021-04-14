@@ -436,9 +436,14 @@ def res50_caspnet_3level(shape, num_classes, routings):
 
     output = Length()(capsules)
 
-    model = Model(input, output)
+    input_decoder = Input(shape=(num_classes,))
 
-    return model
+    train_model = Model([input, input_decoder],
+                        [output, Decoder(num_classes=num_classes, output_shape=shape)([capsules, input_decoder])])
+
+    eval_model = Model(input, [output, Decoder(num_classes=num_classes, output_shape=shape)(capsules)])
+
+    return train_model, eval_model
 
 
 def resnet50(shape, num_classes):
