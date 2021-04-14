@@ -48,7 +48,8 @@ def res_block_caps(x, routings, classes, kernel_size=9, strides=2, num_capsule=1
 
 class Length(layers.Layer):
     def call(self, inputs, **kwargs):
-        return tf.sqrt(tf.reduce_sum(tf.square(inputs), -1) + epsilon())
+        return tf.keras.backend.sqrt(tf.keras.backend.sum(
+            tf.keras.backend.square(inputs), -1) + tf.keras.backend.epsilon())
 
     def compute_output_shape(self, input_shape):
         return input_shape[:-1]
