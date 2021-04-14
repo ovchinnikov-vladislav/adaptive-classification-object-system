@@ -88,23 +88,23 @@ def plot_to_image(figure):
 
 def plot_confusion_matrix(cm, class_names):
     figure = plt.figure(figsize=(8, 8))
-    plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('gray'))
-    plt.title('Confusion matrix')
+    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.title('Матрица ошибок')
     plt.colorbar()
     tick_marks = np.arange(len(class_names))
     plt.xticks(tick_marks, class_names, rotation=45)
     plt.yticks(tick_marks, class_names)
 
-    cm = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=2)
+    cm = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=4)
 
     threshold = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         color = 'white' if cm[i, j] > threshold else 'black'
-        plt.text(j, i, cm[i, j], horizontalment="center", color=color)
+        plt.text(j, i, cm[i, j], horizontalalignment="center", color=color)
 
     plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicated label')
+    plt.ylabel('Входные метки')
+    plt.xlabel('Предсказанные метки')
     return figure
 
 
