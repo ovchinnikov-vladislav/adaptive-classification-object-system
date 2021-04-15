@@ -3,7 +3,7 @@ from keras_preprocessing.image import ImageDataGenerator
 from tensorflow.keras import optimizers
 from tensorflow.keras import callbacks
 from libs.capsnets import losses
-from libs.capsnets.models.rescaps import capsnet_3level, res_capsnet_3level, res50_caspnet_3level
+from libs.capsnets.models.rescaps import capsnet_3level, res_capsnet_3level, res50_capsnet_3level
 from libs.capsnets.models.basic import caps_net_without_decoder
 from libs import utls
 import argparse
@@ -92,9 +92,7 @@ if __name__ == '__main__':
     validation_generator = test_datagen.flow_from_directory(validation_dir, target_size=(150, 150),
                                                             batch_size=16, classes=['dogs', 'cats'])
 
-    model = res50_caspnet_3level(shape=(150, 150, 3),
-                                 num_classes=2,
-                                 routings=args.routings)
+    model = res50_capsnet_3level(shape=(150, 150, 3), num_classes=2, routings=args.routings)
 
     model.summary()
 

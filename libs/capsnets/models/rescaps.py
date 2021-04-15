@@ -188,44 +188,32 @@ def capsnet_3level(shape, num_classes, routings):
 
 
 def res_capsnet_3level(shape, num_classes, routings):
-    inputs = Input(shape=shape)
+    x = inputs = Input(shape=shape)
+
+    num_filters = 256
+
+    x = residual_block(x, downsample=True, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+
+    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
+
+    num_filters = 64
+
+    x = residual_block(x, downsample=True, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+
+    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
 
     num_filters = 32
 
-    x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(inputs)
-
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-
-    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=1)
-
     x = residual_block(x, downsample=True, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
 
-    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=1)
-
-    x = residual_block(x, downsample=True, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-
-    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=1)
+    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=2, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
@@ -412,7 +400,7 @@ def res50_caps(shape, num_classes, routings):
     return train_model
 
 
-def res50_caspnet_3level(shape, num_classes, routings):
+def res50_capsnet_3level(shape, num_classes, routings):
     input = Input(shape=shape)
 
     if tf.keras.backend.image_data_format() == 'channels_last':
@@ -527,7 +515,7 @@ if __name__ == '__main__':
 
     model, eval_model = res_capsnet_3level(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))),
                                            routings=3)
-    model.summary()
+    model.summary(line_length=200)
 
     # compile the model
     model.compile(optimizer=Adam(lr=0.001),
