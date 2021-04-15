@@ -1,6 +1,7 @@
 from libs.capsnets.layers.basic import Decoder
 from libs.capsnets.layers.residual import PrimaryCapsule2D, Capsule, bottleneck, res_block_caps, Length
-from tensorflow.keras.layers import Input, Conv2D, Add, BatchNormalization, LeakyReLU, Reshape, Concatenate, Activation
+from tensorflow.keras.layers import (Input, Conv2D, Add, BatchNormalization, LeakyReLU,
+                                     Reshape, Concatenate, Activation, Dropout)
 from tensorflow.keras.models import Model
 import tensorflow as tf
 from libs import utls
@@ -35,16 +36,22 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
     x = Conv2D(filters1, (1, 1), name=conv_name_base + '2a')(input_tensor)
+    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
+    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters2, kernel_size,
                padding='same', name=conv_name_base + '2b')(x)
+    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
+    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
+    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+    x = Dropout(0.5)(x)
 
     x = Add()([x, input_tensor])
     x = Activation('relu')(x)
@@ -74,20 +81,28 @@ def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2))
 
     x = Conv2D(filters1, (1, 1), strides=strides,
                name=conv_name_base + '2a')(input_tensor)
+    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
+    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters2, kernel_size, padding='same',
                name=conv_name_base + '2b')(x)
+    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
+    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
+    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+    x = Dropout(0.5)(x)
 
     shortcut = Conv2D(filters3, (1, 1), strides=strides,
                       name=conv_name_base + '1')(input_tensor)
+    x = Dropout(0.5)(x)
     shortcut = BatchNormalization(axis=bn_axis, name=bn_name_base + '1')(shortcut)
+    x = Dropout(0.5)(x)
 
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
@@ -403,7 +418,9 @@ def res50_caspnet_3level(shape, num_classes, routings):
         bn_axis = 1
 
     x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1')(input)
+    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
+    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
     x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))

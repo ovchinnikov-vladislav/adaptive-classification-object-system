@@ -20,7 +20,6 @@ parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--lr_decay', default=0.9, type=float)
 parser.add_argument('--lam_recon', default=0.392, type=float)
 
-
 if __name__ == '__main__':
     # CapsNet Mnist
     args = parser.parse_args()
@@ -61,9 +60,9 @@ if __name__ == '__main__':
     #
     # utls.plot_log(args.save_dir + '/log.csv', show=True)
 
-    model = res50_caspnet_3level(shape=x_train.shape[1:],
-                                 num_classes=len(np.unique(np.argmax(y_train, 1))),
-                                 routings=args.routings)
+    model, eval_model = res50_caspnet_3level(shape=x_train.shape[1:],
+                                             num_classes=len(np.unique(np.argmax(y_train, 1))),
+                                             routings=args.routings)
 
     model.summary()
 
@@ -81,6 +80,7 @@ if __name__ == '__main__':
                            metrics.FalsePositives(), metrics.FalseNegatives(),
                            metrics.TruePositives(), metrics.TrueNegatives()])
 
+
     # Begin: Training with data augmentation ---------------------------------------------------------------------#
     def train_generator(x, y, batch_size, shift_fraction=0.):
         train_datagen = ImageDataGenerator(width_shift_range=shift_fraction,
@@ -89,6 +89,7 @@ if __name__ == '__main__':
         while 1:
             x_batch, y_batch = generator.next()
             yield (x_batch, y_batch)
+
 
     # Training with data augmentation. If shift_fraction=0., also no augmentation.
     model.fit(train_generator(x_train, y_train, args.batch_size, 0.1),
