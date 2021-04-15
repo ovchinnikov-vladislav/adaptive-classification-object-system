@@ -1,8 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras import layers
-from tensorflow.keras.backend import epsilon
-from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.backend import epsilon, sqrt, sum, square
+from tensorflow.keras.layers import BatchNormalization, Dropout, Conv2D
 from libs.capsnets.utls import squash
 from libs.capsnets.layers import basic
 
@@ -36,7 +35,10 @@ def bottleneck(inputs, filters, kernel, e, stride, activation):
     x = Conv2D(filters, (1, 1), strides=(1, 1), padding='same')(x)
     x = BatchNormalization(axis=channel_axis)(x)
 
-    return tf.keras.layers.Concatenate(axis=-1)([inputs, x])
+    out = tf.keras.layers.Concatenate(axis=-1)([inputs, x])
+    out = Dropout(0.3)(out)
+
+    return out
 
 
 def res_block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=12, dim_capsule=6, padding='valid'):
@@ -49,8 +51,7 @@ def res_block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=1
 
 class Length(layers.Layer):
     def call(self, inputs, **kwargs):
-        return tf.keras.backend.sqrt(tf.keras.backend.sum(
-            tf.keras.backend.square(inputs), -1) + tf.keras.backend.epsilon())
+        return sqrt(sum(square(inputs), -1) + epsilon())
 
     def compute_output_shape(self, input_shape):
         return input_shape[:-1]
