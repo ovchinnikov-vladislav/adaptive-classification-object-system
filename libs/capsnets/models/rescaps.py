@@ -258,58 +258,6 @@ def res_caps_v2_net(shape, num_classes, routings):
     return model
 
 
-def res_caps_v3_net(shape, num_classes, routings):
-    x = inputs = Input(shape=shape)
-
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='hard_swish')
-
-    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
-
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='hard_swish')
-
-    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
-
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
-
-    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
-
-    capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
-
-    output = Length()(capsules)
-
-    input_decoder = Input(shape=(num_classes,))
-
-    decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=shape)
-
-    train_model = Model([inputs, input_decoder],
-                        [output, decoder([capsules, input_decoder])])
-
-    eval_model = Model(inputs, [output, decoder(capsules)])
-
-    return train_model, eval_model
-
-
 def capsnet_4level(shape, num_classes, routings):
     input_capsnet = Input(shape=shape)
 
