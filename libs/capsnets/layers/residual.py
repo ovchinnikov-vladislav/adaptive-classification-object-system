@@ -39,8 +39,9 @@ def bottleneck(inputs, filters, kernel, e, stride, activation):
     return tf.keras.layers.Concatenate(axis=-1)([inputs, x])
 
 
-def res_block_caps(x, routings, classes, kernel_size=9, strides=2, num_capsule=12, dim_capsule=6):
-    x, capsules = PrimaryCapsule2D(num_capsules=num_capsule, dim_capsules=8, kernel_size=kernel_size, strides=strides)(x)
+def res_block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=12, dim_capsule=6):
+    x, capsules = PrimaryCapsule2D(num_capsules=num_capsule, dim_capsules=8, kernel_size=kernel_size,
+                                   strides=strides, padding='same')(x)
     capsules = Capsule(num_capsules=classes, dim_capsules=dim_capsule, routings=routings)(capsules)
 
     return x, capsules
@@ -65,17 +66,18 @@ class Capsule(basic.Capsule):
 
 
 class PrimaryCapsule2D(layers.Layer):
-    def __init__(self, num_capsules, dim_capsules, kernel_size, strides, **kwargs):
+    def __init__(self, num_capsules, dim_capsules, kernel_size, strides, padding, **kwargs):
         super(PrimaryCapsule2D, self).__init__(**kwargs)
         self.num_capsules = num_capsules
         self.dim_capsules = dim_capsules
         self.kernel_size = kernel_size
+        self.padding = padding
         self.strides = strides
         num_filters = num_capsules * dim_capsules
         self.conv = layers.Conv2D(filters=num_filters,
                                   kernel_size=kernel_size,
                                   strides=strides,
-                                  padding='valid')
+                                  padding=padding)
         self.batch = BatchNormalization(axis=-1)
 
     def call(self, inputs, **kwargs):

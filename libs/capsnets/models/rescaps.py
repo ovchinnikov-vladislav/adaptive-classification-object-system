@@ -47,10 +47,11 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
     x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c', kernel_regularizer=tf.keras.regularizers.l2(0.001))(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
 
-    x = Dropout(0.5)(x)
-
     x = Add()([x, input_tensor])
     x = Activation('relu')(x)
+
+    x = Dropout(0.5)(x)
+
     return x
 
 
@@ -92,10 +93,11 @@ def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2))
                       name=conv_name_base + '1')(input_tensor)
     shortcut = BatchNormalization(axis=bn_axis, name=bn_name_base + '1')(shortcut)
 
-    x = Dropout(0.5)(x)
-
     x = Add()([x, shortcut])
     x = Activation('relu')(x)
+
+    x = Dropout(0.5)(x)
+
     return x
 
 
@@ -190,7 +192,9 @@ def res_capsnet_3level(shape, num_classes, routings):
 
     num_filters = 32
 
-    x = residual_block(inputs, downsample=True, filters=num_filters)
+    x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(inputs)
+
+    x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
@@ -199,7 +203,7 @@ def res_capsnet_3level(shape, num_classes, routings):
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
 
-    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
+    x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=1)
 
     x = residual_block(x, downsample=True, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
@@ -210,7 +214,7 @@ def res_capsnet_3level(shape, num_classes, routings):
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
 
-    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=2)
+    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=1)
 
     x = residual_block(x, downsample=True, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
@@ -530,8 +534,8 @@ if __name__ == '__main__':
                   loss=[margin_loss, 'mse'],
                   metrics=['accuracy'])
 
-    model.fit(x_train, y_train, batch_size=100, epochs=25,
-              validation_data=(x_test, y_test))
+    model.fit([x_train, y_train], [y_train, x_train], batch_size=100, epochs=25,
+              validation_data=([x_test, y_test], [y_test, x_test]))
 
     # model = resnet50(shape=(224, 224, 3), num_classes=len(np.unique(np.argmax(y_train, 1))))
     #
