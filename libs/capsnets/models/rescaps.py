@@ -118,6 +118,8 @@ def residual_block(x, filters, kernel_size=3, downsample=False):
                    padding="same")(x)
     out = Add()([x, y])
     out = relu_bn(out)
+
+    out = Dropout(0.5)(out)
     return out
 
 
@@ -188,7 +190,7 @@ def res_capsnet_3level(shape, num_classes, routings):
 
     num_filters = 32
 
-    x = residual_block(inputs, downsample=False, filters=num_filters)
+    x = residual_block(inputs, downsample=True, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
@@ -199,18 +201,7 @@ def res_capsnet_3level(shape, num_classes, routings):
 
     x, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-    x = residual_block(x, downsample=False, filters=num_filters)
-
-    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=2)
-
-    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=True, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
@@ -219,15 +210,33 @@ def res_capsnet_3level(shape, num_classes, routings):
     x = residual_block(x, downsample=False, filters=num_filters)
     x = residual_block(x, downsample=False, filters=num_filters)
 
-    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
+    x, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=2)
+
+    x = residual_block(x, downsample=True, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+    x = residual_block(x, downsample=False, filters=num_filters)
+
+    x, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=1, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
     output = Length()(capsules)
 
-    model = Model(inputs, output)
+    input_decoder = Input(shape=(num_classes,))
 
-    return model
+    decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=shape)
+
+    train_model = Model([inputs, input_decoder],
+                        [output, decoder([capsules, input_decoder])])
+
+    eval_model = Model(inputs, [output, decoder(capsules)])
+
+    return train_model, eval_model
 
 
 def res_caps_v2_net(shape, num_classes, routings):
@@ -512,16 +521,17 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load('cifar10')
     # define model
 
-    model = res50_caspnet_3level(shape=(224, 224, 3), num_classes=len(np.unique(np.argmax(y_train, 1))), routings=3)
+    model, eval_model = res_capsnet_3level(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))),
+                                           routings=3)
     model.summary()
 
     # compile the model
-    # model.compile(optimizer=Adam(lr=0.001),
-    #               loss=margin_loss,
-    #               metrics=['accuracy'])
-    #
-    # model.fit(x_train, y_train, batch_size=100, epochs=25,
-    #           validation_data=(x_test, y_test))
+    model.compile(optimizer=Adam(lr=0.001),
+                  loss=[margin_loss, 'mse'],
+                  metrics=['accuracy'])
+
+    model.fit(x_train, y_train, batch_size=100, epochs=25,
+              validation_data=(x_test, y_test))
 
     # model = resnet50(shape=(224, 224, 3), num_classes=len(np.unique(np.argmax(y_train, 1))))
     #
