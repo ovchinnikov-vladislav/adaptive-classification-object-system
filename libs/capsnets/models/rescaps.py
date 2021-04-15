@@ -366,6 +366,26 @@ def res_primary_caps(shape, num_classes, routings):
     return train_model
 
 
+def res_capsnet(shape, num_classes, routings):
+    x = inputs = Input(shape=shape)
+
+    x = Conv2D(256, (9, 9), padding='valid', activation=tf.nn.relu)(x)
+    capsules = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=9, strides=2)(x)
+    capsules = Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)(capsules)
+    output = Length(name='length')(capsules)
+
+    input_decoder = Input(shape=(num_classes,))
+
+    decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=shape)
+
+    train_model = Model([inputs, input_decoder],
+                        [output, decoder([capsules, input_decoder])])
+
+    eval_model = Model(inputs, [output, decoder(capsules)])
+
+    return train_model, eval_model
+
+
 def res50_caps(shape, num_classes, routings):
     input = Input(shape=shape)
 

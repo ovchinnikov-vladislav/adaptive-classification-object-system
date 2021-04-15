@@ -77,14 +77,14 @@ class PrimaryCapsule2D(layers.Layer):
         num_filters = num_capsules * dim_capsules
         self.conv = layers.Conv2D(filters=num_filters,
                                   kernel_size=kernel_size,
+                                  kernel_regularizer=tf.keras.regularizers.l2(1e-4),
                                   strides=strides,
                                   padding=padding)
         self.batch = BatchNormalization(axis=-1)
 
     def call(self, inputs, **kwargs):
-        output = self.batch(inputs)
-        output = layers.Activation('relu')(output)
-        output = self.conv(output)
+        output = self.conv(inputs)
+        output = self.batch(output)
 
         outputs = layers.Reshape(target_shape=(-1, self.dim_capsules))(output)
 

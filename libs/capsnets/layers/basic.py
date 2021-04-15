@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras.backend import epsilon
 import numpy as np
-
+import math
 from libs.capsnets.utls import squash
 
 
@@ -15,22 +15,31 @@ class PrimaryCapsule2D(layers.Layer):
     :param name: имя слоя
     """
 
-    def __init__(self, num_capsules, dim_capsules, kernel_size, strides, **kwargs):
+    def __init__(self, num_capsules, dim_capsules, kernel_size, strides, padding='valid', do_reshape=False, **kwargs):
         super(PrimaryCapsule2D, self).__init__(**kwargs)
 
+        self.do_reshape = do_reshape
+        self.dim_capsules = dim_capsules
         num_filters = num_capsules * dim_capsules
         self.conv2d = layers.Conv2D(filters=num_filters,
                                     kernel_size=kernel_size,
+                                    kernel_regularizer=tf.keras.regularizers.l2(1e-4),
                                     strides=strides,
                                     activation=None,
-                                    padding='valid')
-        self.reshape = layers.Reshape(target_shape=(-1, dim_capsules))
+                                    padding=padding)
+        self.batch = layers.BatchNormalization(axis=-1)
 
     def call(self, inputs, **kwargs):
         x = self.conv2d(inputs)
-        x = self.reshape(x)
-        x = squash(x)
-        return x
+        x = self.batch(x)
+
+        if not self.do_reshape:
+            shape = x.shape[1] * x.shape[2] * x.shape[3] / self.dim_capsules
+            x = layers.Reshape(target_shape=(int(math.sqrt(shape)), int(math.sqrt(shape)), self.dim_capsules))(x)
+            return layers.Lambda(squash)(x)
+
+        x = layers.Reshape(target_shape=(-1, self.dim_capsules))(x)
+        return layers.Lambda(squash)(x)
 
     def get_config(self):
         return super(PrimaryCapsule2D, self).get_config()
