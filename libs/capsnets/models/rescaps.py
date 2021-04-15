@@ -35,22 +35,18 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
     conv_name_base = 'res' + str(stage) + block + '_branch'
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
-    x = Conv2D(filters1, (1, 1), name=conv_name_base + '2a')(input_tensor)
-    x = Dropout(0.5)(x)
+    x = Conv2D(filters1, (1, 1), kernel_regularizer=tf.keras.regularizers.l2, name=conv_name_base + '2a')(input_tensor)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
-    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters2, kernel_size,
+    x = Conv2D(filters2, kernel_size, kernel_regularizer=tf.keras.regularizers.l2,
                padding='same', name=conv_name_base + '2b')(x)
-    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
-    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
-    x = Dropout(0.5)(x)
+    x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c', kernel_regularizer=tf.keras.regularizers.l2)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
+
     x = Dropout(0.5)(x)
 
     x = Add()([x, input_tensor])
@@ -81,27 +77,21 @@ def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2))
 
     x = Conv2D(filters1, (1, 1), strides=strides,
                name=conv_name_base + '2a')(input_tensor)
-    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
-    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters2, kernel_size, padding='same',
                name=conv_name_base + '2b')(x)
-    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
-    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
     x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
-    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
-    x = Dropout(0.5)(x)
 
     shortcut = Conv2D(filters3, (1, 1), strides=strides,
                       name=conv_name_base + '1')(input_tensor)
-    x = Dropout(0.5)(x)
     shortcut = BatchNormalization(axis=bn_axis, name=bn_name_base + '1')(shortcut)
+
     x = Dropout(0.5)(x)
 
     x = Add()([x, shortcut])
@@ -418,9 +408,7 @@ def res50_caspnet_3level(shape, num_classes, routings):
         bn_axis = 1
 
     x = Conv2D(64, (7, 7), strides=(2, 2), name='conv1')(input)
-    x = Dropout(0.5)(x)
     x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
-    x = Dropout(0.5)(x)
     x = Activation('relu')(x)
 
     x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
