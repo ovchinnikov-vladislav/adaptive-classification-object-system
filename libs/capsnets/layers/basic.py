@@ -112,7 +112,9 @@ class Decoder(layers.Layer):
         self.masked = Mask()
         self.decoder = tf.keras.models.Sequential()
         self.decoder.add(layers.Dense(512, activation='relu', input_dim=dim * self.num_classes))
+        self.decoder.add(layers.Dropout(0.5))
         self.decoder.add(layers.Dense(1024, activation='relu'))
+        self.decoder.add(layers.Dropout(0.5))
         self.decoder.add(layers.Dense(np.prod(self.shape), activation='sigmoid'))
         self.decoder.add(layers.Reshape(target_shape=self.shape))
 
