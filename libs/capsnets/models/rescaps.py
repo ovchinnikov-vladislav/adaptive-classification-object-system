@@ -259,9 +259,9 @@ def res_caps_v2_net(shape, num_classes, routings):
 
 
 def res_caps_v3_net(shape, num_classes, routings):
-    input_capsnet = Input(shape=shape)
+    x = inputs = Input(shape=shape)
 
-    x = bottleneck(input_capsnet, 32, (3, 3), e=1, stride=1, activation='relu')
+    x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
     x = bottleneck(x, 32, (3, 3), e=1, stride=1, activation='relu')
@@ -298,9 +298,16 @@ def res_caps_v3_net(shape, num_classes, routings):
 
     output = Length()(capsules)
 
-    model = Model(input_capsnet, output)
+    input_decoder = Input(shape=(num_classes,))
 
-    return model
+    decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=shape)
+
+    train_model = Model([inputs, input_decoder],
+                        [output, decoder([capsules, input_decoder])])
+
+    eval_model = Model(inputs, [output, decoder(capsules)])
+
+    return train_model, eval_model
 
 
 def capsnet_4level(shape, num_classes, routings):
