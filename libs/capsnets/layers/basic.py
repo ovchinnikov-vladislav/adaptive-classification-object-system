@@ -45,6 +45,42 @@ class PrimaryCapsule2D(layers.Layer):
         return super(PrimaryCapsule2D, self).get_config()
 
 
+class PrimaryCapsule3D(layers.Layer):
+    """
+    :param capsules: количество первичных капсул
+    :param dim_capsules: размер капсул
+    :param kernel_size: размер ядра свертки
+    :param strides: шаг свертки
+    :param name: имя слоя
+    """
+
+    def __init__(self, num_capsules, dim_capsules, kernel_size, strides, padding='valid', **kwargs):
+        super(PrimaryCapsule3D, self).__init__(**kwargs)
+
+        self.dim_capsules = dim_capsules
+        num_filters = num_capsules * dim_capsules
+        self.conv2d = layers.Conv3D(filters=num_filters,
+                                    kernel_size=kernel_size,
+                                    kernel_regularizer=tf.keras.regularizers.l2(1e-4),
+                                    strides=strides,
+                                    activation=None,
+                                    padding=padding)
+        self.batch = layers.BatchNormalization(axis=-1)
+
+    def call(self, inputs, **kwargs):
+        x = self.conv2d(inputs)
+        x = self.batch(x)
+
+        shape = x.shape
+        num_primary_caps = int(shape[1] * shape[2] * shape[3] * shape[4] / self.dim_capsules)
+
+        x = layers.Reshape(target_shape=(num_primary_caps, self.dim_capsules, 1))(x)
+        return layers.Lambda(squash)(x)
+
+    def get_config(self):
+        return super(PrimaryCapsule3D, self).get_config()
+
+
 class Capsule(layers.Layer):
     """
     :param capsules: количество капсул

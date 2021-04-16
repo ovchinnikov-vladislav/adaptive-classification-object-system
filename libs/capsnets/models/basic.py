@@ -1,6 +1,6 @@
 import tensorflow as tf
-from libs.capsnets.layers.basic import Length, PrimaryCapsule2D, Capsule, Decoder
-from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, Activation
+from libs.capsnets.layers.basic import Length, PrimaryCapsule2D, PrimaryCapsule3D, Capsule, Decoder
+from tensorflow.keras.layers import Input, Conv2D, Conv3D, BatchNormalization, Activation
 from tensorflow.keras import Model
 
 
@@ -46,3 +46,13 @@ def caps_net_v2(shape, num_classes, routings):
     eval_model = Model(inputs, [output, decoder(capsules)])
 
     return train_model, eval_model
+
+
+if __name__ == '__main__':
+    x = inputs = Input(shape=(28, 28, 1, 3))
+
+    x = Conv3D(256, 5, strides=1, padding='same', kernel_regularizer=tf.keras.regularizers.l2(1e-4))(x)
+    x = PrimaryCapsule3D(dim_capsules=256, num_capsules=1, kernel_size=9, strides=2)(x)
+
+    model = Model(inputs, x)
+    model.summary()
