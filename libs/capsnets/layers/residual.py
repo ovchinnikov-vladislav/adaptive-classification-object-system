@@ -6,41 +6,6 @@ from libs.capsnets.utls import squash
 from libs.capsnets.layers import basic
 
 
-def bottleneck(inputs, filters, kernel, e, stride, activation):
-    def _relu6(x):
-        return tf.keras.backend.relu(x, max_value=6.0)
-
-    def _hard_swish(x):
-        return x * tf.keras.backend.relu(x + 3.0, max_value=6.0) / 6.0
-
-    channel_axis = 1 if tf.keras.backend.image_data_format() == 'channels_first' else -1
-    input_shape = tf.keras.backend.int_shape(inputs)
-    tchannel = input_shape[channel_axis] * e
-
-    channel_axis = 1 if tf.keras.backend.image_data_format() == 'channels_first' else -1
-    x = Conv2D(tchannel, (1, 1), padding='same', strides=(1, 1))(inputs)
-    x = BatchNormalization(axis=channel_axis)(x)
-    if activation == 'hard_swish':
-        x = tf.keras.layers.Activation(_hard_swish)(x)
-    if activation == 'relu':
-        x = tf.keras.layers.Activation(_relu6)(x)
-
-    x = tf.keras.layers.DepthwiseConv2D(kernel, strides=(stride, stride), depth_multiplier=1, padding='same')(x)
-    x = BatchNormalization(axis=channel_axis)(x)
-
-    if activation == 'hard_swish':
-        x = tf.keras.layers.Activation(_hard_swish)(x)
-    if activation == 'relu':
-        x = tf.keras.layers.Activation(_relu6)(x)
-    x = Conv2D(filters, (1, 1), strides=(1, 1), padding='same')(x)
-    x = BatchNormalization(axis=channel_axis)(x)
-
-    out = tf.keras.layers.Concatenate(axis=-1)([inputs, x])
-    out = Dropout(0.3)(out)
-
-    return out
-
-
 def res_block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=12, primary_dim_capsule=8,
                    dim_capsule=6, padding='valid'):
     x, capsules = PrimaryCapsule2D(num_capsules=num_capsule, dim_capsules=primary_dim_capsule, kernel_size=kernel_size,

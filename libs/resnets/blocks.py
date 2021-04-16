@@ -1,11 +1,47 @@
-from tensorflow.keras.layers import BatchNormalization, ReLU, Conv2D, Activation, Add, Dropout
+from tensorflow.keras.layers import (BatchNormalization, ReLU, Conv2D, Activation,
+                                     Add, Dropout, DepthwiseConv2D, Concatenate)
 from tensorflow.keras import regularizers
+from tensorflow.keras.backend import relu
 
 
 def relu_bn(inputs):
     bn = BatchNormalization(axis=-1)(inputs)
     relu = ReLU()(bn)
     return relu
+
+
+def bottleneck(inputs, filters, kernel, e, stride, activation):
+    def _relu6(x):
+        return relu(x, max_value=6.0)
+
+    def _hard_swish(x):
+        return x * relu(x + 3.0, max_value=6.0) / 6.0
+
+    channel_axis = -1
+    input_shape = inputs.shape
+    t_channel = input_shape[channel_axis] * e
+
+    x = Conv2D(t_channel, (1, 1), padding='same', strides=(1, 1))(inputs)
+    x = BatchNormalization(axis=channel_axis)(x)
+    if activation == 'hard_swish':
+        x = Activation(_hard_swish)(x)
+    if activation == 'relu':
+        x = Activation(_relu6)(x)
+
+    x = DepthwiseConv2D(kernel, strides=(stride, stride), depth_multiplier=1, padding='same')(x)
+    x = BatchNormalization(axis=channel_axis)(x)
+
+    if activation == 'hard_swish':
+        x = Activation(_hard_swish)(x)
+    if activation == 'relu':
+        x = Activation(_relu6)(x)
+    x = Conv2D(filters, (1, 1), strides=(1, 1), padding='same')(x)
+    x = BatchNormalization(axis=channel_axis)(x)
+
+    out = Concatenate(axis=-1)([inputs, x])
+    out = Dropout(0.3)(out)
+
+    return out
 
 
 def identity_block(input_tensor, kernel_size, filters, stage, block):
