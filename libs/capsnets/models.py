@@ -3,34 +3,10 @@ import libs.capsnets.layers.basic as basic_layers
 import libs.capsnets.layers.segment as segment_layers
 import libs.layers as common_layers
 import libs.capsnets.layers.gamma as gamma_layers
-import libs.capsnets.layers.matrix as matrix_layers
 import libs.capsnets.metrics.gamma as gamma_metrics
-import libs.capsnets.metrics.matrix as matrix_metrics
-from tensorflow.keras import activations, metrics
+from tensorflow.keras import activations
 from libs.capsnets import losses
 from libs.utls import pgd
-from libs import utls
-
-
-class MatrixCapsNet:
-    def __init__(self, shape, classes, routings, batch_size, coord_add):
-        self.inputs = tf.keras.layers.Input(shape=shape, batch_size=batch_size)
-        self.conv1 = tf.keras.layers.Conv2D(filters=32, kernel_size=[5, 5], strides=2, padding='valid',
-                                            activation=activations.relu)
-        self.primaryCaps = matrix_layers.PrimaryCapsule2D(capsules=8, kernel_size=[1, 1], strides=1,
-                                                          padding='valid', pose_shape=[4, 4])
-        self.convCaps1 = matrix_layers.ConvolutionalCapsule(capsules=16, kernel=3, stride=2, routings=routings)
-        self.convCaps2 = matrix_layers.ConvolutionalCapsule(capsules=16, kernel=3, stride=1, routings=routings)
-        self.classCaps = matrix_layers.ClassCapsule(capsules=classes, routings=routings, coord_add=coord_add)
-
-    def build(self):
-        outputs = self.conv1(self.inputs)
-        outputs = self.primaryCaps(outputs)
-        outputs = self.convCaps1(outputs)
-        outputs = self.convCaps2(outputs)
-        outputs = self.classCaps(outputs)
-
-        return MatrixCapsuleModel(self.inputs, outputs)
 
 
 class GammaCapsNet(tf.keras.Model):
@@ -108,33 +84,6 @@ class GammaCapsNet(tf.keras.Model):
         super(GammaCapsNet, self).get_config()
 
 
-class MatrixCapsuleModel(tf.keras.Model):
-    def train_step(self, data):
-        x, y = data
-        with tf.GradientTape() as tape:
-            activation, pose = self(x, training=True)
-            loss = losses.spread_loss(activation, pose, x, y, self.optimizer.learning_rate(self.optimizer.iterations))
-        trainable_vars = self.trainable_variables
-        gradients = tape.gradient(loss, trainable_vars)
-
-        self.optimizer.apply_gradients(zip(gradients, trainable_vars))
-        self.compiled_metrics.update_state(y, activation)
-        metrics = {m.name: m.result() for m in self.metrics}
-        metrics['spread_loss'] = loss
-        return metrics
-
-    def test_step(self, data):
-        x, y = data
-        activation, pose = self(x, training=False)
-        loss = losses.spread_loss(activation, pose, x, y, self.optimizer.learning_rate(self.optimizer.iterations))
-
-        self.compiled_metrics.update_state(y, activation)
-
-        metrics = {m.name: m.result() for m in self.metrics}
-        metrics['spread_loss'] = loss
-        return metrics
-
-
 class SegCapsNetBasic:
     def __init__(self, shape, classes, routings):
         self.shape = shape
@@ -206,39 +155,5 @@ class DarkNet():
 #               validation_data=[x_test, y_test])
 
 # if __name__ == '__main__':
-#     import numpy as np
-#
-#     coord_add = [[[8., 8.], [12., 8.], [16., 8.]],
-#                  [[8., 12.], [12., 12.], [16., 12.]],
-#                  [[8., 16.], [12., 16.], [16., 16.]]]
-#
-#     coord_add = np.array(coord_add, dtype=np.float32) / 28.
-#
-#     (x_train, y_train), (x_test, y_test) = utls.load('fashion_mnist')
-#     x_val = x_test[:9000]
-#     y_val = y_test[:9000]
-#     x_test = x_test[9000:]
-#     y_test = y_test[9000:]
-#
-#     epochs = 2
-#     batch_size = 25
-#
-#     model = MatrixCapsNet([28, 28, 1], 10, 3, batch_size, coord_add).build()
-#     model.summary()
-#
-#     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=tf.keras.optimizers.schedules.PiecewiseConstantDecay(
-#         boundaries=[(len(x_train) // batch_size * x) for x in
-#                     range(1, 8)],
-#         values=[x / 10.0 for x in range(2, 10)])),
-#         metrics=matrix_metrics.matrix_accuracy)
-#
-#     model.fit(x_train, y_train, batch_size=batch_size, epochs=epochs,
-#               validation_data=(x_val, y_val))
-#
-#     print(y_test[0])
-#     activation, pose_out = model.predict(x_test[0])
-#     print(activation)
-
-if __name__ == '__main__':
-    segmodel = SegCapsNetBasic([28, 28, 1], 10, 3).build()
-    segmodel[0].summary()
+#     segmodel = SegCapsNetBasic([28, 28, 1], 10, 3).build()
+#     segmodel[0].summary()
