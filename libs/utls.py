@@ -1,12 +1,16 @@
-import tensorflow as tf
-from tensorflow.keras.utils import to_categorical
-from tensorflow.keras.datasets import mnist, fashion_mnist, cifar10, cifar100
-import matplotlib.pyplot as plt
-import pandas
-import math
-import numpy as np
 import io
 import itertools
+import math
+import os
+from abc import ABC, abstractmethod
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas
+import tensorflow as tf
+from tensorflow.keras.datasets import mnist, fashion_mnist, cifar10, cifar100
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.utils import to_categorical, plot_model
 
 
 def pgd(x, y, model, eps=0.3, k=40, a=0.01):
@@ -88,7 +92,7 @@ def plot_to_image(figure):
 
 def plot_confusion_matrix(cm, class_names):
     figure = plt.figure(figsize=(8, 8))
-    plt.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('Blues'))
     plt.title('Матрица ошибок')
     plt.colorbar()
     tick_marks = np.arange(len(class_names))
@@ -97,7 +101,7 @@ def plot_confusion_matrix(cm, class_names):
 
     cm = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=4)
 
-    threshold = cm.max() / 2.
+    threshold = cm.max(initial=0) / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         color = 'white' if cm[i, j] > threshold else 'black'
         plt.text(j, i, cm[i, j], horizontalalignment="center", color=color)
@@ -146,3 +150,76 @@ def load(dataset):
     y_test = to_categorical(y_test.astype('float32'))
 
     return (x_train, y_train), (x_test, y_test)
+
+
+class BaseCapsNetModel(ABC):
+    def __init__(self, name):
+        self.model = None
+        self.input_shape = None
+        self.output_shape = None
+        self.decoder = None
+        self.batch_size = None
+        self.name = name
+
+    @abstractmethod
+    def create(self, input_shape, output_shape, **kwargs):
+        pass
+
+    def build(self, input_shape, output_shape, **kwargs):
+        self.input_shape = input_shape
+        self.output_shape = output_shape
+
+        self.model = self.create(input_shape, output_shape, **kwargs)
+        self.model.summary()
+
+        return self.model
+
+    def compile(self, **kwargs):
+        self.model.compile(**kwargs)
+
+    def __train_generator(self, x, y, shift_fraction=0.):
+        train_data_generator = ImageDataGenerator(width_shift_range=shift_fraction,
+                                                  height_shift_range=shift_fraction)
+        generator = train_data_generator.flow(x, y, batch_size=self.batch_size)
+        while 1:
+            x_batch, y_batch = generator.next()
+            if self.decoder:
+                yield [x_batch, y_batch], [y_batch, x_batch]
+            else:
+                yield x_batch, y_batch
+
+    def __test_generator(self, x, y):
+        if self.decoder:
+            return [x, y], [y, x]
+        else:
+            return x, y
+
+    def fit(self, x, y, batch_size, epochs, callbacks=None, load_weights=None, validation_data=None, is_plot_model=True,
+            is_tensor_board=True, debug=False, is_model_checkpoint=True, is_csv_logger=True, logdir='./', **kwargs):
+        if callbacks is None:
+            callbacks = []
+        cb = []
+        cb += callbacks
+        self.batch_size = batch_size
+        if is_csv_logger:
+            cb.append(callbacks.CSVLogger(os.path.join(logdir, 'history.csv')))
+        if is_tensor_board:
+            cb.append(callbacks.TensorBoard(log_dir=os.path.join(logdir, 'tb'),
+                                            batch_size=self.batch_size, histogram_freq=debug))
+        if is_model_checkpoint:
+            if not os.path.exists(os.path.join(logdir, 'models')):
+                os.makedirs(os.path.join(logdir, 'models'))
+            cb.append(callbacks.ModelCheckpoint(os.path.join(logdir, 'models/discriminator.h5'),
+                                                save_best_only=False, save_weights_only=True, verbose=1))
+        if is_plot_model:
+            plot_model(self.model, to_file=os.path.join(logdir, self.name + '.svg'), show_shapes=True)
+        if load_weights:
+            self.model.load_weights(load_weights)
+
+        history = self.model.fit(self.__train_generator(x, y, 0.1),
+                                 steps_per_epoch=int(x.shape[0] / batch_size),
+                                 epochs=epochs,
+                                 validation_data=self.__test_generator(validation_data[0], validation_data[1]),
+                                 callbacks=cb,
+                                 **kwargs)
+        return history
