@@ -263,7 +263,7 @@ def res50_capsnet_3level(shape, num_classes, routings):
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='c')
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='d')
 
-    _, capsules_1 = res_block_caps(x, routings, num_classes, kernel_size=5, strides=1)
+    _, capsules_1 = res_block_caps(x, routings, num_classes, primary_dim_capsule=32, num_capsule=16, kernel_size=5, strides=1)
 
     x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a')
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b')
@@ -272,13 +272,13 @@ def res50_capsnet_3level(shape, num_classes, routings):
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e')
     x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f')
 
-    _, capsules_2 = res_block_caps(x, routings, num_classes, kernel_size=3, strides=1)
+    _, capsules_2 = res_block_caps(x, routings, num_classes, primary_dim_capsule=32, num_capsule=16, kernel_size=3, strides=1)
 
     x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a')
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
-    _, capsules_3 = res_block_caps(x, routings, num_classes, kernel_size=2, strides=1)
+    _, capsules_3 = res_block_caps(x, routings, num_classes, primary_dim_capsule=32, num_capsule=16, kernel_size=2, strides=1)
 
     capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
@@ -298,7 +298,7 @@ def res50_capsnet_3level(shape, num_classes, routings):
 
 if __name__ == '__main__':
     # load data
-    (x_train, y_train), (x_test, y_test) = utls.load('cifar10')
+    (x_train, y_train), (x_test, y_test) = utls.load('mnist')
     # define model
 
     model, eval_model = res50_capsnet_3level(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))),

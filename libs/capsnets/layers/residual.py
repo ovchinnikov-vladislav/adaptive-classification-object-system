@@ -41,8 +41,9 @@ def bottleneck(inputs, filters, kernel, e, stride, activation):
     return out
 
 
-def res_block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=12, dim_capsule=6, padding='valid'):
-    x, capsules = PrimaryCapsule2D(num_capsules=num_capsule, dim_capsules=8, kernel_size=kernel_size,
+def res_block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=12, primary_dim_capsule=8,
+                   dim_capsule=6, padding='valid'):
+    x, capsules = PrimaryCapsule2D(num_capsules=num_capsule, dim_capsules=primary_dim_capsule, kernel_size=kernel_size,
                                    strides=strides, padding=padding)(x)
     capsules = Capsule(num_capsules=classes, dim_capsules=dim_capsule, routings=routings)(capsules)
 
