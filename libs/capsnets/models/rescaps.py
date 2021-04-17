@@ -98,7 +98,7 @@ def res_capsnet_3level(shape, num_classes, routings):
 
     input_decoder = Input(shape=(num_classes,))
 
-    decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=shape)
+    decoder = Decoder(name='is_decoder', num_classes=num_classes, dim=18, output_shape=shape)
 
     train_model = Model([inputs, input_decoder],
                         [output, decoder([capsules, input_decoder])])
@@ -201,7 +201,7 @@ def res_capsnet(shape, num_classes, routings):
 
     input_decoder = Input(shape=(num_classes,))
 
-    decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=shape)
+    decoder = Decoder(name='is_decoder', num_classes=num_classes, dim=18, output_shape=shape)
 
     train_model = Model([inputs, input_decoder],
                         [output, decoder([capsules, input_decoder])])
@@ -286,7 +286,7 @@ def res50_capsnet_3level(shape, num_classes, routings):
 
     input_decoder = Input(shape=(num_classes,))
 
-    decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=shape)
+    decoder = Decoder(name='is_decoder', num_classes=num_classes, dim=18, output_shape=shape)
 
     train_model = Model([input, input_decoder],
                         [output, decoder([capsules, input_decoder])])

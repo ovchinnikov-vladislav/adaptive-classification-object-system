@@ -156,26 +156,33 @@ def load(dataset):
 
 class BaseModelForTraining(ABC):
     def __init__(self, name):
-        self.model = None
+        self.models = None
+        self.training_model = None
         self.input_shape = None
-        self.decoder = None
+        self.is_decoder = None
         self.batch_size = None
         self.name = name
 
     @abstractmethod
-    def create(self, input_shape, output_shape, **kwargs):
+    def create(self, input_shape, **kwargs):
         pass
 
     def build(self, input_shape, **kwargs):
         self.input_shape = input_shape
 
-        self.model = self.create(input_shape, **kwargs)
-        self.model.summary()
+        self.models = self.create(input_shape, **kwargs)
 
-        return self.model
+        if type(self.models) is tuple:
+            self.training_model = self.models[0]
+        else:
+            self.training_model = self.models
+
+        self.training_model.summary()
+
+        return self.models
 
     def compile(self, **kwargs):
-        self.model.compile(**kwargs)
+        self.training_model.compile(**kwargs)
 
     def __train_generator(self, x, y, shift_fraction=0.):
         train_data_generator = ImageDataGenerator(width_shift_range=shift_fraction,
@@ -183,13 +190,13 @@ class BaseModelForTraining(ABC):
         generator = train_data_generator.flow(x, y, batch_size=self.batch_size)
         while 1:
             x_batch, y_batch = generator.next()
-            if self.decoder:
+            if self.is_decoder:
                 yield [x_batch, y_batch], [y_batch, x_batch]
             else:
                 yield x_batch, y_batch
 
     def __test_generator(self, x, y):
-        if self.decoder:
+        if self.is_decoder:
             return [x, y], [y, x]
         else:
             return x, y
@@ -215,11 +222,11 @@ class BaseModelForTraining(ABC):
             cb.append(callbacks.ModelCheckpoint(os.path.join(log_dir, f'models/{self.name}-{datetime.datetime}'),
                                                 save_best_only=False, save_weights_only=True, verbose=1))
         if is_plot_model:
-            plot_model(self.model, to_file=os.path.join(log_dir, self.name + '.svg'), show_shapes=True)
+            plot_model(self.training_model, to_file=os.path.join(log_dir, self.name + '.svg'), show_shapes=True)
         if load_weights:
-            self.model.load_weights(load_weights)
+            self.training_model.load_weights(load_weights)
 
-        history = self.model.fit(self.__train_generator(x, y, 0.1), epochs=epochs,
-                                 validation_data=self.__test_generator(validation_data[0], validation_data[1]),
-                                 steps_per_epoch=int(x.shape[0] / batch_size), callbacks=cb, **kwargs)
+        history = self.training_model.fit(self.__train_generator(x, y, 0.1), epochs=epochs,
+                                          validation_data=self.__test_generator(validation_data[0], validation_data[1]),
+                                          steps_per_epoch=int(x.shape[0] / batch_size), callbacks=cb)
         return history
