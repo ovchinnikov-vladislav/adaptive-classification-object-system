@@ -5,7 +5,7 @@ from tensorflow.keras import Model
 from libs.utls import BaseModelForTraining
 
 
-class CapsNetV1(BaseModelForTraining):
+class CapsuleNetworkV1(BaseModelForTraining):
     def create(self, input_shape, **kwargs):
         self.is_decoder = True
 
@@ -31,7 +31,7 @@ class CapsNetV1(BaseModelForTraining):
         return train_model, eval_model
 
 
-class CapsNetV2(BaseModelForTraining):
+class CapsuleNetworkV2(BaseModelForTraining):
     def create(self, input_shape, **kwargs):
         num_classes = kwargs.get('num_classes')
         routings = kwargs.get('routings')

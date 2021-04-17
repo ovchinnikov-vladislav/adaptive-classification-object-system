@@ -1,6 +1,6 @@
 from libs import utls
 from libs.capsnets.models.diverse import DiverseCapsuleNetwork
-from tensorflow.keras import callbacks, optimizers
+from tensorflow.keras import optimizers
 from libs.capsnets.losses import margin_loss
 import numpy as np
 import argparse

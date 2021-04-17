@@ -1,10 +1,9 @@
 import numpy as np
-from keras_preprocessing.image import ImageDataGenerator
 from tensorflow.keras import optimizers
-from tensorflow.keras import callbacks
 from libs.capsnets import losses
-from libs.capsnets.models.basic import CapsNetV1
+from libs.capsnets.models.basic import CapsuleNetworkV1
 from libs import utls
+import os
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -25,7 +24,7 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
     # define model
 
-    builder = CapsNetV1(name="capsnet_v1")
+    builder = CapsuleNetworkV1(name="capsnet_v1")
     model, _ = builder.build(input_shape=x_train.shape[1:],
                              num_classes=len(np.unique(np.argmax(y_train, 1))),
                              routings=args.routings)
@@ -33,40 +32,5 @@ if __name__ == '__main__':
                     loss=losses.margin_loss,
                     metrics='accuracy')
 
-    builder.fit(x_train, y_train, 100, 5, validation_data=(x_test, y_test), log_dir='./capsnet_v1_logs')
-
-    # # callbacks
-    # log = callbacks.CSVLogger(args.save_dir + '/log.csv')
-    # tb = callbacks.TensorBoard(log_dir=args.save_dir + '/tensorboard-logs')
-    # checkpoint = callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', monitor='val_accuracy',
-    #                                        save_best_only=True, save_weights_only=True, verbose=1)
-    # lr_decay = callbacks.LearningRateScheduler(schedule=lambda epoch: args.lr * (args.lr_decay ** epoch))
-    #
-    # # compile the model
-    # model.compile(optimizer=optimizers.Adam(lr=args.lr),
-    #               loss=losses.margin_loss,
-    #               metrics='accuracy')
-    #
-    #
-    # # Begin: Training with data augmentation ---------------------------------------------------------------------#
-    # def train_generator(x, y, batch_size, shift_fraction=0.):
-    #     train_datagen = ImageDataGenerator(width_shift_range=shift_fraction,
-    #                                        height_shift_range=shift_fraction)  # shift up to 2 pixel for MNIST
-    #     generator = train_datagen.flow(x, y, batch_size=batch_size)
-    #     while 1:
-    #         x_batch, y_batch = generator.next()
-    #         yield ([x_batch, y_batch], [y_batch, x_batch])
-    #
-    #
-    # # Training with data augmentation. If shift_fraction=0., also no augmentation.
-    # model.fit(train_generator(x_train, y_train, args.batch_size, 0.1),
-    #           steps_per_epoch=int(y_train.shape[0] / args.batch_size),
-    #           epochs=args.epochs,
-    #           validation_data=([x_test, y_test], [y_test, x_test]),
-    #           callbacks=[log, tb, checkpoint, lr_decay])
-    #
-    # model.save_weights(f'{args.save_dir}/trained_basic_capsnet_model_{args.dataset}.h5')
-    #
-    # print(f'Trained model saved to \'{args.save_dir}/trained_basic_capsnet_model_{args.dataset}.h5\'')
-    #
-    # utls.plot_log(args.save_dir + '/log.csv', show=True)
+    builder.fit(x_train, y_train, args.batch_size, args.epochs, checkpoint_monitor='val_length_accuracy',
+                validation_data=(x_test, y_test), log_dir='capsnet_v1_logs', show_plot_logs=True)

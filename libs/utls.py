@@ -68,16 +68,16 @@ def plot_log(filename, show=True):
         if key.find('loss') >= 0 and not key.find('val') >= 0:  # training loss
             plt.plot(data['epoch'].values, data[key].values, label=key)
     plt.legend()
-    plt.title('Training loss')
+    plt.title('Потери (loss) при тренировке')
 
     fig.add_subplot(212)
     for key in data.keys():
         if key.find('acc') >= 0:  # acc
             plt.plot(data['epoch'].values, data[key].values, label=key)
     plt.legend()
-    plt.title('Training and validation accuracy')
+    plt.title('Точность (accuracy) при тренировке и валидации')
 
-    fig.savefig('result/log.png')
+    fig.savefig('log.png')
     if show:
         plt.show()
 
@@ -202,31 +202,44 @@ class BaseModelForTraining(ABC):
             return x, y
 
     def fit(self, x, y, batch_size, epochs, call_backs=None, load_weights=None, validation_data=None,
-            is_plot_model=False, is_tensor_board=True, debug=False, is_model_checkpoint=True, is_csv_logger=True,
-            log_dir='./'):
+            set_plot_model=True, set_tensor_board=True, set_debug=False, set_model_checkpoint=True,
+            set_csv_logger=True, log_dir='./', show_plot_logs=False, save_weights=True, checkpoint_monitor='acc'):
         if call_backs is None:
             call_backs = []
         cb = []
         cb += call_backs
         self.batch_size = batch_size
 
-        if is_csv_logger:
+        if not os.path.exists(os.path.join(log_dir, 'models')):
+            os.makedirs(os.path.join(log_dir, 'models'))
+
+        if set_csv_logger:
             cb.append(callbacks.CSVLogger(os.path.join(log_dir, 'history.csv')))
 
-        if is_tensor_board:
+        if set_tensor_board:
             cb.append(callbacks.TensorBoard(log_dir=os.path.join(log_dir, 'tb'),
-                                            batch_size=self.batch_size, histogram_freq=debug))
-        if is_model_checkpoint:
-            if not os.path.exists(os.path.join(log_dir, 'models')):
-                os.makedirs(os.path.join(log_dir, 'models'))
-            cb.append(callbacks.ModelCheckpoint(os.path.join(log_dir, f'models/{self.name}-{datetime.datetime}'),
-                                                save_best_only=False, save_weights_only=True, verbose=1))
-        if is_plot_model:
+                                            batch_size=self.batch_size, histogram_freq=set_debug))
+        if set_model_checkpoint:
+            date = str(datetime.datetime.now()).split(' ')[0]
+            file_name = f'{self.name}-{date}' + '-{epoch:02d}.h5'
+            cb.append(callbacks.ModelCheckpoint(
+                os.path.join(log_dir, 'models', file_name), monitor=checkpoint_monitor,
+                save_best_only=True, save_weights_only=True, verbose=1))
+
+        if set_plot_model:
             plot_model(self.training_model, to_file=os.path.join(log_dir, self.name + '.svg'), show_shapes=True)
+
         if load_weights:
             self.training_model.load_weights(load_weights)
 
         history = self.training_model.fit(self.__train_generator(x, y, 0.1), epochs=epochs,
                                           validation_data=self.__test_generator(validation_data[0], validation_data[1]),
                                           steps_per_epoch=int(y.shape[0] / batch_size), callbacks=cb)
+
+        if save_weights:
+            self.training_model.save(os.path.join(log_dir, f'{self.name}-result-{str(datetime.datetime.now())}.h5'))
+
+        if show_plot_logs:
+            plot_log(os.path.join(log_dir, 'history.csv'), True)
+
         return history

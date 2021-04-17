@@ -23,23 +23,23 @@ class PrimaryCapsule2D(layers.Layer):
         num_filters = num_capsules * dim_capsules
         self.conv2d = layers.Conv2D(filters=num_filters,
                                     kernel_size=kernel_size,
-                                    kernel_regularizer=tf.keras.regularizers.l2(1e-4),
+                                    # kernel_regularizer=tf.keras.regularizers.l2(1e-4),
                                     strides=strides,
                                     activation=None,
                                     padding=padding)
-        self.batch = layers.BatchNormalization(axis=-1)
+        # self.batch = layers.BatchNormalization(axis=-1)
 
     def call(self, inputs, **kwargs):
         x = self.conv2d(inputs)
-        x = self.batch(x)
+        # x = self.batch(x)
 
         if not self.do_reshape:
             shape = x.shape[1] * x.shape[2] * x.shape[3] / self.dim_capsules
             x = layers.Reshape(target_shape=(int(math.sqrt(shape)), int(math.sqrt(shape)), self.dim_capsules))(x)
-            return squash(x)
+            return layers.Lambda(squash)(x)
 
         x = layers.Reshape(target_shape=(-1, self.dim_capsules))(x)
-        return squash(x)
+        return layers.Lambda(squash)(x)
 
     def get_config(self):
         return super(PrimaryCapsule2D, self).get_config()
