@@ -3,14 +3,13 @@ from tensorflow.keras import optimizers
 from libs.capsnets import losses
 from libs.capsnets.models.basic import CapsuleNetworkV1
 from libs import utls
-import os
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', default=5, type=int)
 parser.add_argument('--batch_size', default=100, type=int)
 parser.add_argument('--routings', default=3, type=int)
-parser.add_argument('--save_dir', default='./')
+parser.add_argument('--save_dir', default='capsnet_v1_logs')
 parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--lr_decay', default=0.9, type=float)
@@ -24,7 +23,7 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
     # define model
 
-    builder = CapsuleNetworkV1(name="capsnet_v1")
+    builder = CapsuleNetworkV1(name=f'capsnet_v1_{args.dataset}')
     model, _ = builder.build(input_shape=x_train.shape[1:],
                              num_classes=len(np.unique(np.argmax(y_train, 1))),
                              routings=args.routings)
@@ -33,4 +32,4 @@ if __name__ == '__main__':
                     metrics='accuracy')
 
     builder.fit(x_train, y_train, args.batch_size, args.epochs, checkpoint_monitor='val_length_accuracy',
-                validation_data=(x_test, y_test), log_dir='capsnet_v1_logs', show_plot_logs=True)
+                validation_data=(x_test, y_test), log_dir=args.save_dir, show_plot_logs=True)

@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas
 import tensorflow as tf
+import uuid
 from tensorflow.keras import callbacks
 from tensorflow.keras.datasets import mnist, fashion_mnist, cifar10, cifar100
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
@@ -114,6 +115,35 @@ def plot_confusion_matrix(cm, class_names):
     return figure
 
 
+def plot_classification_report(cr, title='Отчет по классификации', with_avg_total=False, cmap=plt.get_cmap('Blues')):
+    lines = cr.split('\n')
+    classes = []
+    plot_mat = []
+    t = None
+    for line in lines[2: (len(lines) - 3)]:
+        t = line.split()
+        classes.append(t[0])
+        v = [float(x) for x in t[1: len(t) - 1]]
+        plot_mat.append(v)
+
+    if with_avg_total:
+        ave_total = lines[len(lines) - 1].split()
+        classes.append('avg/total')
+        v_ave_total = [float(x) for x in t[1:len(ave_total) - 1]]
+        plot_mat.append(v_ave_total)
+
+    plt.imshow(plot_mat, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    x_tick_marks = np.arange(3)
+    y_tick_marks = np.arange(len(classes))
+    plt.xticks(x_tick_marks, ['точность (precision)', 'полнота (recall)', 'f1-score'], rotation=45)
+    plt.yticks(y_tick_marks, classes)
+    plt.tight_layout()
+    plt.ylabel('Классы')
+    plt.xlabel('Метрики')
+
+
 def plot_generated_image(x, y_pred):
     classes = tf.shape(y_pred)
     y_pred = y_pred.numpy()
@@ -203,7 +233,7 @@ class BaseModelForTraining(ABC):
 
     def fit(self, x, y, batch_size, epochs, call_backs=None, load_weights=None, validation_data=None,
             set_plot_model=True, set_tensor_board=True, set_debug=False, set_model_checkpoint=True,
-            set_csv_logger=True, log_dir='./', show_plot_logs=False, save_weights=True, checkpoint_monitor='acc'):
+            set_csv_logger=True, log_dir='./', show_plot_logs=False, save_weights=True, checkpoint_monitor='accuracy'):
         if call_backs is None:
             call_backs = []
         cb = []
@@ -237,7 +267,8 @@ class BaseModelForTraining(ABC):
                                           steps_per_epoch=int(y.shape[0] / batch_size), callbacks=cb)
 
         if save_weights:
-            self.training_model.save(os.path.join(log_dir, f'{self.name}-result-{str(datetime.datetime.now())}.h5'))
+            date = str(datetime.datetime.now()).split(' ')[0]
+            self.training_model.save(os.path.join(log_dir, f'{self.name}-result-{date}-{str(uuid.uuid4())}.h5'))
 
         if show_plot_logs:
             plot_log(os.path.join(log_dir, 'history.csv'), True)
