@@ -1,7 +1,7 @@
 import numpy as np
 from tensorflow.keras import optimizers
 from libs.capsnets import losses
-from libs.capsnets.models.basic import CapsuleNetworkV1
+from libs.capsnets.models.basic import CapsuleNetworkV1, CapsuleNetworkV2
 from libs import utls
 import argparse
 
@@ -14,6 +14,7 @@ parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mn
 parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--lr_decay', default=0.9, type=float)
 parser.add_argument('--lam_recon', default=0.392, type=float)
+parser.add_argument('--model', default='capsnet_v1', help='value: capsnet_v1, capsnet_v2')
 
 if __name__ == '__main__':
     # CapsNet Mnist
@@ -23,7 +24,11 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
     # define model
 
-    builder = CapsuleNetworkV1(name=f'capsnet_v1_{args.dataset}')
+    if args.model == 'capsnet_v2':
+        builder = CapsuleNetworkV2(name=f'capsnet_v2_{args.dataset}')
+    else:
+        builder = CapsuleNetworkV1(name=f'capsnet_v1_{args.dataset}')
+
     model, _ = builder.build(input_shape=x_train.shape[1:],
                              num_classes=len(np.unique(np.argmax(y_train, 1))),
                              routings=args.routings)

@@ -24,9 +24,9 @@ class CapsuleNetworkV1(BaseModelForTraining):
         decoder = Decoder(num_classes=num_classes, output_shape=input_shape, name='decoder')
 
         train_model = Model([inputs, input_decoder],
-                            [output, decoder([capsules, input_decoder])])
+                            [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(inputs, [output, decoder(capsules)])
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -52,8 +52,8 @@ class CapsuleNetworkV2(BaseModelForTraining):
         decoder = Decoder(num_classes=num_classes, output_shape=input_shape, name='decoder')
 
         train_model = Model([inputs, input_decoder],
-                            [output, decoder([capsules, input_decoder])])
+                            [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(inputs, [output, decoder(capsules)])
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
