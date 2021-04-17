@@ -23,11 +23,11 @@ if __name__ == '__main__':
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
 
     if args.model == 'res_capsnet_v2':
-        model = ResCapsuleNetworkV2(name=f'res_capsnet_v1_{args.dataset}')
+        model = ResCapsuleNetworkV2(name=f'res_capsnet_v2_{args.dataset}')
     elif args.model == 'res50_to_capsnet':
         model = Resnet50ToCapsuleNetwork(name=f'res50_to_capsnet_{args.dataset}')
     else:
-        model = ResCapsuleNetworkV1(name=f'res_capsnet_v2_{args.dataset}')
+        model = ResCapsuleNetworkV1(name=f'res_capsnet_v1_{args.dataset}')
 
     model.build(input_shape=x_train.shape[1:],
                 num_classes=len(np.unique(np.argmax(y_train, 1))),

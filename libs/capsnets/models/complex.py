@@ -34,9 +34,9 @@ class CapsuleNetworkWith3Level(BaseModelForTraining):
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
         train_model = Model([input_capsnet, input_decoder],
-                            [output, decoder([capsules, input_decoder])])
+                            [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(input_capsnet, [output, decoder(capsules)])
+        eval_model = Model(input_capsnet, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -74,9 +74,9 @@ class CapsuleNetworkWith4Level(BaseModelForTraining):
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
         train_model = Model([input_capsnet, input_decoder],
-                            [output, decoder([capsules, input_decoder])])
+                            [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(input_capsnet, [output, decoder(capsules)])
+        eval_model = Model(input_capsnet, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -124,9 +124,9 @@ class ResCapsuleNetworkWith3LevelV1(BaseModelForTraining):
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
         train_model = Model([inputs, input_decoder],
-                            [output, decoder([capsules, input_decoder])])
+                            [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(inputs, [output, decoder(capsules)])
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -164,9 +164,9 @@ class ResCapsuleNetworkWith3LevelV2(BaseModelForTraining):
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
         train_model = Model([input_capsnet, input_decoder],
-                            [output, decoder([capsules, input_decoder])])
+                            [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(input_capsnet, [output, decoder(capsules)])
+        eval_model = Model(input_capsnet, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -222,8 +222,8 @@ class Resnet50WithCapsuleNetworkWith3Level(BaseModelForTraining):
         decoder = Decoder(name='is_decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
         train_model = Model([inputs, input_decoder],
-                            [output, decoder([capsules, input_decoder])])
+                            [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(inputs, [output, decoder(capsules)])
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
