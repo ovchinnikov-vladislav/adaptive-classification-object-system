@@ -1,7 +1,8 @@
+import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras.backend import epsilon, sqrt, sum, square
-from tensorflow.keras.layers import BatchNormalization, Dropout, Conv2D
+from tensorflow.keras.layers import BatchNormalization, Dropout, Conv2D, Add
 from libs.capsnets.utls import squash
 from libs.capsnets.layers import basic
 
@@ -13,6 +14,16 @@ def res_block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=1
     capsules = Capsule(num_capsules=classes, dim_capsules=dim_capsule, routings=routings)(capsules)
 
     return x, capsules
+
+
+def residual_primary_caps_block(x, num_capsules, dim_capsules, kernel_size=5):
+    _, capsules = PrimaryCapsule2D(num_capsules=num_capsules, dim_capsules=dim_capsules, kernel_size=kernel_size,
+                                   padding='same', strides=3)(x)
+    _, capsules = PrimaryCapsule2D(num_capsules=num_capsules, dim_capsules=dim_capsules, kernel_size=kernel_size,
+                                   padding='same', strides=3)(capsules)
+
+    out = Add()([x, capsules])
+    return out
 
 
 class Length(layers.Layer):
@@ -33,8 +44,9 @@ class Capsule(basic.Capsule):
 
 
 class PrimaryCapsule2D(layers.Layer):
-    def __init__(self, num_capsules, dim_capsules, kernel_size, strides, padding='valid', **kwargs):
+    def __init__(self, num_capsules, dim_capsules, kernel_size, strides, padding='valid', do_reshape=False, **kwargs):
         super(PrimaryCapsule2D, self).__init__(**kwargs)
+        self.do_reshape = do_reshape
         self.num_capsules = num_capsules
         self.dim_capsules = dim_capsules
         self.kernel_size = kernel_size
@@ -52,9 +64,13 @@ class PrimaryCapsule2D(layers.Layer):
         output = self.conv(inputs)
         output = self.batch(output)
 
-        outputs = layers.Reshape(target_shape=(-1, self.dim_capsules))(output)
+        if not self.do_reshape:
+            shape = output.shape[1] * output.shape[2] * output.shape[3] / self.dim_capsules
+            outputs = layers.Reshape(target_shape=(int(np.sqrt(shape)), int(np.sqrt(shape)), self.dim_capsules))(output)
+            return output, layers.Lambda(squash)(outputs)
 
-        return output, squash(outputs)
+        outputs = layers.Reshape(target_shape=(-1, self.dim_capsules))(output)
+        return output, layers.Lambda(squash)(outputs)
 
     def get_config(self):
         return super().get_config()

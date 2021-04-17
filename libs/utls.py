@@ -268,7 +268,6 @@ class BaseModelForTraining(ABC):
         self.training_model = None
         self.input_shape = None
         self.is_decoder = None
-        self.batch_size = None
         self.name = name
 
     @abstractmethod
@@ -292,10 +291,10 @@ class BaseModelForTraining(ABC):
     def compile(self, **kwargs):
         self.training_model.compile(**kwargs)
 
-    def __train_generator(self, x, y, shift_fraction=0.):
+    def __train_generator(self, x, y, batch_size, shift_fraction=0.):
         train_data_generator = ImageDataGenerator(width_shift_range=shift_fraction,
                                                   height_shift_range=shift_fraction)
-        generator = train_data_generator.flow(x, y, batch_size=self.batch_size)
+        generator = train_data_generator.flow(x, y, batch_size=batch_size)
         while 1:
             x_batch, y_batch = generator.next()
             if self.is_decoder:
@@ -316,7 +315,6 @@ class BaseModelForTraining(ABC):
             call_backs = []
         cb = []
         cb += call_backs
-        self.batch_size = batch_size
 
         if not os.path.exists(os.path.join(log_dir, 'models')):
             os.makedirs(os.path.join(log_dir, 'models'))
@@ -326,7 +324,7 @@ class BaseModelForTraining(ABC):
 
         if set_tensor_board:
             cb.append(callbacks.TensorBoard(log_dir=os.path.join(log_dir, 'tb'),
-                                            batch_size=self.batch_size, histogram_freq=set_debug))
+                                            batch_size=batch_size, histogram_freq=set_debug))
         if set_model_checkpoint:
             date = str(datetime.datetime.now()).split(' ')[0]
             file_name = f'{self.name}-{date}' + '-{epoch:02d}.h5'
@@ -340,9 +338,49 @@ class BaseModelForTraining(ABC):
         if load_weights:
             self.training_model.load_weights(load_weights)
 
-        history = self.training_model.fit(self.__train_generator(x, y, 0.1), epochs=epochs,
+        history = self.training_model.fit(self.__train_generator(x, y, batch_size, 0.1), epochs=epochs,
                                           validation_data=self.__test_generator(validation_data[0], validation_data[1]),
                                           steps_per_epoch=int(y.shape[0] / batch_size), callbacks=cb)
+
+        if save_weights:
+            date = str(datetime.datetime.now()).split(' ')[0]
+            self.training_model.save_weights(os.path.join(log_dir, f'{self.name}-result-{date}-{str(uuid.uuid4())}.h5'))
+
+        return history
+
+    def fit_generator(self, train_data, steps_per_epoch, epochs, validation_data=None, call_backs=None,
+                      load_weights=None, set_plot_model=True, set_tensor_board=True,
+                      set_debug=False, set_model_checkpoint=True, set_csv_logger=True, log_dir='./',
+                      save_weights=True, checkpoint_monitor='accuracy'):
+        if call_backs is None:
+            call_backs = []
+        cb = []
+        cb += call_backs
+
+        if not os.path.exists(os.path.join(log_dir, 'models')):
+            os.makedirs(os.path.join(log_dir, 'models'))
+
+        if set_csv_logger:
+            cb.append(callbacks.CSVLogger(os.path.join(log_dir, 'history_training.csv')))
+
+        if set_tensor_board:
+            cb.append(callbacks.TensorBoard(log_dir=os.path.join(log_dir, 'tb'),
+                                            batch_size=steps_per_epoch // epochs, histogram_freq=set_debug))
+        if set_model_checkpoint:
+            date = str(datetime.datetime.now()).split(' ')[0]
+            file_name = f'{self.name}-{date}' + '-{epoch:02d}.h5'
+            cb.append(callbacks.ModelCheckpoint(
+                os.path.join(log_dir, 'models', file_name), monitor=checkpoint_monitor,
+                save_best_only=True, save_weights_only=True, verbose=1))
+
+        if set_plot_model:
+            plot_model(self.training_model, to_file=os.path.join(log_dir, self.name + '.svg'), show_shapes=True)
+
+        if load_weights:
+            self.training_model.load_weights(load_weights)
+
+        history = self.training_model.fit(train_data, validation_data=validation_data,
+                                          epochs=epochs, steps_per_epoch=steps_per_epoch, callbacks=cb)
 
         if save_weights:
             date = str(datetime.datetime.now()).split(' ')[0]

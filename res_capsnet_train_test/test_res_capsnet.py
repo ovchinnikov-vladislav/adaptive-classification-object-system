@@ -1,5 +1,5 @@
 from libs import utls
-from libs.capsnets.models.rescaps import ResCapsuleNetworkV1
+from libs.capsnets.models.rescaps import ResCapsuleNetworkV1, ResCapsuleNetworkV2
 import numpy as np
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -11,20 +11,27 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--routings', default=3)
 parser.add_argument('--save_dir', default='res_capsnet_v1_logs')
 parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
+parser.add_argument('--model', default='res_capsnet_v2', help='values: res_capsnet_v1, res_capsnet_v2')
 
 if __name__ == '__main__':
     args = parser.parse_args()
 
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
 
-    _, model = ResCapsuleNetworkV1(name=f'res_capsnet_v1_{args.dataset}') \
-        .create(input_shape=x_train.shape[1:],
-                num_classes=len(np.unique(np.argmax(y_train, 1))),
-                routings=args.routings)
+    if args.model == 'res_capsnet_v2':
+        _, model = ResCapsuleNetworkV2(name=f'res_capsnet_v2_{args.dataset}') \
+            .create(input_shape=x_train.shape[1:],
+                    num_classes=len(np.unique(np.argmax(y_train, 1))),
+                    routings=args.routings)
+    else:
+        _, model = ResCapsuleNetworkV1(name=f'res_capsnet_v1_{args.dataset}') \
+            .create(input_shape=x_train.shape[1:],
+                    num_classes=len(np.unique(np.argmax(y_train, 1))),
+                    routings=args.routings)
 
     model.load_weights(
         os.path.join(args.save_dir,
-                     f'res_capsnet_v1_{args.dataset}-result-2021-04-17-... .h5'))
+                     f'res_capsnet_v1_{args.dataset}-result-2021-04-18-7466ebc7-bfbe-4d56-86d0-41f04924d877.h5'))
 
     y_pred, x_recon = model.predict(x_test, batch_size=100)
 
