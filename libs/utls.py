@@ -346,6 +346,6 @@ class BaseModelForTraining(ABC):
 
         if save_weights:
             date = str(datetime.datetime.now()).split(' ')[0]
-            self.training_model.save(os.path.join(log_dir, f'{self.name}-result-{date}-{str(uuid.uuid4())}.h5'))
+            self.training_model.save_weights(os.path.join(log_dir, f'{self.name}-result-{date}-{str(uuid.uuid4())}.h5'))
 
         return history

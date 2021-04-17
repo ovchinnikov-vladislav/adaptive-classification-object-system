@@ -14,7 +14,8 @@ model_data/coco_test_annotation.txt
 downloads/
 tensorboard-logs/
 logs/
-capsnet_v1_logs/
+basic_capsnet_train_test/capsnet_v1_logs/
+diverse_capsnet_train_test/diverse_capsnet_logs/
 log.*
 *.h5
 *.dat
