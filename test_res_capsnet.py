@@ -1,5 +1,5 @@
 from libs import utls
-from libs.capsnets.models.basic import CapsuleNetworkV1
+from libs.capsnets.models.rescaps import ResCapsuleNetworkV1
 import numpy as np
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -9,7 +9,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--routings', default=3)
-parser.add_argument('--save_dir', default='capsnet_v1_logs')
+parser.add_argument('--save_dir', default='res_capsnet_v1_logs')
 parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
 
 if __name__ == '__main__':
@@ -17,14 +17,14 @@ if __name__ == '__main__':
 
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
 
-    _, model = CapsuleNetworkV1(name=f'capsnet_v1_{args.dataset}') \
+    _, model = ResCapsuleNetworkV1(name=f'res_capsnet_v1_{args.dataset}') \
         .create(input_shape=x_train.shape[1:],
                 num_classes=len(np.unique(np.argmax(y_train, 1))),
                 routings=args.routings)
 
     model.load_weights(
         os.path.join(args.save_dir,
-                     f'capsnet_v1_{args.dataset}-result-2021-04-17-405a9a4b-b896-473e-b466-ac4b689b39eb.h5'))
+                     f'res_capsnet_v1_{args.dataset}-result-2021-04-17-... .h5'))
 
     y_pred, x_recon = model.predict(x_test, batch_size=100)
 

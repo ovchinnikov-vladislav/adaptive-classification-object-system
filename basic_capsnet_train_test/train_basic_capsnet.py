@@ -28,7 +28,7 @@ if __name__ == '__main__':
                              num_classes=len(np.unique(np.argmax(y_train, 1))),
                              routings=args.routings)
     builder.compile(optimizer=optimizers.Adam(lr=args.lr),
-                    loss=losses.margin_loss,
+                    loss=[losses.margin_loss, 'mse'],
                     metrics='accuracy')
 
     history = builder.fit(x_train, y_train, args.batch_size, args.epochs, checkpoint_monitor='val_length_accuracy',
