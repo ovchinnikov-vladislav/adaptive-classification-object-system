@@ -228,5 +228,5 @@ class BaseModelForTraining(ABC):
 
         history = self.training_model.fit(self.__train_generator(x, y, 0.1), epochs=epochs,
                                           validation_data=self.__test_generator(validation_data[0], validation_data[1]),
-                                          steps_per_epoch=int(x.shape[0] / batch_size), callbacks=cb)
+                                          steps_per_epoch=int(y.shape[0] / batch_size), callbacks=cb)
         return history

@@ -1,5 +1,5 @@
 from libs import utls
-from libs.capsnets.models.basic import caps_net_v1
+from libs.capsnets.models.basic import CapsNetV1
 import numpy as np
 from PIL import Image
 from matplotlib import pyplot as plt
@@ -15,8 +15,9 @@ if __name__ == '__main__':
 
     (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
 
-    _, model = caps_net_v1(shape=x_train.shape[1:], num_classes=len(np.unique(np.argmax(y_train, 1))),
-                              routings=args.routings)
+    _, model = CapsNetV1(name='capsnet_v1').create(input_shape=x_train.shape[1:],
+                                                   num_classes=len(np.unique(np.argmax(y_train, 1))),
+                                                   routings=args.routings)
 
     model.load_weights(f'{args.save_dir}/eval_basic_capsnet_model_{args.dataset}.h5')
 
