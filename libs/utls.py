@@ -59,28 +59,42 @@ def combine_images(generated_images, height=None, width=None):
     return image
 
 
-def plot_log(filename, show=True):
+def plot_log(filename, training_metric, val_metric, train_name, val_name, title, color, save_dir='.', show=True):
     data = pandas.read_csv(filename)
 
-    fig = plt.figure(figsize=(4, 6))
-    fig.subplots_adjust(top=0.95, bottom=0.05, right=0.95)
-    fig.add_subplot(211)
-    for key in data.keys():
-        if key.find('loss') >= 0 and not key.find('val') >= 0:  # training loss
-            plt.plot(data['epoch'].values, data[key].values, label=key)
-    plt.legend()
-    plt.title('Потери (loss) при тренировке')
+    fig = plt.figure()
 
-    fig.add_subplot(212)
     for key in data.keys():
-        if key.find('acc') >= 0:  # acc
-            plt.plot(data['epoch'].values, data[key].values, label=key)
+        if key == training_metric:
+            plt.plot(data['epoch'].values, data[key].values, f'{color}--', label=train_name)
+        if key == val_metric:
+            plt.plot(data['epoch'].values, data[key].values, f'{color}', label=val_name)
     plt.legend()
-    plt.title('Точность (accuracy) при тренировке и валидации')
+    plt.title(title)
 
-    fig.savefig('log.png')
+    fig.savefig(os.path.join(save_dir, f'log_{training_metric}_{val_metric}.png'))
     if show:
         plt.show()
+
+    plt.close()
+    return fig
+
+
+def plot_history(history, training_metric, val_metric, train_name, val_name, title, show=True):
+    train = history[training_metric]
+    val = history[val_metric]
+    epochs = range(1, len(train) + 1)
+
+    figure = plt.figure()
+    plt.plot(epochs, train, 'y--', label=train_name)
+    plt.plot(epochs, val, 'y', label=val_name)
+    plt.title(title)
+    plt.legend()
+    plt.close()
+    if show:
+        figure.show()
+
+    return figure
 
 
 def plot_to_image(figure):
@@ -93,7 +107,7 @@ def plot_to_image(figure):
     return image
 
 
-def plot_confusion_matrix(cm, class_names):
+def plot_confusion_matrix(cm, class_names, show=True):
     figure = plt.figure(figsize=(8, 8))
     plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('Blues'))
     plt.title('Матрица ошибок')
@@ -112,36 +126,11 @@ def plot_confusion_matrix(cm, class_names):
     plt.tight_layout()
     plt.ylabel('Входные метки')
     plt.xlabel('Предсказанные метки')
+    plt.close()
+    if show:
+        figure.show()
+
     return figure
-
-
-def plot_classification_report(cr, title='Отчет по классификации', with_avg_total=False, cmap=plt.get_cmap('Blues')):
-    lines = cr.split('\n')
-    classes = []
-    plot_mat = []
-    t = None
-    for line in lines[2: (len(lines) - 3)]:
-        t = line.split()
-        classes.append(t[0])
-        v = [float(x) for x in t[1: len(t) - 1]]
-        plot_mat.append(v)
-
-    if with_avg_total:
-        ave_total = lines[len(lines) - 1].split()
-        classes.append('avg/total')
-        v_ave_total = [float(x) for x in t[1:len(ave_total) - 1]]
-        plot_mat.append(v_ave_total)
-
-    plt.imshow(plot_mat, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
-    x_tick_marks = np.arange(3)
-    y_tick_marks = np.arange(len(classes))
-    plt.xticks(x_tick_marks, ['точность (precision)', 'полнота (recall)', 'f1-score'], rotation=45)
-    plt.yticks(y_tick_marks, classes)
-    plt.tight_layout()
-    plt.ylabel('Классы')
-    plt.xlabel('Метрики')
 
 
 def plot_generated_image(x, y_pred):
@@ -182,6 +171,95 @@ def load(dataset):
     y_test = to_categorical(y_test.astype('float32'))
 
     return (x_train, y_train), (x_test, y_test)
+
+
+class ClassificationReportPlotWriter:
+    @staticmethod
+    def __show_values(pc, fmt="%.2f", **kw):
+        pc.update_scalarmappable()
+        ax = pc.axes
+        for p, color, value in zip(pc.get_paths(), pc.get_facecolors(), pc.get_array()):
+            x, y = p.vertices[:-2, :].mean(0)
+            if np.all(color[:3] > 0.5):
+                color = (0.0, 0.0, 0.0)
+            else:
+                color = (1.0, 1.0, 1.0)
+            ax.text(x, y, fmt % value, ha="center", va="center", color=color, **kw)
+
+    @staticmethod
+    def __cm2inch(*tupl):
+        inch = 2.54
+        if type(tupl[0]) == tuple:
+            return tuple(i / inch for i in tupl[0])
+        else:
+            return tuple(i / inch for i in tupl)
+
+    @staticmethod
+    def __heatmap(auc, title, x_label, y_label, x_tick_labels, y_tick_labels, show,
+                  figure_width=40, figure_height=20, correct_orientation=False, cmap='Blues'):
+        fig, ax = plt.subplots()
+        c = ax.pcolor(auc, edgecolors='k', linestyle='dashed', linewidths=0.2, cmap=cmap)
+
+        ax.set_yticks(np.arange(auc.shape[0]) + 0.5, minor=False)
+        ax.set_xticks(np.arange(auc.shape[1]) + 0.5, minor=False)
+
+        ax.set_xticklabels(x_tick_labels, minor=False)
+        ax.set_yticklabels(y_tick_labels, minor=False)
+
+        plt.title(title)
+        plt.xlabel(x_label)
+        plt.ylabel(y_label)
+
+        plt.xlim((0, auc.shape[1]))
+
+        ax = plt.gca()
+        for t in ax.xaxis.get_major_ticks():
+            t.tick1On = False
+            t.tick2On = False
+        for t in ax.yaxis.get_major_ticks():
+            t.tick1On = False
+            t.tick2On = False
+        plt.colorbar(c)
+        ClassificationReportPlotWriter.__show_values(c)
+        if correct_orientation:
+            ax.invert_yaxis()
+            ax.xaxis.tick_top()
+
+        fig = plt.gcf()
+        fig.set_size_inches(ClassificationReportPlotWriter.__cm2inch(figure_width, figure_height))
+        plt.close()
+        if show:
+            fig.show()
+        return fig
+
+    @staticmethod
+    def plot(classification_report, title='Отчет классификации', cmap='Blues', show=True):
+        lines = classification_report.split('\n')
+
+        classes = []
+        plot_mat = []
+        support = []
+        class_names = []
+        for line in lines[2: (len(lines) - 2)]:
+            t = line.strip().split()
+            if len(t) < 2:
+                break
+            classes.append(t[0])
+            v = [float(x) for x in t[1: len(t) - 1]]
+            support.append(int(t[-1]))
+            class_names.append(t[0])
+            plot_mat.append(v)
+
+        x_label = 'Метрики'
+        y_label = 'Классы'
+        x_tick_labels = ['Точность (precision)', 'Полнота (recall)', 'F1-score']
+        y_tick_labels = ['{0} ({1})'.format(class_names[idx], sup) for idx, sup in enumerate(support)]
+        figure_width = 25
+        figure_height = len(class_names) + 7
+        correct_orientation = False
+        return ClassificationReportPlotWriter.__heatmap(np.array(plot_mat), title, x_label, y_label, x_tick_labels,
+                                                        y_tick_labels, show, figure_width, figure_height,
+                                                        correct_orientation, cmap=cmap)
 
 
 class BaseModelForTraining(ABC):
@@ -233,7 +311,7 @@ class BaseModelForTraining(ABC):
 
     def fit(self, x, y, batch_size, epochs, call_backs=None, load_weights=None, validation_data=None,
             set_plot_model=True, set_tensor_board=True, set_debug=False, set_model_checkpoint=True,
-            set_csv_logger=True, log_dir='./', show_plot_logs=False, save_weights=True, checkpoint_monitor='accuracy'):
+            set_csv_logger=True, log_dir='./', save_weights=True, checkpoint_monitor='accuracy'):
         if call_backs is None:
             call_backs = []
         cb = []
@@ -244,7 +322,7 @@ class BaseModelForTraining(ABC):
             os.makedirs(os.path.join(log_dir, 'models'))
 
         if set_csv_logger:
-            cb.append(callbacks.CSVLogger(os.path.join(log_dir, 'history.csv')))
+            cb.append(callbacks.CSVLogger(os.path.join(log_dir, 'history_training.csv')))
 
         if set_tensor_board:
             cb.append(callbacks.TensorBoard(log_dir=os.path.join(log_dir, 'tb'),
@@ -269,8 +347,5 @@ class BaseModelForTraining(ABC):
         if save_weights:
             date = str(datetime.datetime.now()).split(' ')[0]
             self.training_model.save(os.path.join(log_dir, f'{self.name}-result-{date}-{str(uuid.uuid4())}.h5'))
-
-        if show_plot_logs:
-            plot_log(os.path.join(log_dir, 'history.csv'), True)
 
         return history
