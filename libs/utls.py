@@ -2,12 +2,14 @@ import io
 import itertools
 import math
 import os
+import datetime
 from abc import ABC, abstractmethod
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas
 import tensorflow as tf
+from tensorflow.keras import callbacks
 from tensorflow.keras.datasets import mnist, fashion_mnist, cifar10, cifar100
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import to_categorical, plot_model
@@ -152,11 +154,10 @@ def load(dataset):
     return (x_train, y_train), (x_test, y_test)
 
 
-class BaseCapsNetModel(ABC):
+class BaseModelForTraining(ABC):
     def __init__(self, name):
         self.model = None
         self.input_shape = None
-        self.output_shape = None
         self.decoder = None
         self.batch_size = None
         self.name = name
@@ -165,11 +166,10 @@ class BaseCapsNetModel(ABC):
     def create(self, input_shape, output_shape, **kwargs):
         pass
 
-    def build(self, input_shape, output_shape, **kwargs):
+    def build(self, input_shape, **kwargs):
         self.input_shape = input_shape
-        self.output_shape = output_shape
 
-        self.model = self.create(input_shape, output_shape, **kwargs)
+        self.model = self.create(input_shape, **kwargs)
         self.model.summary()
 
         return self.model
@@ -194,32 +194,32 @@ class BaseCapsNetModel(ABC):
         else:
             return x, y
 
-    def fit(self, x, y, batch_size, epochs, callbacks=None, load_weights=None, validation_data=None, is_plot_model=True,
-            is_tensor_board=True, debug=False, is_model_checkpoint=True, is_csv_logger=True, logdir='./', **kwargs):
-        if callbacks is None:
-            callbacks = []
+    def fit(self, x, y, batch_size, epochs, call_backs=None, load_weights=None, validation_data=None,
+            is_plot_model=False, is_tensor_board=True, debug=False, is_model_checkpoint=True, is_csv_logger=True,
+            log_dir='./'):
+        if call_backs is None:
+            call_backs = []
         cb = []
-        cb += callbacks
+        cb += call_backs
         self.batch_size = batch_size
+
         if is_csv_logger:
-            cb.append(callbacks.CSVLogger(os.path.join(logdir, 'history.csv')))
+            cb.append(callbacks.CSVLogger(os.path.join(log_dir, 'history.csv')))
+
         if is_tensor_board:
-            cb.append(callbacks.TensorBoard(log_dir=os.path.join(logdir, 'tb'),
+            cb.append(callbacks.TensorBoard(log_dir=os.path.join(log_dir, 'tb'),
                                             batch_size=self.batch_size, histogram_freq=debug))
         if is_model_checkpoint:
-            if not os.path.exists(os.path.join(logdir, 'models')):
-                os.makedirs(os.path.join(logdir, 'models'))
-            cb.append(callbacks.ModelCheckpoint(os.path.join(logdir, 'models/discriminator.h5'),
+            if not os.path.exists(os.path.join(log_dir, 'models')):
+                os.makedirs(os.path.join(log_dir, 'models'))
+            cb.append(callbacks.ModelCheckpoint(os.path.join(log_dir, f'models/{self.name}-{datetime.datetime}'),
                                                 save_best_only=False, save_weights_only=True, verbose=1))
         if is_plot_model:
-            plot_model(self.model, to_file=os.path.join(logdir, self.name + '.svg'), show_shapes=True)
+            plot_model(self.model, to_file=os.path.join(log_dir, self.name + '.svg'), show_shapes=True)
         if load_weights:
             self.model.load_weights(load_weights)
 
-        history = self.model.fit(self.__train_generator(x, y, 0.1),
-                                 steps_per_epoch=int(x.shape[0] / batch_size),
-                                 epochs=epochs,
+        history = self.model.fit(self.__train_generator(x, y, 0.1), epochs=epochs,
                                  validation_data=self.__test_generator(validation_data[0], validation_data[1]),
-                                 callbacks=cb,
-                                 **kwargs)
+                                 steps_per_epoch=int(x.shape[0] / batch_size), callbacks=cb, **kwargs)
         return history

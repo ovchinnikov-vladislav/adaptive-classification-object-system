@@ -1,3 +1,4 @@
+
 import numpy as np
 from keras.callbacks import Callback
 from keras_preprocessing.image import ImageDataGenerator
@@ -78,7 +79,6 @@ if __name__ == '__main__':
                   metrics=['accuracy', metrics.Recall(), metrics.Precision(),
                            metrics.FalsePositives(), metrics.FalseNegatives(),
                            metrics.TruePositives(), metrics.TrueNegatives()])
-
 
     # Begin: Training with data augmentation ---------------------------------------------------------------------#
     def train_generator(x, y, batch_size, shift_fraction=0.):

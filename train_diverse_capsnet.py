@@ -36,11 +36,8 @@ if __name__ == '__main__':
                   loss_weights=[1.],
                   metrics=['accuracy'])
 
-    model.fit([x_train, y_train], y_train,
-              epochs=args.epochs,
-              batch_size=args.batch_size,
-              validation_data=[[x_test, y_test], y_test],
-              callbacks=[log, tb, checkpoint, lr_decay])
+    model.fit([x_train, y_train], y_train, batch_size=args.batch_size, epochs=args.epochs,
+              validation_data=[[x_test, y_test], y_test], callbacks=[log, tb, checkpoint, lr_decay])
 
     # # Begin: Training with data augmentation ---------------------------------------------------------------------#
     # def train_generator(x, y, batch_size, shift_fraction=0.):
