@@ -30,8 +30,7 @@ if __name__ == '__main__':
                     routings=args.routings)
 
     model.load_weights(
-        os.path.join(args.save_dir,
-                     f'res_capsnet_v1_{args.dataset}-result-2021-04-18-7466ebc7-bfbe-4d56-86d0-41f04924d877.h5'))
+        os.path.join(args.save_dir, f'{model.name}-result-2021-04-18-7466ebc7-bfbe-4d56-86d0-41f04924d877.h5'))
 
     y_pred, x_recon = model.predict(x_test, batch_size=100)
 

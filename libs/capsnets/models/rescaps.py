@@ -37,10 +37,11 @@ class ResCapsuleNetworkV1(utls.BaseModelForTraining):
 
         input_decoder = Input(shape=(num_classes,))
 
-        train_model = Model([inputs, input_decoder],
-                            [output, Decoder(num_classes=num_classes, output_shape=input_shape)([capsules, input_decoder])])
+        decoder = Decoder(num_classes=num_classes, output_shape=input_shape, name='decoder')
 
-        eval_model = Model(inputs, [output, Decoder(num_classes=num_classes, output_shape=input_shape)(capsules)])
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
+
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -52,9 +53,9 @@ class ResCapsuleNetworkV2(utls.BaseModelForTraining):
         num_classes = kwargs.get('num_classes')
         routings = kwargs.get('routings')
 
-        input_capsnet = Input(shape=input_shape)
+        inputs = Input(shape=input_shape)
 
-        capsules = Conv2D(256, 5, padding='same', activation=tf.nn.relu)(input_capsnet)
+        capsules = Conv2D(256, 5, padding='same', activation=tf.nn.relu)(inputs)
         _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=9, dim_capsules=8, kernel_size=5,
                                                      padding='valid', strides=2)(capsules)
         x = residual_primary_caps_block(capsules, num_capsules=9, dim_capsules=8)
@@ -62,7 +63,8 @@ class ResCapsuleNetworkV2(utls.BaseModelForTraining):
         x = residual_primary_caps_block(x, num_capsules=9, dim_capsules=8)
         x = residual_primary_caps_block(x, num_capsules=9, dim_capsules=8)
         x = residual_primary_caps_block(x, num_capsules=9, dim_capsules=8)
-        _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=8, dim_capsules=8, kernel_size=4, strides=1, do_reshape=True)(x)
+        _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=8, dim_capsules=8, kernel_size=4,
+                                                     strides=1, do_reshape=True)(x)
 
         capsules = Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)(capsules)
         output = Length()(capsules)
@@ -71,10 +73,9 @@ class ResCapsuleNetworkV2(utls.BaseModelForTraining):
 
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=16, output_shape=input_shape)
 
-        train_model = Model([input_capsnet, input_decoder],
-                            [output, decoder([capsules, input_decoder])])
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(input_capsnet, [output, decoder(capsules)])
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -120,9 +121,8 @@ class Resnet50ToCapsuleNetwork(utls.BaseModelForTraining):
 
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=16, output_shape=input_shape)
 
-        train_model = Model([inputs, input_decoder],
-                            [output, decoder([capsules, input_decoder])])
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(inputs, [output, decoder(capsules)])
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
