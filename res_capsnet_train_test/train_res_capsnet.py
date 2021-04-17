@@ -1,5 +1,5 @@
 from libs import utls
-from libs.capsnets.models.rescaps import ResCapsuleNetworkV1, ResCapsuleNetworkV2
+from libs.capsnets.models.rescaps import ResCapsuleNetworkV1, ResCapsuleNetworkV2, Resnet50ToCapsuleNetwork
 from tensorflow.keras import optimizers
 from libs.capsnets.losses import margin_loss
 import numpy as np
@@ -14,7 +14,8 @@ parser.add_argument('--lr', default=0.003, type=float)
 parser.add_argument('--lr_decay', default=0.90, type=float)
 parser.add_argument('-r', '--routings', default=3, type=int)
 parser.add_argument('--save_dir', default='res_capsnet_v2_logs')
-parser.add_argument('--model', default='res_capsnet_v2', help='values: res_capsnet_v1, res_capsnet_v2')
+parser.add_argument('--model', default='res_capsnet_v2', help='values: res_capsnet_v1, res_capsnet_v2, '
+                                                              'res50_to_capsnet')
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -23,6 +24,8 @@ if __name__ == '__main__':
 
     if args.model == 'res_capsnet_v2':
         model = ResCapsuleNetworkV2(name=f'res_capsnet_v1_{args.dataset}')
+    elif args.model == 'res50_to_capsnet':
+        model = Resnet50ToCapsuleNetwork(name=f'res50_to_capsnet_{args.dataset}')
     else:
         model = ResCapsuleNetworkV1(name=f'res_capsnet_v2_{args.dataset}')
 
