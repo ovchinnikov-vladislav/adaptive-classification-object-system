@@ -14,9 +14,9 @@ class CapsuleNetworkWith3Level(BaseModelForTraining):
         num_classes = kwargs.get('num_classes')
         routings = kwargs.get('routings')
 
-        input_capsnet = Input(shape=input_shape)
+        inputs = Input(shape=input_shape)
 
-        x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(input_capsnet)
+        x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(inputs)
         x, capsules_1 = block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
         x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(x)
@@ -33,10 +33,9 @@ class CapsuleNetworkWith3Level(BaseModelForTraining):
 
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
-        train_model = Model([input_capsnet, input_decoder],
-                            [output, decoder([capsules, input_decoder])], name=self.name)
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(input_capsnet, [output, decoder(capsules)], name=self.name)
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -48,9 +47,9 @@ class CapsuleNetworkWith4Level(BaseModelForTraining):
         num_classes = kwargs.get('num_classes')
         routings = kwargs.get('routings')
 
-        input_capsnet = Input(shape=input_shape)
+        inputs = Input(shape=input_shape)
 
-        x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(input_capsnet)
+        x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(inputs)
         x, capsules_01 = block_caps(x, routings, num_classes, kernel_size=5, strides=2)
 
         x = Conv2D(32, (9, 9), padding='same', activation=tf.nn.relu)(x)
@@ -73,10 +72,9 @@ class CapsuleNetworkWith4Level(BaseModelForTraining):
 
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
-        train_model = Model([input_capsnet, input_decoder],
-                            [output, decoder([capsules, input_decoder])], name=self.name)
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(input_capsnet, [output, decoder(capsules)], name=self.name)
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -123,8 +121,7 @@ class ResCapsuleNetworkWith3LevelV1(BaseModelForTraining):
 
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
-        train_model = Model([inputs, input_decoder],
-                            [output, decoder([capsules, input_decoder])], name=self.name)
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
         eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
@@ -138,9 +135,9 @@ class ResCapsuleNetworkWith3LevelV2(BaseModelForTraining):
         num_classes = kwargs.get('num_classes')
         routings = kwargs.get('routings')
 
-        input_capsnet = Input(shape=input_shape)
+        inputs = Input(shape=input_shape)
 
-        x = residual_block(input_capsnet, filters=128)
+        x = residual_block(inputs, filters=128)
         x = residual_block(x, filters=128)
         x = residual_block(x, filters=128)
         x, capsules_1 = block_caps(x, routings, num_classes, kernel_size=9, strides=2)
@@ -163,10 +160,9 @@ class ResCapsuleNetworkWith3LevelV2(BaseModelForTraining):
 
         decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
-        train_model = Model([input_capsnet, input_decoder],
-                            [output, decoder([capsules, input_decoder])], name=self.name)
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(input_capsnet, [output, decoder(capsules)], name=self.name)
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
         return train_model, eval_model
 
@@ -221,8 +217,7 @@ class Resnet50WithCapsuleNetworkWith3Level(BaseModelForTraining):
 
         decoder = Decoder(name='is_decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
 
-        train_model = Model([inputs, input_decoder],
-                            [output, decoder([capsules, input_decoder])], name=self.name)
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
         eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 

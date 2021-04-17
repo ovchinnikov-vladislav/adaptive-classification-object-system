@@ -35,6 +35,7 @@ if __name__ == '__main__':
                   'Значения метрики потери (loss) при обучении и при валидации',
                   color='b', show=True, save_dir=args.save_dir)
 
+    # MNIST
     cm = confusion_matrix(np.argmax(y_test, 1), np.argmax(y_pred, 1))
     class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
     figure = utls.plot_confusion_matrix(cm, class_names, show=True)

@@ -1,6 +1,6 @@
 import tensorflow as tf
-from libs.capsnets.layers.basic import Length, PrimaryCapsule2D, PrimaryCapsule3D, Capsule, Decoder
-from tensorflow.keras.layers import Input, Conv2D, Conv3D, BatchNormalization, Activation
+from libs.capsnets.layers.basic import Length, PrimaryCapsule2D, Capsule, Decoder
+from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, Activation
 from tensorflow.keras import Model
 from libs.utls import BaseModelForTraining
 
@@ -23,8 +23,7 @@ class CapsuleNetworkV1(BaseModelForTraining):
 
         decoder = Decoder(num_classes=num_classes, output_shape=input_shape, name='decoder')
 
-        train_model = Model([inputs, input_decoder],
-                            [output, decoder([capsules, input_decoder])], name=self.name)
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
         eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
@@ -51,8 +50,7 @@ class CapsuleNetworkV2(BaseModelForTraining):
 
         decoder = Decoder(num_classes=num_classes, output_shape=input_shape, name='decoder')
 
-        train_model = Model([inputs, input_decoder],
-                            [output, decoder([capsules, input_decoder])], name=self.name)
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
         eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
 
