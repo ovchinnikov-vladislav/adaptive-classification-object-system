@@ -2,25 +2,25 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras.backend import epsilon, sqrt, sum, square
-from tensorflow.keras.layers import BatchNormalization, Dropout, Conv2D, Add
+from tensorflow.keras.layers import BatchNormalization, Add
 from libs.capsnets.utls import squash
 from libs.capsnets.layers import basic
 
 
-def res_block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=12, primary_dim_capsule=8,
-                   dim_capsule=6, padding='valid'):
-    x, capsules = PrimaryCapsule2D(num_capsules=num_capsule, dim_capsules=primary_dim_capsule, kernel_size=kernel_size,
-                                   strides=strides, padding=padding)(x)
+def block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=12,
+               primary_dim_capsule=8, dim_capsule=6, padding='valid'):
+    x, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=num_capsule, dim_capsules=primary_dim_capsule, kernel_size=kernel_size,
+                                                 strides=strides, padding=padding)(x)
     capsules = Capsule(num_capsules=classes, dim_capsules=dim_capsule, routings=routings)(capsules)
 
     return x, capsules
 
 
 def residual_primary_caps_block(x, num_capsules, dim_capsules, kernel_size=5):
-    _, capsules = PrimaryCapsule2D(num_capsules=num_capsules, dim_capsules=dim_capsules, kernel_size=kernel_size,
-                                   padding='same', strides=3)(x)
-    _, capsules = PrimaryCapsule2D(num_capsules=num_capsules, dim_capsules=dim_capsules, kernel_size=kernel_size,
-                                   padding='same', strides=3)(capsules)
+    _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=num_capsules, dim_capsules=dim_capsules, kernel_size=kernel_size,
+                                                 padding='same', strides=3)(x)
+    _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=num_capsules, dim_capsules=dim_capsules, kernel_size=kernel_size,
+                                                 padding='same', strides=3)(capsules)
 
     out = Add()([x, capsules])
     return out
@@ -43,9 +43,9 @@ class Capsule(basic.Capsule):
         super(Capsule, self).__init__(num_capsules, dim_capsules, routings, **kwargs)
 
 
-class PrimaryCapsule2D(layers.Layer):
+class PrimaryCapsule2DWithConvOutput(layers.Layer):
     def __init__(self, num_capsules, dim_capsules, kernel_size, strides, padding='valid', do_reshape=False, **kwargs):
-        super(PrimaryCapsule2D, self).__init__(**kwargs)
+        super(PrimaryCapsule2DWithConvOutput, self).__init__(**kwargs)
         self.do_reshape = do_reshape
         self.num_capsules = num_capsules
         self.dim_capsules = dim_capsules
