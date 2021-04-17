@@ -1,7 +1,6 @@
 from libs import utls
 from libs.capsnets.models.diverse import DiverseCapsuleNetwork
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix
 import argparse
 import os
@@ -22,9 +21,7 @@ if __name__ == '__main__':
                               routings=args.routings)
 
     model.load_weights(
-        os.path.join(
-            args.save_dir,
-            f'diverse_capsule_networks_{args.dataset}-result-2021-04-17-... .h5'))
+        os.path.join(args.save_dir, f'{model.name}-result-2021-04-17-... .h5'))
 
     y_pred = model.predict(x_test, batch_size=32)
 
@@ -46,4 +43,3 @@ if __name__ == '__main__':
     report = classification_report(np.argmax(y_test, 1), np.argmax(y_pred, 1))
     figure = utls.ClassificationReportPlotWriter.plot(report, show=True)
     figure.savefig(os.path.join(args.save_dir, "classification_report.png"))
-

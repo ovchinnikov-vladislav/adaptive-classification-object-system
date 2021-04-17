@@ -30,8 +30,7 @@ if __name__ == '__main__':
                     routings=args.routings)
 
     model.load_weights(
-        os.path.join(args.save_dir,
-                     f'{model.name}-result-2021-04-17-405a9a4b-b896-473e-b466-ac4b689b39eb.h5'))
+        os.path.join(args.save_dir, f'{model.name}-result-2021-04-17-405a9a4b-b896-473e-b466-ac4b689b39eb.h5'))
 
     y_pred, x_recon = model.predict(x_test, batch_size=100)
 
