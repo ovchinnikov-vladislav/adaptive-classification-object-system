@@ -28,7 +28,7 @@ class EfficientCapsuleNetwork(BaseModelForTraining):
         if dataset == 'cifar10':
             x = PrimaryCapsule2D(128, 9, 72, 16)(x)
         elif dataset == 'masks':
-            x = PrimaryCapsule2D(128, 9, 1369, 128)(x)
+            x = PrimaryCapsule2D(128, 9, 722, 64)(x)
         else:
             x = PrimaryCapsule2D(128, 9, 16, 8)(x)
 
