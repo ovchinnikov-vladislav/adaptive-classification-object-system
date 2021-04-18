@@ -32,6 +32,8 @@ class CapsuleNetworkV1(BaseModelForTraining):
 
 class CapsuleNetworkV2(BaseModelForTraining):
     def create(self, input_shape, **kwargs):
+        self.is_decoder = True
+
         num_classes = kwargs.get('num_classes')
         routings = kwargs.get('routings')
 
