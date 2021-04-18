@@ -333,7 +333,7 @@ class BaseModelForTraining(ABC):
                 save_best_only=True, save_weights_only=True, verbose=1))
 
         if set_plot_model:
-            plot_model(self.training_model, to_file=os.path.join(log_dir, self.name + '.svg'), show_shapes=True)
+            plot_model(self.training_model, to_file=os.path.join(log_dir, self.name + '.png'), show_shapes=True)
 
         if load_weights:
             self.training_model.load_weights(load_weights)
@@ -374,7 +374,7 @@ class BaseModelForTraining(ABC):
                 save_best_only=True, save_weights_only=True, verbose=1))
 
         if set_plot_model:
-            plot_model(self.training_model, to_file=os.path.join(log_dir, self.name + '.svg'), show_shapes=True)
+            plot_model(self.training_model, to_file=os.path.join(log_dir, self.name + '.png'), show_shapes=True)
 
         if load_weights:
             self.training_model.load_weights(load_weights)
