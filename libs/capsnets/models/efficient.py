@@ -43,8 +43,8 @@ class EfficientCapsuleNetwork(BaseModelForTraining):
             train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
             eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
-        else:
-            train_model = Model(inputs, output, self.name)
-            eval_model = Model(inputs, output, self.name)
 
-        return train_model, eval_model
+            return train_model, eval_model
+        else:
+            train_model = Model(inputs, output, name=self.name)
+            return train_model

@@ -10,7 +10,7 @@ parser.add_argument('--epochs', default=150, type=int)
 parser.add_argument('--batch_size', default=100, type=int)
 parser.add_argument('--routings', default=3, type=int)
 parser.add_argument('--save_dir', default='efficient_capsnet_logs')
-parser.add_argument('--dataset', default='cifar10', help='value: mnist, fashion_mnist, cifar10, cifar100')
+parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--lr_decay', default=0.9, type=float)
 parser.add_argument('--lam_recon', default=0.392, type=float)
@@ -25,8 +25,9 @@ if __name__ == '__main__':
 
     builder = EfficientCapsuleNetwork(name=f'efficient_capsnet_{args.dataset}')
 
-    model, _ = builder.build(input_shape=x_train.shape[1:],
-                             num_classes=len(np.unique(np.argmax(y_train, 1))))
+    model = builder.build(input_shape=x_train.shape[1:],
+                          decoder=False,
+                          num_classes=len(np.unique(np.argmax(y_train, 1))))
     builder.compile(optimizer=optimizers.Adam(lr=5e-4),
                     loss=[losses.margin_loss, 'mse'],
                     loss_weights=[1., 0.392],
