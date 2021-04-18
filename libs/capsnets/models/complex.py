@@ -27,7 +27,7 @@ class CapsuleNetworkWith3Level(BaseModelForTraining):
 
         capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
-        output = Length()(capsules)
+        output = Length(name='length')(capsules)
 
         input_decoder = Input(shape=(num_classes,))
 
@@ -66,7 +66,7 @@ class CapsuleNetworkWith4Level(BaseModelForTraining):
 
         capsules = tf.keras.layers.Concatenate()([capsules0, capsules1])
 
-        output = Length()(capsules)
+        output = Length(name='length')(capsules)
 
         input_decoder = Input(shape=(num_classes,))
 
@@ -115,7 +115,7 @@ class ResCapsuleNetworkWith3LevelV1(BaseModelForTraining):
 
         capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
-        output = Length()(capsules)
+        output = Length(name='length')(capsules)
 
         input_decoder = Input(shape=(num_classes,))
 
@@ -154,7 +154,7 @@ class ResCapsuleNetworkWith3LevelV2(BaseModelForTraining):
 
         capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
-        output = Length()(capsules)
+        output = Length(name='length')(capsules)
 
         input_decoder = Input(shape=(num_classes,))
 

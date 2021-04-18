@@ -129,7 +129,7 @@ class DiverseCapsuleNetwork(BaseModelForTraining):
         digitcaps = Concatenate(axis=-1)([digitcaps, digitcaps4])
 
         digitcaps = layers.Lambda(squash)(digitcaps)
-        out_caps = Length(name='capsnet')(digitcaps)
+        out_caps = Length(name='length')(digitcaps)
         y = layers.Input(shape=(num_classes,))
         train_model = models.Model([x, y], out_caps, name=self.name)
         eval_model = models.Model(x, out_caps, name=self.name)
