@@ -7,6 +7,7 @@ import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default='mnist', help='values: mnist, fashion_mnist, cifar10, cifar100')
+parser.add_argument('--path_model', default='diverse_capsnet-result-2021-04-17-... .h5')
 parser.add_argument('-r', '--routings', default=3)
 parser.add_argument('--save_dir', default='diverse_capsnet_logs')
 
@@ -21,7 +22,7 @@ if __name__ == '__main__':
                               routings=args.routings)
 
     model.load_weights(
-        os.path.join(args.save_dir, f'{model.name}-result-2021-04-17-... .h5'))
+        os.path.join(args.save_dir, args.path_model))
 
     y_pred = model.predict(x_test, batch_size=32)
 

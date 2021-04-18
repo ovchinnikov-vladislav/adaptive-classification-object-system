@@ -10,7 +10,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 parser = argparse.ArgumentParser()
 parser.add_argument('--routings', default=3)
 parser.add_argument('--save_dir', default='efficient_capsnet_logs')
-parser.add_argument('--id_model', default='...')
+parser.add_argument('--path_model', default='efficient_capsnet-result-2021-04-17-... .h5')
 parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
 
 if __name__ == '__main__':
@@ -24,7 +24,7 @@ if __name__ == '__main__':
                 routings=args.routings)
 
     model.load_weights(
-        os.path.join(args.save_dir, f'{model.name}-result-2021-04-17-{args.id_model}.h5'))
+        os.path.join(args.save_dir, args.path_model))
 
     y_pred, x_recon = model.predict(x_test, batch_size=100)
 
