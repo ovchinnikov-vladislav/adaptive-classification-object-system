@@ -38,4 +38,3 @@ if __name__ == '__main__':
 
     history = builder.fit(x_train, y_train, args.batch_size, args.epochs, checkpoint_monitor='val_length_accuracy',
                           validation_data=(x_test, y_test), log_dir=args.save_dir)
-

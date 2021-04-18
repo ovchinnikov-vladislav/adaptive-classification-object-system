@@ -18,6 +18,7 @@ basic_capsnet_train_test/capsnet_v1_logs/
 diverse_capsnet_train_test/diverse_capsnet_logs/
 res_capsnet_train_test/res_capsnet_v1_logs/
 res_capsnet_train_test/res_capsnet_v2_logs
+complex_capsnet_train_test/capsnet_3level
 log.*
 *.h5
 *.dat

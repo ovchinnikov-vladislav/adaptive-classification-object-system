@@ -9,18 +9,19 @@ from libs.capsnets.layers import basic
 
 def block_caps(x, routings, classes, kernel_size=9, strides=1, num_capsule=12,
                primary_dim_capsule=8, dim_capsule=6, padding='valid'):
-    x, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=num_capsule, dim_capsules=primary_dim_capsule, kernel_size=kernel_size,
-                                                 strides=strides, padding=padding)(x)
+    x, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=num_capsule, dim_capsules=primary_dim_capsule,
+                                                 kernel_size=kernel_size, strides=strides,
+                                                 padding=padding, do_reshape=True)(x)
     capsules = Capsule(num_capsules=classes, dim_capsules=dim_capsule, routings=routings)(capsules)
 
     return x, capsules
 
 
 def residual_primary_caps_block(x, num_capsules, dim_capsules, kernel_size=5):
-    _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=num_capsules, dim_capsules=dim_capsules, kernel_size=kernel_size,
-                                                 padding='same', strides=3)(x)
-    _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=num_capsules, dim_capsules=dim_capsules, kernel_size=kernel_size,
-                                                 padding='same', strides=3)(capsules)
+    _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=num_capsules, dim_capsules=dim_capsules,
+                                                 kernel_size=kernel_size, padding='same', strides=3)(x)
+    _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=num_capsules, dim_capsules=dim_capsules,
+                                                 kernel_size=kernel_size, padding='same', strides=3)(capsules)
 
     out = Add()([x, capsules])
     return out
