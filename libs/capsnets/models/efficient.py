@@ -24,10 +24,10 @@ class EfficientCapsuleNetwork(BaseModelForTraining):
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Conv2D(128, 3, 2, activation='relu', padding='valid', kernel_initializer='he_normal')(x)
         x = tf.keras.layers.BatchNormalization()(x)
-        if input_shape[1] == input_shape[2] == 32:
+        if dataset == 'cifar10':
             x = PrimaryCapsule2D(128, 9, 72, 16)(x)
-        elif input_shape[1] == input_shape[2] == 150:
-            x = PrimaryCapsule2D(128, 9, 1922, 256)
+        elif dataset == 'masks':
+            x = PrimaryCapsule2D(128, 9, 1922, 256)(x)
         else:
             x = PrimaryCapsule2D(128, 9, 16, 8)(x)
 
