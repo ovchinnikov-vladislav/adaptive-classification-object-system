@@ -107,6 +107,30 @@ def plot_to_image(figure):
     return image
 
 
+def plot_dataset_images(x_batch, y_batch, n_img, class_names, show=True):
+    max_c = 5  # max images per row
+
+    if n_img <= max_c:
+        r = 1
+        c = n_img
+    else:
+        r = int(np.ceil(n_img / max_c))
+        c = max_c
+
+    fig, axes = plt.subplots(r, c, figsize=(15, 15))
+    axes = axes.flatten()
+    for img_batch, label_batch, ax in zip(x_batch, y_batch, axes):
+        ax.imshow(img_batch, cmap='gray')
+        ax.grid()
+        ax.set_title('Class: {}'.format(class_names[np.argmax(label_batch)]))
+    plt.tight_layout()
+    if show:
+        plt.show()
+    plt.close()
+
+    return fig
+
+
 def plot_confusion_matrix(cm, class_names, show=True):
     figure = plt.figure(figsize=(8, 8))
     plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('Blues'))
@@ -146,6 +170,7 @@ def plot_generated_image(x, y_pred):
             text += "\n"
 
     plt.title(text)
+    plt.close()
     return figure
 
 
