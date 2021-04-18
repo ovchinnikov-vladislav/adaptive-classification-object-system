@@ -284,7 +284,7 @@ class BaseModelForTraining(ABC):
         else:
             self.training_model = self.models
 
-        self.training_model.summary()
+        self.training_model.summary(line_length=200)
 
         return self.models
 
