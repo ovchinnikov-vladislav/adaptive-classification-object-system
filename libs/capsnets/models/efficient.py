@@ -24,7 +24,7 @@ class EfficientCapsuleNetwork(BaseModelForTraining):
         x = tf.keras.layers.BatchNormalization()(x)
         x = PrimaryCapsule2D(128, 9, 16, 8)(x)
 
-        capsules = Capsule(10, 16)(x)
+        capsules = Capsule(num_classes, 16)(x)
         output = Length(name='length')(capsules)
 
         input_decoder = Input(shape=(num_classes,))

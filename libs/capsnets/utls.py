@@ -12,6 +12,10 @@ def squash(vectors, axis=-1):
     return additional_squashing * unit_scaling
 
 
-def efficient_squash(vectors, axis=-1, eps=10e-21):
-    norm = tf.norm(vectors, axis=axis, keepdims=True)
-    return 1 - 1 / (tf.math.exp(norm) + eps) * (vectors / (norm + eps))
+# v = (1 - 1 / e^(||s||)) * (s / ||s||)
+def efficient_squash(vectors, axis=-1):
+    s_squared_norm = tf.reduce_sum(tf.square(vectors), axis=axis, keepdims=True)
+    s_norm = tf.sqrt(s_squared_norm + epsilon())
+
+    return (1 - 1 / (tf.math.exp(s_norm))) * (vectors / s_norm)
+
