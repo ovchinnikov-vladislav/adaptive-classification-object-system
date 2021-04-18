@@ -8,11 +8,12 @@ from libs.utls import BaseModelForTraining
 
 class EfficientCapsuleNetwork(BaseModelForTraining):
     def create(self, input_shape, **kwargs):
-        self.is_decoder = True
-
         dataset = kwargs.get('dataset')
-
+        decoder = kwargs.get('decoder')
         num_classes = kwargs.get('num_classes')
+
+        if decoder:
+            self.is_decoder = True
 
         x = inputs = Input(shape=input_shape)
 
@@ -34,12 +35,16 @@ class EfficientCapsuleNetwork(BaseModelForTraining):
         capsules = Capsule(num_classes, 16)(x)
         output = Length(name='length')(capsules)
 
-        input_decoder = Input(shape=(num_classes,))
+        if self.is_decoder:
+            input_decoder = Input(shape=(num_classes,))
 
-        decoder = Decoder(num_classes=num_classes, output_shape=input_shape, name='decoder')
+            decoder = Decoder(num_classes=num_classes, output_shape=input_shape, name='decoder')
 
-        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
+            train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
-        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
+            eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
+        else:
+            train_model = Model(inputs, output, self.name)
+            eval_model = Model(inputs, output, self.name)
 
         return train_model, eval_model
