@@ -10,6 +10,8 @@ class EfficientCapsuleNetwork(BaseModelForTraining):
     def create(self, input_shape, **kwargs):
         self.is_decoder = True
 
+        dataset = kwargs.get('dataset')
+
         num_classes = kwargs.get('num_classes')
 
         x = inputs = Input(shape=input_shape)
@@ -22,7 +24,10 @@ class EfficientCapsuleNetwork(BaseModelForTraining):
         x = tf.keras.layers.BatchNormalization()(x)
         x = tf.keras.layers.Conv2D(128, 3, 2, activation='relu', padding='valid', kernel_initializer='he_normal')(x)
         x = tf.keras.layers.BatchNormalization()(x)
-        x = PrimaryCapsule2D(128, 9, 16, 8)(x)
+        if dataset == 'cifar10':
+            x = PrimaryCapsule2D(128, 9, 72, 16)(x)
+        else:
+            x = PrimaryCapsule2D(128, 9, 16, 8)(x)
 
         capsules = Capsule(num_classes, 16)(x)
         output = Length(name='length')(capsules)
