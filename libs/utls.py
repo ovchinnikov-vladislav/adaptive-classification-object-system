@@ -214,11 +214,11 @@ class ClassificationReportPlotWriter:
 
         ax = plt.gca()
         for t in ax.xaxis.get_major_ticks():
-            t.tick1On = False
-            t.tick2On = False
+            t.tick1line.set_visible(True)
+            t.tick2line.set_visible(True)
         for t in ax.yaxis.get_major_ticks():
-            t.tick1On = False
-            t.tick2On = False
+            t.tick1line.set_visible(True)
+            t.tick2line.set_visible(True)
         plt.colorbar(c)
         ClassificationReportPlotWriter.__show_values(c)
         if correct_orientation:
