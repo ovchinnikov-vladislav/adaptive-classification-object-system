@@ -47,3 +47,17 @@ class FlattenCapsule(layers.Layer):
                              'or "batch_input_shape" argument to the first '
                              'layer in your model.')
         return input_shape[0], np.prod(input_shape[1:-1]), input_shape[-1]
+
+
+class CapsuleToScalars(layers.Layer):
+
+    def __init__(self, **kwargs):
+        super(CapsuleToScalars, self).__init__(**kwargs)
+        self.input_spec = layers.InputSpec(min_ndim=3)
+
+    def call(self, inputs, **kwargs):
+        return tf.sqrt(tf.reduce_sum(tf.square(inputs + epsilon()), axis=-1))
+
+    def compute_output_shape(self, input_shape):
+        return input_shape[0], input_shape[1]
+
