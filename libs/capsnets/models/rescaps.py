@@ -31,7 +31,8 @@ class ResCapsuleNetworkV1(utls.BaseModelForTraining):
                 t = residual_block(t, downsample=(j == 0 and i != 0), filters=num_filters)
             num_filters *= 2
 
-        _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=32, dim_capsules=8, kernel_size=4, strides=1)(t)
+        _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=32, dim_capsules=8, kernel_size=4, strides=1,
+                                                     do_reshape=True)(t)
         capsules = Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)(capsules)
         output = Length(name='length')(capsules)
 
@@ -113,7 +114,8 @@ class Resnet50ToCapsuleNetwork(utls.BaseModelForTraining):
         x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b')
         x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
 
-        _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=32, dim_capsules=8, kernel_size=2, strides=2)(x)
+        _, capsules = PrimaryCapsule2DWithConvOutput(num_capsules=32, dim_capsules=8, kernel_size=2, strides=2,
+                                                     do_reshape=True)(x)
         capsules = Capsule(num_capsules=num_classes, dim_capsules=16, routings=routings)(capsules)
         output = Length(name='length')(capsules)
 

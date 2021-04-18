@@ -1,5 +1,4 @@
 import tensorflow as tf
-import numpy as np
 from tensorflow.keras.backend import epsilon
 
 
@@ -13,6 +12,6 @@ def squash(vectors, axis=-1):
     return additional_squashing * unit_scaling
 
 
-def efficient_squash(vectors, axis=-1):
-    norm = tf.norm(vectors, axis=-1, keepdims=True)
-    return 1 - 1 / (tf.math.exp(norm) + epsilon()) * (vectors / (norm + epsilon()))
+def efficient_squash(vectors, axis=-1, eps=10e-21):
+    norm = tf.norm(vectors, axis=axis, keepdims=True)
+    return 1 - 1 / (tf.math.exp(norm) + eps) * (vectors / (norm + eps))

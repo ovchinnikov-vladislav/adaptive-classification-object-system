@@ -38,10 +38,11 @@ class Capsule(layers.Layer):
     :param name: имя слоя
     """
 
-    def __init__(self, num_capsules, dim_capsules, **kwargs):
+    def __init__(self, num_capsules, dim_capsules, kernel_initializer='he_normal', **kwargs):
         super(Capsule, self).__init__(**kwargs)
         self.num_capsules = num_capsules
         self.dim_capsules = dim_capsules
+        self.kernel_initializer = tf.keras.initializers.get(kernel_initializer)
         self.w = None
         self.b = None
 
@@ -51,8 +52,7 @@ class Capsule(layers.Layer):
 
         self.w = self.add_weight(shape=[self.num_capsules, input_n, input_d, self.dim_capsules],
                                  dtype=tf.float32,
-                                 initializer=tf.random_normal_initializer(stddev=0.1),
-                                 trainable=True,
+                                 initializer=self.kernel_initializer,
                                  name='W')
         self.b = self.add_weight(shape=[self.num_capsules, input_n, 1],
                                  dtype=tf.float32,
