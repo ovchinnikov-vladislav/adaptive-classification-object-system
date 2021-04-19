@@ -70,7 +70,7 @@ class CapsuleNetworkWith4Level(BaseModelForTraining):
 
         input_decoder = Input(shape=(num_classes,))
 
-        decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
+        decoder = Decoder(name='decoder', num_classes=num_classes, dim=24, output_shape=input_shape)
 
         train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
 
