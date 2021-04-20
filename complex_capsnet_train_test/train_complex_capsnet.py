@@ -11,12 +11,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', default=1, type=int)
 parser.add_argument('--batch_size', default=100, type=int)
 parser.add_argument('--routings', default=1, type=int)
-parser.add_argument('--save_dir', default='capsnet_3level')
+parser.add_argument('--save_dir', default='res_capsnet_3level_v2')
 parser.add_argument('--dataset', default='cifar10', help='value: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--lr_decay', default=0.9, type=float)
 parser.add_argument('--lam_recon', default=0.392, type=float)
-parser.add_argument('--model', default='capsnet_3level', help='value: capsnet_3level, capsnet_4level, '
+parser.add_argument('--model', default='res_capsnet_3level_v2', help='value: capsnet_3level, capsnet_4level, '
                                                               'res_capsnet_3level_v1, res_capsnet_3level_v2, '
                                                               'res50_capsnet_3level')
 
@@ -34,7 +34,7 @@ if __name__ == '__main__':
     elif args.model == 'res50_capsnet_3level':
         model = Resnet50WithCapsuleNetworkWith3Level(name=f'res50_capsnet_3level_{args.dataset}')
     else:
-        model = CapsuleNetworkWith3Level(name=f'capsnet_3level_{args.dataset}')
+        model = CapsuleNetworkWith3Level(name=f'res_capsnet_3level_v2_{args.dataset}')
 
     model.build(input_shape=x_train.shape[1:],
                 num_classes=len(np.unique(np.argmax(y_train, 1))),

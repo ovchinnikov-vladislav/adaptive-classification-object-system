@@ -137,20 +137,20 @@ class ResCapsuleNetworkWith3LevelV2(BaseModelForTraining):
 
         inputs = Input(shape=input_shape)
 
-        x = residual_block(inputs, filters=128)
+        x = residual_block(inputs, filters=128, downsample=True)
         x = residual_block(x, filters=128)
         x = residual_block(x, filters=128)
-        x, capsules_1 = block_caps(x, routings, num_classes, kernel_size=9, strides=2)
+        x, capsules_1 = block_caps(x, routings, num_classes, kernel_size=9, strides=1)
 
+        x = residual_block(x, filters=64, downsample=True)
         x = residual_block(x, filters=64)
         x = residual_block(x, filters=64)
-        x = residual_block(x, filters=64)
-        x, capsules_2 = block_caps(x, routings, num_classes, kernel_size=6, strides=2)
+        x, capsules_2 = block_caps(x, routings, num_classes, kernel_size=4, strides=1)
 
+        x = residual_block(x, filters=32, downsample=True)
         x = residual_block(x, filters=32)
         x = residual_block(x, filters=32)
-        x = residual_block(x, filters=32)
-        x, capsules_3 = block_caps(x, routings, num_classes, kernel_size=3, strides=1)
+        x, capsules_3 = block_caps(x, routings, num_classes, kernel_size=1, strides=1)
 
         capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
 
