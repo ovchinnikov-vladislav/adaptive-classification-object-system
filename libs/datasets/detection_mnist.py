@@ -181,7 +181,7 @@ if __name__ == "__main__":
         "--max-digits-per-image", default=20, type=int
     )
     parser.add_argument(
-        "--annotations_path", default='model_data'
+        "--annotations-path", default='./'
     )
     args = parser.parse_args()
     (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
@@ -196,4 +196,4 @@ if __name__ == "__main__":
             args.max_digits_per_image,
             X,
             Y,
-            os.path.join(args.annotations_path, dataset + '_annotation.txt'))
+            os.path.join(args.annotations_path, 'mnist_detection_' + dataset + '_annotation.txt'))
