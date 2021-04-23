@@ -320,7 +320,10 @@ def get_random_data(annotation_line, input_shape, random=False, max_boxes=20, ji
     # resize image
     image_data = 0
     if proc_img:
-        new_image = tf.image.resize(np.array(image), (w, h))
+        np_image = np.array(image)
+        if np_image.ndim < 3:
+            np_image = tf.expand_dims(np_image, -1)
+        new_image = tf.image.resize(np_image, (w, h))
         image_data = np.array(new_image) / 255.
 
     # correct boxes

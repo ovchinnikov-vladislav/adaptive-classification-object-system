@@ -58,8 +58,8 @@ def csp_block(x, residual_out, repeat, residual_bottleneck=False):
     return x
 
 
-def darknet53(name=None):
-    x = inputs = Input([None, None, 3])
+def darknet53(name=None, channels=3):
+    x = inputs = Input([None, None, channels])
     x = darknet_conv(x, 32, 3)
     x = darknet_block(x, 64, 1)
     x = darknet_block(x, 128, 2)  # skip connection
@@ -69,8 +69,8 @@ def darknet53(name=None):
     return tf.keras.Model(inputs, (x_36, x_61, x), name=name)
 
 
-def darknet53_tiny(name=None):
-    x = inputs = Input([None, None, 3])
+def darknet53_tiny(name=None, channels=3):
+    x = inputs = Input([None, None, channels])
     x = darknet_conv(x, 16, 3)
     x = MaxPool2D(2, 2, 'same')(x)
     x = darknet_conv(x, 32, 3)

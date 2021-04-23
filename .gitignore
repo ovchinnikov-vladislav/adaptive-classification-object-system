@@ -27,3 +27,4 @@ yolov*
 *.weights
 checkpoint*
 test_data
+data
