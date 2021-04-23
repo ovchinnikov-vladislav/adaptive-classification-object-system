@@ -4,6 +4,7 @@ import pathlib
 import cv2
 import numpy as np
 import tqdm
+import os
 
 
 def calculate_iou(prediction_box, gt_box):
@@ -179,6 +180,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max-digits-per-image", default=20, type=int
     )
+    parser.add_argument(
+        "--annotations_path", default='model_data'
+    )
     args = parser.parse_args()
     (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
     for dataset, (X, Y) in zip(["train", "test"], [[X_train, Y_train], [X_test, Y_test]]):
@@ -192,4 +196,4 @@ if __name__ == "__main__":
             args.max_digits_per_image,
             X,
             Y,
-            dataset + '_annotation.txt')
+            os.path.join(args.annotations_path, dataset + '_annotation.txt'))
