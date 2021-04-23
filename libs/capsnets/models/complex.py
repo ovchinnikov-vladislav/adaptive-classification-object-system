@@ -184,7 +184,7 @@ class ResCapsuleNetworkWith3LevelV3(BaseModelForTraining):
         x = residual_block(x, filters=128)
         x = residual_block(x, filters=128)
         x = residual_block(x, filters=128)
-        x, capsules_1 = block_caps(x, routings, num_classes, kernel_size=5, strides=1)
+        x, capsules_1 = block_caps(x, routings, num_classes, kernel_size=5, strides=1, padding='same')
 
         x = residual_block(x, filters=64, downsample=True)
         x = residual_block(x, filters=64)
@@ -194,7 +194,7 @@ class ResCapsuleNetworkWith3LevelV3(BaseModelForTraining):
         x = residual_block(x, filters=64)
         x = residual_block(x, filters=64)
         x = residual_block(x, filters=64)
-        x, capsules_2 = block_caps(x, routings, num_classes, kernel_size=5, strides=1)
+        x, capsules_2 = block_caps(x, routings, num_classes, kernel_size=5, strides=1, padding='same')
 
         x = residual_block(x, filters=32, downsample=True)
         x = residual_block(x, filters=32)

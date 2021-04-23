@@ -16,7 +16,7 @@ parser.add_argument('--dataset', default='cifar10', help='value: mnist, fashion_
 parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--lr_decay', default=0.9, type=float)
 parser.add_argument('--lam_recon', default=0.392, type=float)
-parser.add_argument('--model', default='res_capsnet_3level_v2', help='value: capsnet_3level, capsnet_4level, '
+parser.add_argument('--model', default='res_capsnet_3level_v3', help='value: capsnet_3level, capsnet_4level, '
                                                               'res_capsnet_3level_v1, res_capsnet_3level_v2, '
                                                               'res_capsnet_3level_v3, res50_capsnet_3level')
 
