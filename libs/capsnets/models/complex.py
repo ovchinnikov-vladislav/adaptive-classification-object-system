@@ -167,6 +167,60 @@ class ResCapsuleNetworkWith3LevelV2(BaseModelForTraining):
         return train_model, eval_model
 
 
+class ResCapsuleNetworkWith3LevelV3(BaseModelForTraining):
+    def create(self, input_shape, **kwargs):
+        self.is_decoder = True
+
+        num_classes = kwargs.get('num_classes')
+        routings = kwargs.get('routings')
+
+        inputs = Input(shape=input_shape)
+
+        x = residual_block(inputs, filters=128, downsample=True)
+        x = residual_block(x, filters=128)
+        x = residual_block(x, filters=128)
+        x = residual_block(x, filters=128)
+        x = residual_block(x, filters=128)
+        x = residual_block(x, filters=128)
+        x = residual_block(x, filters=128)
+        x = residual_block(x, filters=128)
+        x, capsules_1 = block_caps(x, routings, num_classes, kernel_size=5, strides=1)
+
+        x = residual_block(x, filters=64, downsample=True)
+        x = residual_block(x, filters=64)
+        x = residual_block(x, filters=64)
+        x = residual_block(x, filters=64)
+        x = residual_block(x, filters=64)
+        x = residual_block(x, filters=64)
+        x = residual_block(x, filters=64)
+        x = residual_block(x, filters=64)
+        x, capsules_2 = block_caps(x, routings, num_classes, kernel_size=5, strides=1)
+
+        x = residual_block(x, filters=32, downsample=True)
+        x = residual_block(x, filters=32)
+        x = residual_block(x, filters=32)
+        x = residual_block(x, filters=32)
+        x = residual_block(x, filters=32)
+        x = residual_block(x, filters=32)
+        x = residual_block(x, filters=32)
+        x = residual_block(x, filters=32)
+        x, capsules_3 = block_caps(x, routings, num_classes, kernel_size=3, strides=1)
+
+        capsules = tf.keras.layers.Concatenate()([capsules_1, capsules_2, capsules_3])
+
+        output = Length(name='length')(capsules)
+
+        input_decoder = Input(shape=(num_classes,))
+
+        decoder = Decoder(name='decoder', num_classes=num_classes, dim=18, output_shape=input_shape)
+
+        train_model = Model([inputs, input_decoder], [output, decoder([capsules, input_decoder])], name=self.name)
+
+        eval_model = Model(inputs, [output, decoder(capsules)], name=self.name)
+
+        return train_model, eval_model
+
+
 class Resnet50WithCapsuleNetworkWith3Level(BaseModelForTraining):
     def create(self, input_shape, **kwargs):
         self.is_decoder = True
