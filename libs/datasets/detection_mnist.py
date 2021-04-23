@@ -13,13 +13,11 @@ def calculate_iou(prediction_box, gt_box):
             [xmin, ymin, xmax, ymax]
         gt_box (np.array of floats): location of ground truth object as
             [xmin, ymin, xmax, ymax]
-        returns:
-            float: value of the intersection of union for the two boxes.
     """
     # YOUR CODE HERE
     x1_t, y1_t, x2_t, y2_t = gt_box
     x1_p, y1_p, x2_p, y2_p = prediction_box
-    if (x2_t < x1_p or x2_p < x1_t or y2_t < y1_p or y2_p < y1_t):
+    if x2_t < x1_p or x2_p < x1_t or y2_t < y1_p or y2_p < y1_t:
         return 0.0
 
     # Compute intersection
@@ -34,7 +32,7 @@ def calculate_iou(prediction_box, gt_box):
     gt_area = (x2_t - x1_t) * (y2_t - y1_t)
     union = pred_area + gt_area - intersection
     iou = intersection / union
-    assert iou >= 0 and iou <= 1
+    assert 0 <= iou <= 1
     return iou
 
 
@@ -63,7 +61,6 @@ def tight_bbox(digit, orig_bbox):
             break
         shift += 1
     xmax -= shift
-    ymin
     shift = 0
     for i in range(digit.shape[0]):
         if digit[i, :].sum() != 0:
