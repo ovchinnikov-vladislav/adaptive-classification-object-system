@@ -56,7 +56,7 @@ class PrimaryCapsule2DWithConvOutput(layers.Layer):
         num_filters = num_capsules * dim_capsules
         self.conv = layers.Conv2D(filters=num_filters,
                                   kernel_size=kernel_size,
-                                  kernel_regularizer=tf.keras.regularizers.l2(1e-4),
+                                  kernel_regularizer=tf.keras.regularizers.l2(0.0001),
                                   strides=strides,
                                   padding=padding)
         self.batch = BatchNormalization(axis=-1)
