@@ -131,7 +131,7 @@ def plot_dataset_images(x_batch, y_batch, n_img, class_names, show=True):
     return fig
 
 
-def plot_confusion_matrix(cm, class_names, show=True):
+def plot_confusion_matrix(cm, class_names, save_dir='.', show=True):
     figure = plt.figure(figsize=(8, 8))
     plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('Blues'))
     plt.title('Матрица ошибок')
@@ -153,7 +153,7 @@ def plot_confusion_matrix(cm, class_names, show=True):
     plt.close()
     if show:
         figure.show()
-
+    figure.savefig(os.path.join(save_dir, f'confusion_matrix.png'))
     return figure
 
 
@@ -221,7 +221,7 @@ class ClassificationReportPlotWriter:
 
     @staticmethod
     def __heatmap(auc, title, x_label, y_label, x_tick_labels, y_tick_labels, show,
-                  figure_width=40, figure_height=20, correct_orientation=False, cmap='Blues'):
+                  figure_width=40, figure_height=20, correct_orientation=False, cmap='Blues', save_dir='.'):
         fig, ax = plt.subplots()
         c = ax.pcolor(auc, edgecolors='k', linestyle='dashed', linewidths=0.2, cmap=cmap)
 
@@ -255,6 +255,9 @@ class ClassificationReportPlotWriter:
         plt.close()
         if show:
             fig.show()
+
+        fig.savefig(os.path.join(save_dir, f'classification_report.png'))
+
         return fig
 
     @staticmethod
