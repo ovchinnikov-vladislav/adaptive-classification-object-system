@@ -8,9 +8,9 @@ from libs import utls
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', default=1, type=int)
+parser.add_argument('--epochs', default=100, type=int)
 parser.add_argument('--batch_size', default=100, type=int)
-parser.add_argument('--routings', default=1, type=int)
+parser.add_argument('--routings', default=3, type=int)
 parser.add_argument('--save_dir', default='res_capsnet_3level_v2')
 parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--lr', default=0.001, type=float)
