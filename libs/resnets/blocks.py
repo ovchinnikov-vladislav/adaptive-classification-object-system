@@ -64,11 +64,10 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
     x = relu_bn(x)
 
     x = Conv2D(filters2, kernel_size, padding='same',
-               name=conv_name_base + '2b', kernel_regularizer=regularizers.l2(0.0001))(x)
+               name=conv_name_base + '2b')(x)
     x = relu_bn(x)
 
-    x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c',
-               kernel_regularizer=regularizers.l2(0.0001))(x)
+    x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c')(x)
     x = BatchNormalization(axis=-1, name=bn_name_base + '2c')(x)
 
     x = Add()([x, input_tensor])
@@ -101,14 +100,14 @@ def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2))
     x = relu_bn(x)
 
     x = Conv2D(filters2, kernel_size, padding='same',
-               name=conv_name_base + '2b', kernel_regularizer=regularizers.l2(0.0001))(x)
+               name=conv_name_base + '2b')(x)
     x = relu_bn(x)
 
     x = Conv2D(filters3, (1, 1), name=conv_name_base + '2c', kernel_regularizer=regularizers.l2(0.0001))(x)
     x = BatchNormalization(axis=-1, name=bn_name_base + '2c')(x)
 
     shortcut = Conv2D(filters3, (1, 1), strides=strides,
-                      name=conv_name_base + '1', kernel_regularizer=regularizers.l2(0.0001))(input_tensor)
+                      name=conv_name_base + '1')(input_tensor)
     shortcut = BatchNormalization(axis=-1, name=bn_name_base + '1')(shortcut)
 
     x = Add()([x, shortcut])
@@ -128,14 +127,12 @@ def residual_block(x, filters, kernel_size=3, downsample=False):
 
     y = relu_bn(y)
     y = Conv2D(kernel_size=kernel_size,
-               kernel_regularizer=regularizers.l2(0.0001),
                strides=1,
                filters=filters,
                padding="same")(y)
 
     if downsample:
         x = Conv2D(kernel_size=1,
-                   kernel_regularizer=regularizers.l2(0.0001),
                    strides=2,
                    filters=filters,
                    padding="same")(x)
