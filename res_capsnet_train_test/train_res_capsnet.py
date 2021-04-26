@@ -13,7 +13,7 @@ parser.add_argument('--dataset', default='mnist', help='values: mnist, fashion_m
 parser.add_argument('--lr', default=0.003, type=float)
 parser.add_argument('--lr_decay', default=0.90, type=float)
 parser.add_argument('-r', '--routings', default=3, type=int)
-parser.add_argument('--save_dir', default='res_capsnet_v2_logs')
+parser.add_argument('--save_dir', default='capsnet_logs')
 parser.add_argument('--model', default='res_capsnet_v2', help='values: res_capsnet_v1, res_capsnet_v2, '
                                                               'res50_to_capsnet')
 
