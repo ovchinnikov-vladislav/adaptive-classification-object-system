@@ -156,7 +156,7 @@ def yolo_output(x_in, filters, anchors, classes, name=None):
 
     x, capsules = block_caps(x, anchors * (classes + 5), 16)
 
-    x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2], anchors, classes + 5)))(x)
+    x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2], anchors, classes + 5)))(capsules)
     return tf.keras.Model(inputs, x, name=name)(x_in)
 
 
