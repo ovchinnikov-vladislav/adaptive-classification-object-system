@@ -11,14 +11,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', default=100, type=int)
 parser.add_argument('--batch_size', default=100, type=int)
 parser.add_argument('--routings', default=3, type=int)
-parser.add_argument('--save_dir', default='res_capsnet_3level_v2')
+parser.add_argument('--save_dir', default='capsnet_logs')
 parser.add_argument('--dataset', default='mnist', help='value: mnist, fashion_mnist, cifar10, cifar100')
 parser.add_argument('--lr', default=0.001, type=float)
 parser.add_argument('--lr_decay', default=0.9, type=float)
 parser.add_argument('--lam_recon', default=0.392, type=float)
 parser.add_argument('--model', default='res_capsnet_3level_v3', help='value: capsnet_3level, capsnet_4level, '
-                                                              'res_capsnet_3level_v1, res_capsnet_3level_v2, '
-                                                              'res_capsnet_3level_v3, res50_capsnet_3level')
+                                                                     'res_capsnet_3level_v1, res_capsnet_3level_v1, '
+                                                                     'res_capsnet_3level_v3, res50_capsnet_3level')
 
 if __name__ == '__main__':
     args = parser.parse_args()

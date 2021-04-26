@@ -74,7 +74,7 @@ if __name__ == '__main__':
 
     class_names = [c.strip() for c in open('model_data/coco_classes_ru.txt').readlines()]
 
-    vid = cv2.VideoCapture('test_data/test.mp4')
+    vid = cv2.VideoCapture('other/test.mp4')
 
     fps = 0.0
     count = 0

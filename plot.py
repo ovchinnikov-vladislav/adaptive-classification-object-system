@@ -9,8 +9,8 @@ def plot_log(filename1, filename2, training_metric, val_metric, train_name1, tra
     data2 = pandas.read_csv(filename2)
 
     fig = plt.figure()
-    plt.plot(0, 0)
-    plt.plot(0, 1)
+    # plt.plot(0, 0)
+    # plt.plot(0, 1)
 
     for key in data1.keys():
         if key == training_metric:
@@ -36,24 +36,24 @@ def plot_log(filename1, filename2, training_metric, val_metric, train_name1, tra
 
 
 if __name__ == '__main__':
-    plot_log(filename1=os.path.join('test_data', 'capsnet-basic-v1-cifar10-logs', 'history_training.csv'),
-             filename2=os.path.join('test_data', 'complex-res-capsnet-3level-v3-cifar10-logs', 'history_training.csv'),
+    plot_log(filename1=os.path.join('other', 'capsnet-basic-v1-cifar10-logs', 'history_training_cifar10.csv'),
+             filename2=os.path.join('other', 'complex-res-capsnet-3level-v3-cifar10-logs', 'history_training_cifar10.csv'),
              training_metric='length_accuracy',
              val_metric='val_length_accuracy',
-             train_name1='Точность при обучении (CapsNet)',
-             train_name2='Точность при обучении (3Level CapsNet)',
-             val_name1='Точность при валидации (CapsNet)',
-             val_name2='Точность при валидации (3Level CapsNet)',
-             title='Значения метрики точности (accuracy) при обучении и при валидации',
+             train_name1='Точность при обучении (исходная капсульная сеть)',
+             train_name2='Точность при обучении (трехуровневая капсульная сеть)',
+             val_name1='Точность при валидации (исходная капсульная сеть)',
+             val_name2='Точность при валидации (трехуровневая капсульная сеть)',
+             title='Точность при обучении и при валидации',
              color1='b', color2='g', show=True)
 
-    plot_log(filename1=os.path.join('test_data', 'capsnet-basic-v1-cifar10-logs', 'history_training.csv'),
-             filename2=os.path.join('test_data', 'complex-res-capsnet-3level-v3-cifar10-logs', 'history_training.csv'),
+    plot_log(filename1=os.path.join('other', 'capsnet-basic-v1-cifar10-logs', 'history_training_cifar10.csv'),
+             filename2=os.path.join('other', 'complex-res-capsnet-3level-v3-cifar10-logs', 'history_training_cifar10.csv'),
              training_metric='length_loss',
              val_metric='val_length_loss',
-             train_name1='Точность при обучении (CapsNet)',
-             train_name2='Точность при обучении (3Level CapsNet)',
-             val_name1='Точность при валидации (CapsNet)',
-             val_name2='Точность при валидации (3Level CapsNet)',
-             title='Значения метрики точности (accuracy) при обучении и при валидации',
+             train_name1='Потери при обучении (исходная капсульная сеть)',
+             train_name2='Потери при обучении (трехуровневая капсульная сеть)',
+             val_name1='Потери при валидации (исходная капсульная сеть)',
+             val_name2='Потери при валидации (трехуровневая капсульная сеть)',
+             title='Потери при обучении и при валидации',
              color1='b', color2='g', show=True)

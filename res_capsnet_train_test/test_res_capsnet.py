@@ -35,12 +35,12 @@ if __name__ == '__main__':
 
     y_pred, x_recon = model.predict(x_test, batch_size=100)
 
-    utls.plot_log(os.path.join(args.save_dir, 'history_training.csv'), 'length_accuracy', 'val_length_accuracy',
+    utls.plot_log(os.path.join(args.save_dir, 'history_training_cifar10.csv'), 'length_accuracy', 'val_length_accuracy',
                   'Точность (accuracy) при обучении', 'Точность (accuracy) при валидации',
                   'Значения метрики точности (accuracy) при обучении и при валидации',
                   color='b', show=True, save_dir=args.save_dir)
 
-    utls.plot_log(os.path.join(args.save_dir, 'history_training.csv'), 'length_loss', 'val_length_loss',
+    utls.plot_log(os.path.join(args.save_dir, 'history_training_cifar10.csv'), 'length_loss', 'val_length_loss',
                   'Потери (losses) при обучении', 'Потери (losses) при валидации',
                   'Значения метрики потери (loss) при обучении и при валидации',
                   color='b', show=True, save_dir=args.save_dir)
@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     report = classification_report(np.argmax(y_test, 1), np.argmax(y_pred, 1))
     figure = utls.ClassificationReportPlotWriter.plot(report, show=True)
-    figure.savefig(os.path.join(args.save_dir, "classification_report.png"))
+    figure.savefig(os.path.join(args.save_dir, "classification_report_cifar10.png"))
 
     img = utls.combine_images(np.concatenate([x_test[:50], x_recon[:50]]))
     image = img * 255

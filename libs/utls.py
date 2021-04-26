@@ -131,25 +131,25 @@ def plot_dataset_images(x_batch, y_batch, n_img, class_names, show=True):
     return fig
 
 
-def plot_confusion_matrix(cm, class_names, save_dir='.', show=True):
+def plot_confusion_matrix(cm, class_names, title='Матрица ошибок', save_dir='.', show=True):
     figure = plt.figure(figsize=(8, 8))
-    plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('Blues'))
-    plt.title('Матрица ошибок')
+    cm = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=4)
+
+    plt.imshow(cm, interpolation='nearest', cmap=plt.get_cmap('Greys'), vmin=0, vmax=1)
+    plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(class_names))
     plt.xticks(tick_marks, class_names, rotation=45)
     plt.yticks(tick_marks, class_names)
-
-    cm = np.around(cm.astype('float') / cm.sum(axis=1)[:, np.newaxis], decimals=4)
 
     threshold = cm.max(initial=0) / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         color = 'white' if cm[i, j] > threshold else 'black'
         plt.text(j, i, cm[i, j], horizontalalignment="center", color=color)
 
-    plt.tight_layout()
     plt.ylabel('Входные метки')
     plt.xlabel('Предсказанные метки')
+    plt.tight_layout()
     plt.close()
     if show:
         figure.show()
@@ -212,18 +212,18 @@ class ClassificationReportPlotWriter:
             ax.text(x, y, fmt % value, ha="center", va="center", color=color, **kw)
 
     @staticmethod
-    def __cm2inch(*tupl):
+    def __cm2inch(*t):
         inch = 2.54
-        if type(tupl[0]) == tuple:
-            return tuple(i / inch for i in tupl[0])
+        if type(t[0]) == tuple:
+            return tuple(i / inch for i in t[0])
         else:
-            return tuple(i / inch for i in tupl)
+            return tuple(i / inch for i in t)
 
     @staticmethod
     def __heatmap(auc, title, x_label, y_label, x_tick_labels, y_tick_labels, show,
-                  figure_width=40, figure_height=20, correct_orientation=False, cmap='Blues', save_dir='.'):
+                  figure_width=40, figure_height=20, correct_orientation=False, cmap='Greys', save_dir='.'):
         fig, ax = plt.subplots()
-        c = ax.pcolor(auc, edgecolors='k', linestyle='dashed', linewidths=0.2, cmap=cmap)
+        c = ax.pcolor(auc, edgecolors='k', linestyle='dashed', linewidths=0.2, cmap=cmap)  # , vmin=0.3, vmax=0.9)
 
         ax.set_yticks(np.arange(auc.shape[0]) + 0.5, minor=False)
         ax.set_xticks(np.arange(auc.shape[1]) + 0.5, minor=False)
@@ -261,7 +261,7 @@ class ClassificationReportPlotWriter:
         return fig
 
     @staticmethod
-    def plot(classification_report, title='Отчет классификации', cmap='Blues', show=True):
+    def plot(classification_report, title='Отчет классификации', cmap='gist_gray', show=True):
         lines = classification_report.split('\n')
 
         classes = []
