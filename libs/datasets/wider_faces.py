@@ -6,6 +6,7 @@ import tensorflow_datasets.object_detection.coco
 
 def _prepare_annotation(filename, path, dataset):
     with open(filename, 'w') as file:
+        print('Start prepare annotation')
         for example in dataset:
             string = os.path.join(path, example['image/filename'].numpy().decode())
             height, width, _ = example['image'].shape
@@ -16,8 +17,8 @@ def _prepare_annotation(filename, path, dataset):
                               f'{int(bbox[i][3] * width)},{int(bbox[i][2] * height)},{0}'
                 bboxs += ' ' + bbox_string
             string += bboxs
-            print(string)
             file.write(string + '\n')
+        print('End prepare annotation')
 
 
 def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
