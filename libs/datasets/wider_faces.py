@@ -34,7 +34,7 @@ def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
         list_d = os.listdir(os.path.join(root_path, 'downloads', 'extracted'))
         for d in list_d:
             if not os.path.isdir(d):
-                break
+                continue
             list_dir = os.listdir(os.path.join(root_path, 'downloads', 'extracted', d))
             if len(list_dir) != 0:
                 if list_dir[0] == 'WIDER_train':
@@ -49,7 +49,7 @@ def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
     else:
         for d in list_d:
             if not os.path.isdir(d):
-                break
+                continue
             list_dir = os.listdir(os.path.join(root_path, 'downloads', d))
             if len(list_dir) != 0:
                 if list_dir[0] == 'WIDER_train':
