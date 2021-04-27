@@ -21,9 +21,9 @@ def _prepare_annotation(filename, path, dataset):
 
 
 def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
-    train_path = f'{root_path}wider_face/WIDER_train/images/'
-    test_path = f'{root_path}wider_face/WIDER_test/images/'
-    val_path = f'{root_path}wider_face/WIDER_val/images/'
+    train_path = os.path.join(root_path, 'wider_face', 'WIDER_train', 'images')
+    test_path = os.path.join(root_path, 'wider_face', 'WIDER_test', 'images')
+    val_path = os.path.join(root_path, 'wider_face', 'WIDER_val', 'images')
     train_ds = tfds.load('wider_face', split='train', data_dir=root_path)
     val_ds = tfds.load('wider_face', split='validation', data_dir=root_path)
     test_ds = tfds.load('wider_face', split='test', data_dir=root_path)
