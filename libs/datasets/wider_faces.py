@@ -30,37 +30,21 @@ def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
     test_ds = tfds.load('wider_face', split='test', data_dir=root_path)
 
     list_d = os.listdir(os.path.join(root_path, 'downloads'))
-    if len(list_d) != 0 and list_d[0] == 'extracted':
-        list_d = os.listdir(os.path.join(root_path, 'downloads', 'extracted'))
-        for d in list_d:
-            if not os.path.isdir(d):
-                continue
-            list_dir = os.listdir(os.path.join(root_path, 'downloads', 'extracted', d))
-            if len(list_dir) != 0:
-                if list_dir[0] == 'WIDER_train':
-                    shutil.move(os.path.join(root_path, 'downloads', 'extracted', d, 'WIDER_train'),
-                                os.path.join(root_path, 'wider_face', 'WIDER_train'))
-                elif list_dir[0] == 'WIDER_test':
-                    shutil.move(os.path.join(root_path, 'downloads', 'extracted', d, 'WIDER_test'),
-                                os.path.join(root_path, 'wider_face', 'WIDER_test'))
-                elif list_dir[0] == 'WIDER_val':
-                    shutil.move(os.path.join(root_path, 'downloads', 'extracted', d, 'WIDER_val'),
-                                os.path.join(root_path, 'wider_face', 'WIDER_val'))
-    else:
-        for d in list_d:
-            if not os.path.isdir(d):
-                continue
-            list_dir = os.listdir(os.path.join(root_path, 'downloads', d))
-            if len(list_dir) != 0:
-                if list_dir[0] == 'WIDER_train':
-                    shutil.move(os.path.join(root_path, 'downloads', d, 'WIDER_train'),
-                                os.path.join(root_path, 'wider_face', 'WIDER_train'))
-                elif list_dir[0] == 'WIDER_test':
-                    shutil.move(os.path.join(root_path, 'downloads', d, 'WIDER_test'),
-                                os.path.join(root_path, 'wider_face', 'WIDER_test'))
-                elif list_dir[0] == 'WIDER_val':
-                    shutil.move(os.path.join(root_path, 'downloads', d, 'WIDER_val'),
-                                os.path.join(root_path, 'wider_face', 'WIDER_val'))
+    for ext_d in list_d:
+        if os.path.isdir(ext_d) and ext_d == 'extracted':
+            list_d = os.listdir(os.path.join(root_path, 'downloads', 'extracted'))
+            for d in list_d:
+                list_dir = os.listdir(os.path.join(root_path, 'downloads', 'extracted', d))
+                if len(list_dir) != 0:
+                    if list_dir[0] == 'WIDER_train':
+                        shutil.move(os.path.join(root_path, 'downloads', 'extracted', d, 'WIDER_train'),
+                                    os.path.join(root_path, 'wider_face', 'WIDER_train'))
+                    elif list_dir[0] == 'WIDER_test':
+                        shutil.move(os.path.join(root_path, 'downloads', 'extracted', d, 'WIDER_test'),
+                                    os.path.join(root_path, 'wider_face', 'WIDER_test'))
+                    elif list_dir[0] == 'WIDER_val':
+                        shutil.move(os.path.join(root_path, 'downloads', 'extracted', d, 'WIDER_val'),
+                                    os.path.join(root_path, 'wider_face', 'WIDER_val'))
 
     ann_train_path = './model_data/wider_face_train_annotation.txt'
     ann_test_path = './model_data/wider_face_test_annotation.txt'
