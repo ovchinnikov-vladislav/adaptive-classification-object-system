@@ -29,13 +29,13 @@ def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
     val_ds = tfds.load('wider_face', split='validation', data_dir=root_path)
     test_ds = tfds.load('wider_face', split='test', data_dir=root_path)
 
-    list_d = os.listdir(os.path.join(root_path, 'downloads'))
-    for ext_d in list_d:
+    downloads_dir = os.listdir(os.path.join(root_path, 'downloads'))
+    for ext_d in downloads_dir:
         print('1. ' + ext_d)
         if os.path.isdir(ext_d) and ext_d == 'extracted':
-            list_d = os.listdir(os.path.join(root_path, 'downloads', 'extracted'))
-            print('\t2. ' + str(list_d))
-            for d in list_d:
+            extracted_dir = os.listdir(os.path.join(root_path, 'downloads', 'extracted'))
+            print('\t2. ' + str(extracted_dir))
+            for d in extracted_dir:
                 print('\t\t3.' + d)
                 list_dir = os.listdir(os.path.join(root_path, 'downloads', 'extracted', d))
                 if len(list_dir) != 0:
