@@ -57,6 +57,8 @@ def coco_dataset_annotations(classes, root_path='./', download=True, is_prepare_
 
         downloads_dir = os.listdir(os.path.join(root_path, 'downloads'))
         for ext_d in downloads_dir:
+            if not os.path.isdir(ext_d):
+                os.remove(os.path.join(os.path.join(root_path, 'downloads', ext_d)))
             if ext_d == 'extracted':
                 extracted_dir = os.listdir(os.path.join(root_path, 'downloads', 'extracted'))
                 for d in extracted_dir:
