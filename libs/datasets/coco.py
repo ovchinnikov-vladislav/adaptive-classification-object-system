@@ -39,9 +39,9 @@ def _prepare_annotation(filename, path, dataset, classes):
 
 
 def coco_dataset_annotations(classes, root_path='./', download=True, is_prepare_annotation=True):
-    train_path = f'{root_path}coco/COCO_train/'
-    test_path = f'{root_path}coco/COCO_test/'
-    val_path = f'{root_path}coco/COCO_val/'
+    train_path = os.path.join(root_path, 'coco', 'COCO_train')
+    test_path = os.path.join(root_path, 'coco', 'COCO_test')
+    val_path = os.path.join(root_path, 'coco', 'COCO_val')
 
     ann_train_path = './model_data/coco_train_annotation.txt'
     ann_test_path = './model_data/coco_test_annotation.txt'
@@ -51,6 +51,9 @@ def coco_dataset_annotations(classes, root_path='./', download=True, is_prepare_
         train_ds = tfds.load('coco', split='train', data_dir=root_path)
         val_ds = tfds.load('coco', split='validation', data_dir=root_path)
         test_ds = tfds.load('coco', split='test', data_dir=root_path)
+
+        shutil.rmtree(os.path.join(root_path, 'coco'))
+        os.mkdir(os.path.join(root_path, 'coco'))
 
         downloads_dir = os.listdir(os.path.join(root_path, 'downloads'))
         for ext_d in downloads_dir:

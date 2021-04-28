@@ -34,6 +34,9 @@ def wider_dataset_annotations(root_path='./', download=True, is_prepare_annotati
         val_ds = tfds.load('wider_face', split='validation', data_dir=root_path)
         test_ds = tfds.load('wider_face', split='test', data_dir=root_path)
 
+        shutil.rmtree(os.path.join(root_path, 'wider_face'))
+        os.mkdir(os.path.join(root_path, 'wider_face'))
+
         downloads_dir = os.listdir(os.path.join(root_path, 'downloads'))
         for ext_d in downloads_dir:
             if ext_d == 'extracted':
