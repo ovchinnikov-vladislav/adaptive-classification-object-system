@@ -31,11 +31,15 @@ def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
 
     list_d = os.listdir(os.path.join(root_path, 'downloads'))
     for ext_d in list_d:
+        print('1. ' + ext_d)
         if os.path.isdir(ext_d) and ext_d == 'extracted':
             list_d = os.listdir(os.path.join(root_path, 'downloads', 'extracted'))
+            print('\t2. ' + str(list_d))
             for d in list_d:
+                print('\t\t3.' + d)
                 list_dir = os.listdir(os.path.join(root_path, 'downloads', 'extracted', d))
                 if len(list_dir) != 0:
+                    print('\t\t\t4.' + list_dir[0])
                     if list_dir[0] == 'WIDER_train':
                         shutil.move(os.path.join(root_path, 'downloads', 'extracted', d, 'WIDER_train'),
                                     os.path.join(root_path, 'wider_face', 'WIDER_train'))
