@@ -52,8 +52,8 @@ def coco_dataset_annotations(classes, root_path='./', download=True, is_prepare_
         val_ds = tfds.load('coco', split='validation', data_dir=root_path)
         test_ds = tfds.load('coco', split='test', data_dir=root_path)
 
-        shutil.rmtree(os.path.join(root_path, 'coco'))
-        os.mkdir(os.path.join(root_path, 'coco'))
+        # shutil.rmtree(os.path.join(root_path, 'coco'))
+        # os.mkdir(os.path.join(root_path, 'coco'))
 
         downloads_dir = os.listdir(os.path.join(root_path, 'downloads'))
         for ext_d in downloads_dir:
