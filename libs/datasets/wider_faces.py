@@ -33,7 +33,8 @@ def wider_dataset_annotations(root_path='./', is_prepare_annotation=True):
     for ext_d in downloads_dir:
         print('1. ' + ext_d)
         if os.path.isdir(ext_d) and ext_d == 'extracted':
-            extracted_dir = os.listdir(os.path.join(root_path, 'downloads', 'extracted'))
+            print('-> ext_d = ' + ext_d)
+            extracted_dir = os.listdir(os.path.join(root_path, 'downloads', ext_d))
             print('\t2. ' + str(extracted_dir))
             for d in extracted_dir:
                 print('\t\t3.' + d)
