@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras.backend import epsilon
 from tensorflow.keras.losses import (binary_crossentropy, categorical_crossentropy)
 from libs.yolo3.utils import yolo_boxes
-import math
+import numpy as np
 
 
 def softmax_focal_loss(y_true, y_pred, gamma=2.0, alpha=0.25):
@@ -122,7 +122,7 @@ def box_diou(b_true, b_pred, use_ciou=False):
     if use_ciou:
         v = 4 * tf.square(tf.math.atan2(
             b_true_wh[..., 0], b_true_wh[..., 1]) - tf.math.atan2(
-            b_pred_wh[..., 0], b_pred_wh[..., 1])) / (math.pi * math.pi)
+            b_pred_wh[..., 0], b_pred_wh[..., 1])) / (np.pi * np.pi)
 
         v = v * tf.stop_gradient(b_pred_wh[..., 0] * b_pred_wh[..., 0] + b_pred_wh[..., 1] * b_pred_wh[..., 1])
 
