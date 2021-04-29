@@ -1,6 +1,6 @@
 import tensorflow as tf
-from tensorflow.keras import backend as keras
-from tensorflow.keras.losses import (binary_crossentropy, sparse_categorical_crossentropy, categorical_crossentropy)
+from tensorflow.keras.backend import epsilon
+from tensorflow.keras.losses import (binary_crossentropy, categorical_crossentropy)
 from libs.yolo3.utils import yolo_boxes
 import math
 
@@ -17,7 +17,7 @@ def softmax_focal_loss(y_true, y_pred, gamma=2.0, alpha=0.25):
 
 
 def sigmoid_focal_loss(y_true, y_pred, gamma=2.0, alpha=0.25):
-    sigmoid_loss = keras.binary_crossentropy(y_true, y_pred, from_logits=True)
+    sigmoid_loss = tf.reduce_sum(tf.square(y_true - y_pred), axis=-1)
 
     pred_prob = tf.sigmoid(y_pred)
     p_t = ((y_true * pred_prob) + ((1 - y_true) * (1 - pred_prob)))
@@ -64,24 +64,24 @@ def box_giou(b_true, b_pred):
     b_pred_mins = b_pred_xy - b_pred_wh_half
     b_pred_maxes = b_pred_xy + b_pred_wh_half
 
-    intersect_mins = keras.maximum(b_true_mins, b_pred_mins)
-    intersect_maxes = keras.minimum(b_true_maxes, b_pred_maxes)
-    intersect_wh = keras.maximum(intersect_maxes - intersect_mins, 0.)
+    intersect_mins = tf.maximum(b_true_mins, b_pred_mins)
+    intersect_maxes = tf.minimum(b_true_maxes, b_pred_maxes)
+    intersect_wh = tf.maximum(intersect_maxes - intersect_mins, 0.)
     intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
     b_true_area = b_true_wh[..., 0] * b_true_wh[..., 1]
     b_pred_area = b_pred_wh[..., 0] * b_pred_wh[..., 1]
     union_area = b_true_area + b_pred_area - intersect_area
     # calculate IoU, add epsilon in denominator to avoid dividing by 0
-    iou = intersect_area / (union_area + keras.epsilon())
+    iou = intersect_area / (union_area + epsilon())
 
     # get enclosed area
-    enclose_mins = keras.minimum(b_true_mins, b_pred_mins)
-    enclose_maxes = keras.maximum(b_true_maxes, b_pred_maxes)
-    enclose_wh = keras.maximum(enclose_maxes - enclose_mins, 0.0)
+    enclose_mins = tf.minimum(b_true_mins, b_pred_mins)
+    enclose_maxes = tf.maximum(b_true_maxes, b_pred_maxes)
+    enclose_wh = tf.maximum(enclose_maxes - enclose_mins, 0.0)
     enclose_area = enclose_wh[..., 0] * enclose_wh[..., 1]
     # calculate GIoU, add epsilon in denominator to avoid dividing by 0
-    giou = iou - 1.0 * (enclose_area - union_area) / (enclose_area + keras.epsilon())
-    giou = keras.expand_dims(giou, -1)
+    giou = iou - 1.0 * (enclose_area - union_area) / (enclose_area + epsilon())
+    giou = tf.expand_dims(giou, -1)
 
     return giou
 
@@ -99,29 +99,29 @@ def box_diou(b_true, b_pred, use_ciou=False):
     b_pred_mins = b_pred_xy - b_pred_wh_half
     b_pred_maxes = b_pred_xy + b_pred_wh_half
 
-    intersect_mins = keras.maximum(b_true_mins, b_pred_mins)
-    intersect_maxes = keras.minimum(b_true_maxes, b_pred_maxes)
-    intersect_wh = keras.maximum(intersect_maxes - intersect_mins, 0.)
+    intersect_mins = tf.maximum(b_true_mins, b_pred_mins)
+    intersect_maxes = tf.minimum(b_true_maxes, b_pred_maxes)
+    intersect_wh = tf.maximum(intersect_maxes - intersect_mins, 0.)
     intersect_area = intersect_wh[..., 0] * intersect_wh[..., 1]
     b_true_area = b_true_wh[..., 0] * b_true_wh[..., 1]
     b_pred_area = b_pred_wh[..., 0] * b_pred_wh[..., 1]
     union_area = b_true_area + b_pred_area - intersect_area
     # calculate IoU, add epsilon in denominator to avoid dividing by 0
-    iou = intersect_area / (union_area + keras.epsilon())
+    iou = intersect_area / (union_area + epsilon())
 
     # box center distance
-    center_distance = keras.sum(keras.square(b_true_xy - b_pred_xy), axis=-1)
+    center_distance = tf.reduce_sum(tf.square(b_true_xy - b_pred_xy), axis=-1)
     # get enclosed area
-    enclose_mins = keras.minimum(b_true_mins, b_pred_mins)
-    enclose_maxes = keras.maximum(b_true_maxes, b_pred_maxes)
-    enclose_wh = keras.maximum(enclose_maxes - enclose_mins, 0.0)
+    enclose_mins = tf.minimum(b_true_mins, b_pred_mins)
+    enclose_maxes = tf.maximum(b_true_maxes, b_pred_maxes)
+    enclose_wh = tf.maximum(enclose_maxes - enclose_mins, 0.0)
     # get enclosed diagonal distance
-    enclose_diagonal = keras.sum(keras.square(enclose_wh), axis=-1)
+    enclose_diagonal = tf.reduce_sum(tf.square(enclose_wh), axis=-1)
     # calculate DIoU, add epsilon in denominator to avoid dividing by 0
-    diou = iou - 1.0 * center_distance / (enclose_diagonal + keras.epsilon())
+    diou = iou - 1.0 * center_distance / (enclose_diagonal + epsilon())
 
     if use_ciou:
-        v = 4 * keras.square(tf.math.atan2(
+        v = 4 * tf.square(tf.math.atan2(
             b_true_wh[..., 0], b_true_wh[..., 1]) - tf.math.atan2(
             b_pred_wh[..., 0], b_pred_wh[..., 1])) / (math.pi * math.pi)
 
@@ -130,12 +130,12 @@ def box_diou(b_true, b_pred, use_ciou=False):
         alpha = v / (1.0 - iou + v)
         diou = diou - alpha*v
 
-    diou = keras.expand_dims(diou, -1)
+    diou = tf.expand_dims(diou, -1)
     return diou
 
 
 def _smooth_labels(y_true, label_smoothing):
-    label_smoothing = keras.constant(label_smoothing, dtype=keras.floatx())
+    label_smoothing = tf.constant(label_smoothing, dtype=tf.float32)
     return y_true * (1.0 - label_smoothing) + 0.5 * label_smoothing
 
 
