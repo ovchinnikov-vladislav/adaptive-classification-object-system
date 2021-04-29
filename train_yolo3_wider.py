@@ -15,11 +15,11 @@ parser.add_argument('--weights', default='./model_data/yolov3.tf', help='path to
 parser.add_argument('--classes', default='./model_data/wider_classes.txt', help='path to classes file')
 parser.add_argument('--dataset_path', default='D:/tensorflow_datasets/', help='path to download dataset')
 parser.add_argument('--pretrained', default=False, type=bool, help='pretrained model')
-parser.add_argument('--batch_size', default=32, type=int, help='batch size')
+parser.add_argument('--batch_size', default=2, type=int, help='batch size')
 parser.add_argument('--size', default=416, type=int, help='size image')
 parser.add_argument('--channels', default=3, type=int, help='channels')
 parser.add_argument('--training_path', default='./', help='training data path')
-parser.add_argument('--update_annotation', default=0, type=int, help='update annotation path to files')
+parser.add_argument('--update_annotation', default=1, type=int, help='update annotation path to files')
 parser.add_argument('--epochs', default=100, type=int, help='epochs number')
 
 if __name__ == '__main__':
@@ -53,7 +53,7 @@ if __name__ == '__main__':
                                                    'ignore_thresh': 0.5})([*model_body.output, *y_true_input])
     model = tf.keras.Model([model_body.input, *y_true_input], model_loss)
 
-    ann_train_path, ann_test_path, ann_val_path = wider_dataset_annotations(args.dataset_path, update_annotation)
+    ann_train_path, ann_test_path, ann_val_path = wider_dataset_annotations(args.dataset_path, False, update_annotation)
 
     with open(ann_train_path) as f:
         train_lines = f.readlines()
@@ -81,6 +81,6 @@ if __name__ == '__main__':
                                                                anchors, num_classes),
                         validation_steps=max(1, num_val // batch_size),
                         epochs=args.epochs,
-                        initial_epoch=12,
+                        initial_epoch=0,
                         callbacks=callbacks)
     model.save_weights(f'{training_path}/yolov3_wider.tf')

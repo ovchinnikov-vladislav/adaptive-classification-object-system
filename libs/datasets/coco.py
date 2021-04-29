@@ -80,6 +80,6 @@ def coco_dataset_annotations(classes, root_path='./', download=True, is_prepare_
         coco_dir = os.listdir(os.path.join(root_path, 'coco'))
         for elem_d in coco_dir:
             if not (elem_d == 'COCO_val' or elem_d == 'COCO_train' or elem_d == 'COCO_test'):
-                shutil.rmtree(elem_d)
+                shutil.rmtree(os.path.join(root_path, 'codo', elem_d))
 
     return ann_train_path, ann_test_path, ann_val_path
