@@ -137,7 +137,7 @@ def _smooth_labels(y_true, label_smoothing):
     return y_true * (1.0 - label_smoothing) + 0.5 * label_smoothing
 
 
-def yolo_loss(anchors, batch_size, classes=80, ignore_thresh=0.5, label_smoothing=0, use_focal_loss=False,
+def yolo_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0, use_focal_loss=False,
               use_focal_obj_loss=False, use_softmax_loss=False, use_giou_loss=False, use_diou_loss=True):
     def calc_yolo_loss(y_true, y_pred):
         # 1. transform all pred outputs
@@ -193,6 +193,11 @@ def yolo_loss(anchors, batch_size, classes=80, ignore_thresh=0.5, label_smoothin
                     categorical_crossentropy(true_class_idx, pred_class, from_logits=True))
             else:
                 class_loss = obj_mask * binary_crossentropy(true_class_idx, pred_class, from_logits=True)
+
+        if y_pred.shape[0] is None:
+            batch_size = 1
+        else:
+            batch_size = int(y_pred.shape[0])
 
         if use_giou_loss:
             giou = box_giou(true_box, pred_box)
