@@ -29,4 +29,5 @@ checkpoint*
 other/
 data/
 wider_face/
+mnist_detection/
 coco/

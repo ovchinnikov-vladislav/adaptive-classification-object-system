@@ -160,7 +160,7 @@ def generate_dataset(dirpath: pathlib.Path,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--base-path", default="data/mnist_detection"
+        "--base-path", default="./mnist_detection"
     )
     parser.add_argument(
         "--imsize", default=300, type=int
@@ -180,9 +180,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--max-digits-per-image", default=20, type=int
     )
-    parser.add_argument(
-        "--annotations-path", default='./'
-    )
     args = parser.parse_args()
     (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
     for dataset, (X, Y) in zip(["train", "test"], [[X_train, Y_train], [X_test, Y_test]]):
@@ -196,4 +193,4 @@ if __name__ == "__main__":
             args.max_digits_per_image,
             X,
             Y,
-            os.path.join(args.annotations_path, 'mnist_detection_' + dataset + '_annotation.txt'))
+            os.path.join(args.base_path, 'mnist_detection_' + dataset + '_annotation.txt'))
