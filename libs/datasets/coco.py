@@ -34,8 +34,9 @@ def _prepare_annotation(filename, path, dataset, classes):
                     bbox_string = f'{int(bbox[i][1] * width)},{int(bbox[i][0] * height)},' \
                                   f'{int(bbox[i][3] * width)},{int(bbox[i][2] * height)},{label[i]}'
                     bboxs += ' ' + bbox_string
-            string += bboxs
-            file.write(string + '\n')
+            if bboxs != "":
+                string += bboxs
+                file.write(string + '\n')
         print('End prepare annotation')
 
 
