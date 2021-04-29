@@ -218,6 +218,9 @@ def yolo_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0, use_foc
         class_loss = tf.reduce_sum(class_loss, axis=(1, 2, 3))
 
         loss = location_loss + obj_loss + class_loss
-        return loss, location_loss, obj_loss, class_loss
+
+        loss = tf.expand_dims(loss, axis=-1)
+
+        return loss
 
     return calc_yolo_loss
