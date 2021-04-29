@@ -60,7 +60,8 @@ def wider_dataset_annotations(root_path='./', download=True, is_prepare_annotati
 
         wider_dir = os.listdir(os.path.join(root_path, 'wider_face'))
         for elem_d in wider_dir:
-            if not (elem_d == 'WIDER_train' or elem_d == 'WIDER_test' or elem_d == 'WIDER_val'):
-                shutil.rmtree(os.path.join(root_path, 'wider_face', elem_d))
+            path = os.path.join(root_path, 'wider_face', elem_d)
+            if not (elem_d == 'WIDER_train' or elem_d == 'WIDER_test' or elem_d == 'WIDER_val') and os.path.isdir(path):
+                shutil.rmtree(path)
 
     return ann_train_path, ann_test_path, ann_val_path
