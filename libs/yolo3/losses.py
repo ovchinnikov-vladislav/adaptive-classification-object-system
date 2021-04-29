@@ -81,7 +81,6 @@ def box_giou(b_true, b_pred):
     enclose_area = enclose_wh[..., 0] * enclose_wh[..., 1]
     # calculate GIoU, add epsilon in denominator to avoid dividing by 0
     giou = iou - 1.0 * (enclose_area - union_area) / (enclose_area + epsilon())
-    giou = tf.expand_dims(giou, -1)
 
     return giou
 
@@ -130,7 +129,6 @@ def box_diou(b_true, b_pred, use_ciou=False):
         alpha = v / (1.0 - iou + v)
         diou = diou - alpha*v
 
-    diou = tf.expand_dims(diou, -1)
     return diou
 
 
@@ -218,8 +216,6 @@ def yolo_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0, use_foc
         class_loss = tf.reduce_sum(class_loss, axis=(1, 2, 3))
 
         loss = location_loss + obj_loss + class_loss
-
-        loss = tf.expand_dims(loss, axis=-1)
 
         return loss
 
