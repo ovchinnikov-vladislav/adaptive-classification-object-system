@@ -37,6 +37,8 @@ def _prepare_annotation(filename, path, dataset, classes):
             if bboxs != "":
                 string += bboxs
                 file.write(string + '\n')
+            else:
+                os.remove(string)
         print('End prepare annotation')
 
 
