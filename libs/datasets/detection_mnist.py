@@ -184,13 +184,6 @@ if __name__ == "__main__":
     (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
     for dataset, (X, Y) in zip(["train", "test"], [[X_train, Y_train], [X_test, Y_test]]):
         num_images = args.num_train_images if dataset == "train" else args.num_test_images
-        generate_dataset(
-            pathlib.Path(args.base_path, dataset),
-            num_images,
-            args.max_digit_size,
-            args.min_digit_size,
-            args.imsize,
-            args.max_digits_per_image,
-            X,
-            Y,
-            os.path.join(args.base_path, 'mnist_detection_' + dataset + '_annotation.txt'))
+        generate_dataset(pathlib.Path(args.base_path, dataset), num_images, args.max_digit_size,
+                         args.min_digit_size, args.imsize, args.max_digits_per_image, X, Y,
+                         os.path.join(args.base_path, 'mnist_detection_' + dataset + '_annotation.txt'))

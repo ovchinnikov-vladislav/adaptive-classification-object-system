@@ -4,7 +4,6 @@ from libs.yolo3.losses import yolo_loss
 from libs.yolo3.utils import get_anchors, data_generator_wrapper
 import tensorflow as tf
 import numpy as np
-import argparse
 
 
 if __name__ == '__main__':
@@ -18,8 +17,8 @@ if __name__ == '__main__':
 
     input_shape = (size, size)
 
-    ann_train_path, ann_test_path = './model_data/mnist_detection_train_annotation.txt', \
-                                    './model_data/mnist_detection_test_annotation.txt'
+    ann_train_path, ann_test_path = './mnist_detection/mnist_detection_train_annotation.txt', \
+                                    './mnist_detection/mnist_detection_test_annotation.txt'
 
     with open(ann_train_path) as f:
         train_lines = f.readlines()
@@ -35,9 +34,9 @@ if __name__ == '__main__':
 
     grid_size = size // 32
     shape_input_image = (None, size, size, channels)
-    shape_output_0_image = (None, grid_size, grid_size, channels, 6)
-    shape_output_1_image = (None, grid_size * 2, grid_size * 2, channels, 6)
-    shape_output_2_image = (None, grid_size * 4, grid_size * 4, channels, 6)
+    shape_output_0_image = (None, grid_size, grid_size, 3, 6)
+    shape_output_1_image = (None, grid_size * 2, grid_size * 2, 3, 6)
+    shape_output_2_image = (None, grid_size * 4, grid_size * 4, 3, 6)
 
     dataset = tf.data.Dataset.from_generator(
         generator=lambda: map(tuple,
