@@ -44,9 +44,9 @@ def coco_dataset_annotations(classes, root_path='./', download=True, is_prepare_
     test_path = os.path.join(root_path, 'coco', 'COCO_test')
     val_path = os.path.join(root_path, 'coco', 'COCO_val')
 
-    ann_train_path = './model_data/coco_train_annotation.txt'
-    ann_test_path = './model_data/coco_test_annotation.txt'
-    ann_val_path = './model_data/coco_val_annotation.txt'
+    ann_train_path = os.path.join(root_path, 'coco', 'coco_train_annotation.txt')
+    ann_test_path = os.path.join(root_path, 'coco', 'coco_test_annotation.txt')
+    ann_val_path = os.path.join(root_path, 'coco', 'coco_val_annotation.txt')
 
     if download:
         train_ds = tfds.load('coco', split='train', data_dir=root_path)
@@ -80,6 +80,6 @@ def coco_dataset_annotations(classes, root_path='./', download=True, is_prepare_
         coco_dir = os.listdir(os.path.join(root_path, 'coco'))
         for elem_d in coco_dir:
             if not (elem_d == 'COCO_val' or elem_d == 'COCO_train' or elem_d == 'COCO_test'):
-                shutil.rmtree(os.path.join(root_path, 'codo', elem_d))
+                shutil.rmtree(os.path.join(root_path, 'coco', elem_d))
 
     return ann_train_path, ann_test_path, ann_val_path

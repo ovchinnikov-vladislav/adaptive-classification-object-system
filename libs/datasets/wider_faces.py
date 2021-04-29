@@ -25,9 +25,9 @@ def wider_dataset_annotations(root_path='./', download=True, is_prepare_annotati
     test_path = os.path.join(root_path, 'wider_face', 'WIDER_test', 'images')
     val_path = os.path.join(root_path, 'wider_face', 'WIDER_val', 'images')
 
-    ann_train_path = './model_data/wider_face_train_annotation.txt'
-    ann_test_path = './model_data/wider_face_test_annotation.txt'
-    ann_val_path = './model_data/wider_face_val_annotation.txt'
+    ann_train_path = os.path.join(root_path, 'wider_face', 'wider_face_train_annotation.txt')
+    ann_test_path = os.path.join(root_path, 'wider_face', 'wider_face_test_annotation.txt')
+    ann_val_path = os.path.join(root_path, 'wider_face', 'wider_face_val_annotation.txt')
 
     if download:
         train_ds = tfds.load('wider_face', split='train', data_dir=root_path)
