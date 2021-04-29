@@ -22,6 +22,7 @@ def _prepare_annotation(filename, path, dataset, classes):
             processing_classes.add(class_names[key])
 
     with open(filename, 'w') as file:
+        print('Start prepare annotation')
         for example in dataset:
             string = os.path.join(path, example['image/filename'].numpy().decode())
             height, width, _ = example['image'].shape
@@ -34,8 +35,8 @@ def _prepare_annotation(filename, path, dataset, classes):
                                   f'{int(bbox[i][3] * width)},{int(bbox[i][2] * height)},{label[i]}'
                     bboxs += ' ' + bbox_string
             string += bboxs
-            print(string)
             file.write(string + '\n')
+        print('End prepare annotation')
 
 
 def coco_dataset_annotations(classes, root_path='./', download=True, is_prepare_annotation=True):
@@ -75,5 +76,10 @@ def coco_dataset_annotations(classes, root_path='./', download=True, is_prepare_
             _prepare_annotation(ann_train_path, train_path, train_ds, classes)
             _prepare_annotation(ann_test_path, test_path, test_ds, classes)
             _prepare_annotation(ann_val_path, val_path, val_ds, classes)
+
+        coco_dir = os.listdir(os.path.join(root_path, 'coco'))
+        for elem_d in coco_dir:
+            if not (elem_d == 'COCO_val' or elem_d == 'COCO_train' or elem_d == 'COCO_test'):
+                shutil.rmtree(elem_d)
 
     return ann_train_path, ann_test_path, ann_val_path
