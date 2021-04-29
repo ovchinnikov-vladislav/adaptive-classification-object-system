@@ -8,7 +8,7 @@ import numpy as np
 
 if __name__ == '__main__':
     size = 416
-    batch_size = 1
+    batch_size = 3
     epochs = 30
     channels = 1
     class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
