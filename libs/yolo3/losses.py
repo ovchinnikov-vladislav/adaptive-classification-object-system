@@ -18,7 +18,7 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
 
     feats = keras.reshape(feats, [-1, grid_shape[0], grid_shape[1], num_anchors, num_classes + 5])
 
-    # Adjust predictions to each spatial grid point and anchor size.
+    # Adjust preditions to each spatial grid point and anchor size.
     box_xy = (keras.sigmoid(feats[..., :2]) + grid) / keras.cast(grid_shape[::-1], keras.dtype(feats))
     box_wh = keras.exp(feats[..., 2:4]) * anchors_tensor / keras.cast(input_shape[::-1], keras.dtype(feats))
     box_confidence = keras.sigmoid(feats[..., 4:5])
@@ -26,7 +26,6 @@ def yolo_head(feats, anchors, num_classes, input_shape, calc_loss=False):
 
     if calc_loss:
         return grid, feats, box_xy, box_wh
-
     return box_xy, box_wh, box_confidence, box_class_probs
 
 
@@ -73,7 +72,7 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5):
     Parameters
     ----------
     yolo_outputs: list of tensor, the output of yolo_body or tiny_yolo_body
-    y_true_input: list of array, the output of preprocess_true_boxes
+    y_true: list of array, the output of preprocess_true_boxes
     anchors: array, shape=(N, 2), wh
     num_classes: integer
     ignore_thresh: float, the iou threshold whether to ignore object confidence loss
@@ -81,7 +80,6 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5):
     -------
     loss: tensor, shape=(1,)
     """
-
     num_layers = len(anchors) // 3  # default setting
     yolo_outputs = args[:num_layers]
     y_true = args[num_layers:]
@@ -121,13 +119,13 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5):
         ignore_mask = ignore_mask.stack()
         ignore_mask = keras.expand_dims(ignore_mask, -1)
 
-        # keras.binary_crossentropy is helpful to avoid exp overflow.
+        # K.binary_crossentropy is helpful to avoid exp overflow.
         xy_loss = object_mask * box_loss_scale * keras.binary_crossentropy(raw_true_xy, raw_pred[..., 0:2],
-                                                                           from_logits=True)
+                                                                       from_logits=True)
         wh_loss = object_mask * box_loss_scale * 0.5 * keras.square(raw_true_wh - raw_pred[..., 2:4])
         confidence_loss = object_mask * keras.binary_crossentropy(object_mask, raw_pred[..., 4:5], from_logits=True) + \
                           (1 - object_mask) * keras.binary_crossentropy(object_mask, raw_pred[..., 4:5],
-                                                                        from_logits=True) * ignore_mask
+                                                                    from_logits=True) * ignore_mask
         class_loss = object_mask * keras.binary_crossentropy(true_class_probs, raw_pred[..., 5:], from_logits=True)
 
         xy_loss = keras.sum(xy_loss) / mf
@@ -135,7 +133,6 @@ def yolo_loss(args, anchors, num_classes, ignore_thresh=.5):
         confidence_loss = keras.sum(confidence_loss) / mf
         class_loss = keras.sum(class_loss) / mf
         loss += xy_loss + wh_loss + confidence_loss + class_loss
-
     return loss
 
 
@@ -157,9 +154,9 @@ def broadcast_iou(box_1, box_2):
                        tf.maximum(box_1[..., 1], box_2[..., 1]), 0)
     int_area = int_w * int_h
     box_1_area = (box_1[..., 2] - box_1[..., 0]) * \
-        (box_1[..., 3] - box_1[..., 1])
+                 (box_1[..., 3] - box_1[..., 1])
     box_2_area = (box_2[..., 2] - box_2[..., 0]) * \
-        (box_2[..., 3] - box_2[..., 1])
+                 (box_2[..., 3] - box_2[..., 1])
     return int_area / (box_1_area + box_2_area - int_area)
 
 
@@ -199,12 +196,12 @@ def YoloLoss(anchors, classes=80, ignore_thresh=0.5):
 
         # 5. calculate all losses
         xy_loss = obj_mask * box_loss_scale * \
-            tf.reduce_sum(tf.square(true_xy - pred_xy), axis=-1)
+                  tf.reduce_sum(tf.square(true_xy - pred_xy), axis=-1)
         wh_loss = obj_mask * box_loss_scale * \
-            tf.reduce_sum(tf.square(true_wh - pred_wh), axis=-1)
+                  tf.reduce_sum(tf.square(true_wh - pred_wh), axis=-1)
         obj_loss = binary_crossentropy(true_obj, pred_obj)
         obj_loss = obj_mask * obj_loss + \
-            (1 - obj_mask) * ignore_mask * obj_loss
+                   (1 - obj_mask) * ignore_mask * obj_loss
         # TODO: use binary_crossentropy instead
         class_loss = obj_mask * sparse_categorical_crossentropy(
             true_class_idx, pred_class)
@@ -216,4 +213,5 @@ def YoloLoss(anchors, classes=80, ignore_thresh=0.5):
         class_loss = tf.reduce_sum(class_loss, axis=(1, 2, 3))
 
         return xy_loss + wh_loss + obj_loss + class_loss
+
     return yolo_loss

@@ -19,7 +19,7 @@ parser.add_argument('--batch_size', default=1, type=int, help='batch size')
 parser.add_argument('--size', default=416, type=int, help='size image')
 parser.add_argument('--channels', default=3, type=int, help='channels')
 parser.add_argument('--training_path', default='./', help='training data path')
-parser.add_argument('--download_dataset', default=1, type=int,)
+parser.add_argument('--download_dataset', default=1, type=int, )
 parser.add_argument('--update_annotation', default=1, type=int, help='update annotation path to files')
 parser.add_argument('--epochs', default=100, type=int, help='epochs number')
 
@@ -35,25 +35,6 @@ if __name__ == '__main__':
     update_annotation = True if args.update_annotation == 1 else False
     pretrained = True if args.pretrained == 1 else False
     num_classes = len(class_names)
-
-    input_shape = (size, size)
-
-    if args.tiny:
-        anchors = get_anchors('./model_data/tiny_yolo_anchors.txt')
-        masks = np.array([[3, 4, 5], [0, 1, 2]])
-        model_body = yolo_v3_tiny(anchors, size=size, channels=channels, classes=1, training=True)
-    else:
-        anchors = get_anchors('./model_data/yolo_anchors.txt')
-        masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
-        model_body = yolo_v3(anchors, size=size, channels=channels, classes=1, training=True)
-
-    num_anchors = len(anchors)
-    y_true_input = [tf.keras.layers.Input(shape=(size // {0: 32, 1: 16, 2: 8}[i], size // {0: 32, 1: 16, 2: 8}[i],
-                                                 num_anchors // 3, num_classes + 5)) for i in range(3)]
-    model_loss = tf.keras.layers.Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
-                                        arguments={'anchors': anchors, 'num_classes': num_classes,
-                                                   'ignore_thresh': 0.5})([*model_body.output, *y_true_input])
-    model = tf.keras.Model([model_body.input, *y_true_input], model_loss)
 
     # ann_train, ann_test, ann_val = wider_dataset_annotations(args.dataset_path, download_dataset, update_annotation)
 
@@ -71,9 +52,36 @@ if __name__ == '__main__':
     num_train = len(train_lines)
     num_val = len(val_lines)
 
+    input_shape = (size, size)
+
+    if args.tiny:
+        anchors = get_anchors('./model_data/tiny_yolo_anchors.txt')
+        masks = np.array([[3, 4, 5], [0, 1, 2]])
+        model_body = yolo_v3_tiny(anchors, size=size, channels=channels, classes=num_classes, training=True)
+    else:
+        anchors = get_anchors('./model_data/yolo_anchors.txt')
+        masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
+        model_body = yolo_v3(anchors, size=size, channels=channels, classes=num_classes, training=True)
+
+    # num_anchors = len(anchors)
+    # y_true_input = [tf.keras.layers.Input(shape=(size // {0: 32, 1: 16, 2: 8}[i], size // {0: 32, 1: 16, 2: 8}[i],
+    #                                              num_anchors // 3, num_classes + 5)) for i in range(3)]
+    # model_loss = tf.keras.layers.Lambda(yolo_loss, output_shape=(1,), name='yolo_loss',
+    #                                     arguments={'anchors': anchors, 'num_classes': num_classes,
+    #                                                'ignore_thresh': 0.5})([*model_body.output, *y_true_input])
+    # model = tf.keras.Model([model_body.input, *y_true_input], model_loss)
+
+    dataset = tf.data.Dataset.from_generator(generator=lambda: map(tuple, data_generator_wrapper(train_lines, batch_size, input_shape, anchors, num_classes)),
+                                             output_types=(tf.float32, (tf.float32, tf.float32, tf.float32)),
+                                             output_shapes=((None, 416, 416, 3), ((None, 13, 13, 3, 6), (None, 26, 26, 3, 6), (None, 52, 52, 3, 6))))
+    val_dataset = tf.data.Dataset.from_generator(generator=lambda: map(tuple, data_generator_wrapper(val_lines, batch_size, input_shape, anchors, num_classes)),
+                                                 output_types=(tf.float32, (tf.float32, tf.float32, tf.float32)),
+                                                 output_shapes=((None, 416, 416, 3), ((None, 13, 13, 3, 6), (None, 26, 26, 3, 6), (None, 52, 52, 3, 6))))
+
+    loss = [YoloLoss(anchors[mask], classes=num_classes) for mask in masks]
     optimizer = tf.keras.optimizers.Adam(lr=1e-3)
 
-    model.compile(optimizer=optimizer, loss={'yolo_loss': lambda y_true, y_pred: y_pred})
+    model_body.compile(optimizer=optimizer, loss=loss)
     callbacks = [
         ReduceLROnPlateau(verbose=1),
         EarlyStopping(patience=3, verbose=1),
@@ -81,12 +89,11 @@ if __name__ == '__main__':
         TensorBoard(log_dir='logs')
     ]
 
-    history = model.fit(data_generator_wrapper(train_lines, batch_size, input_shape, anchors, num_classes),
-                        steps_per_epoch=max(1, num_train // batch_size),
-                        validation_data=data_generator_wrapper(val_lines, batch_size, input_shape,
-                                                               anchors, num_classes),
-                        validation_steps=max(1, num_val // batch_size),
-                        epochs=args.epochs,
-                        initial_epoch=0,
-                        callbacks=callbacks)
-    model.save_weights(f'{training_path}/yolov3_wider.tf')
+    history = model_body.fit(dataset,
+                             steps_per_epoch=max(1, num_train // batch_size),
+                             validation_data=val_dataset,
+                             validation_steps=max(1, num_val // batch_size),
+                             epochs=args.epochs,
+                             initial_epoch=0,
+                             callbacks=callbacks)
+    model_body.save_weights(f'{training_path}/yolov3_wider.tf')

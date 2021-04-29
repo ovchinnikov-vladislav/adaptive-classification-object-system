@@ -413,7 +413,7 @@ def data_generator(annotation_lines, batch_size, input_shape, anchors, num_class
         image_data = np.array(image_data)
         box_data = np.array(box_data)
         y_true = transform_targets(box_data, anchors, np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]]), input_shape[0])
-        yield [image_data, y_true], np.zeros(batch_size)
+        yield image_data, y_true
 
 
 def data_generator_wrapper(annotation_lines, batch_size, input_shape, anchors, num_classes):
