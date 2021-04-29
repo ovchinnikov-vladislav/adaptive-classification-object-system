@@ -139,7 +139,7 @@ def _smooth_labels(y_true, label_smoothing):
     return y_true * (1.0 - label_smoothing) + 0.5 * label_smoothing
 
 
-def yolo_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0, elim_grid_sense=False, use_focal_loss=False,
+def yolo_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0, use_focal_loss=False,
               use_focal_obj_loss=False, use_softmax_loss=False, use_giou_loss=False, use_diou_loss=True):
     def calc_yolo_loss(y_true, y_pred):
         # 1. transform all pred outputs
@@ -196,34 +196,28 @@ def yolo_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0, elim_gr
             else:
                 class_loss = obj_mask * binary_crossentropy(true_class_idx, pred_class, from_logits=True)
 
-        batch_size = keras.cast(y_pred.shape[0], keras.dtype(y_pred))
         if use_giou_loss:
             giou = box_giou(true_box, pred_box)
             giou_loss = obj_mask * box_loss_scale * (1 - giou)
-            giou_loss = keras.sum(giou_loss) / batch_size
+            giou_loss = tf.reduce_sum(giou_loss, axis=(1, 2, 3))
             location_loss = giou_loss
         elif use_diou_loss:
             diou = box_diou(true_box, pred_box)
             diou_loss = obj_mask * box_loss_scale * (1 - diou)
-            diou_loss = keras.sum(diou_loss) / batch_size
+            diou_loss = tf.reduce_sum(diou_loss, axis=(1, 2, 3))
             location_loss = diou_loss
         else:
-            # xy_loss = obj_mask * box_loss_scale * tf.reduce_sum(tf.square(true_xy - pred_xy), axis=-1)
-            # wh_loss = obj_mask * box_loss_scale * tf.reduce_sum(tf.square(true_wh - pred_wh), axis=-1)
-            # xy_loss = tf.reduce_sum(xy_loss, axis=(1, 2, 3))
-            # wh_loss = tf.reduce_sum(wh_loss, axis=(1, 2, 3))
-            xy_loss = obj_mask * box_loss_scale * binary_crossentropy(true_xy, pred_xy, from_logits=True)
-            wh_loss = obj_mask * box_loss_scale * 0.5 * tf.square(true_wh - pred_wh)
-            xy_loss = keras.sum(xy_loss) / batch_size
-            wh_loss = keras.sum(wh_loss) / batch_size
+            xy_loss = obj_mask * box_loss_scale * tf.reduce_sum(tf.square(true_xy - pred_xy), axis=-1)
+            wh_loss = obj_mask * box_loss_scale * tf.reduce_sum(tf.square(true_wh - pred_wh), axis=-1)
+            xy_loss = tf.reduce_sum(xy_loss, axis=(1, 2, 3))
+            wh_loss = tf.reduce_sum(wh_loss, axis=(1, 2, 3))
             location_loss = xy_loss + wh_loss
 
         # 6. sum over (batch, gridx, gridy, anchors) => (batch, 1)
-        # obj_loss = tf.reduce_sum(obj_loss, axis=(1, 2, 3))
-        # class_loss = tf.reduce_sum(class_loss, axis=(1, 2, 3))
-        obj_loss = keras.sum(obj_loss) / batch_size
-        class_loss = keras.sum(class_loss) / batch_size
+        obj_loss = tf.reduce_sum(obj_loss, axis=(1, 2, 3))
+        class_loss = tf.reduce_sum(class_loss, axis=(1, 2, 3))
 
-        return location_loss + obj_loss + class_loss
+        loss = location_loss + obj_loss + class_loss
+        return loss, location_loss, obj_loss, class_loss
 
     return calc_yolo_loss
