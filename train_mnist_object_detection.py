@@ -1,6 +1,7 @@
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint, TensorBoard
 from libs.yolo3.layers import (yolo_v3, yolo_v3_tiny)
 from libs.yolo3.losses import yolo_loss
+from libs.capsyolo.layers import capsules_yolo
 from libs.yolo3.utils import get_anchors, data_generator_wrapper
 import tensorflow as tf
 import numpy as np
@@ -8,7 +9,7 @@ import numpy as np
 
 if __name__ == '__main__':
     size = 416
-    batch_size = 3
+    batch_size = 1
     epochs = 30
     channels = 1
     class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -30,7 +31,7 @@ if __name__ == '__main__':
 
     anchors = get_anchors('./model_data/yolo_anchors.txt')
     masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
-    model = yolo_v3(anchors, size=size, channels=channels, classes=10, training=True)
+    model = capsules_yolo(anchors, size=size, channels=channels, classes=num_classes, training=True)
 
     grid_size = size // 32
     shape_input_image = (None, size, size, channels)
@@ -48,7 +49,7 @@ if __name__ == '__main__':
         output_types=(tf.float32, (tf.float32, tf.float32, tf.float32)),
         output_shapes=(shape_input_image, (shape_output_0_image, shape_output_1_image, shape_output_2_image)))
 
-    loss = [yolo_loss(anchors[mask], classes=num_classes) for mask in masks]
+    loss = [yolo_loss(anchors[mask], classes=num_classes, use_softmax_loss=True) for mask in masks]
     optimizer = tf.keras.optimizers.Adam(lr=1e-3)
 
     model.compile(optimizer=optimizer, loss=loss)

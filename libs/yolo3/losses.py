@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.backend import epsilon
-from tensorflow.keras.losses import (binary_crossentropy, categorical_crossentropy)
+from tensorflow.keras.losses import (binary_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy)
 from libs.yolo3.utils import yolo_boxes
 import numpy as np
 import sys
@@ -190,8 +190,8 @@ def yolo_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0, use_foc
                 class_loss = sigmoid_focal_loss(true_class_idx, pred_class)
         else:
             if use_softmax_loss:
-                class_loss = obj_mask * tf.expand_dims(
-                    categorical_crossentropy(true_class_idx, pred_class, from_logits=True))
+                class_loss = obj_mask * sparse_categorical_crossentropy(
+                    true_class_idx, pred_class)
             else:
                 class_loss = obj_mask * binary_crossentropy(true_class_idx, pred_class, from_logits=True)
 

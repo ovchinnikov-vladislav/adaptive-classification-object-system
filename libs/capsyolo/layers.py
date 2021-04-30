@@ -102,8 +102,8 @@ def block(x, filters, blocks):
     return x
 
 
-def conv_net(name=None):
-    x = inputs = Input([None, None, 3])
+def conv_net(name=None, channels=3):
+    x = inputs = Input([None, None, channels])
     x = conv(x, 32, 3)
     x = block(x, 64, 1)
     x = block(x, 128, 2)  # skip connection
@@ -149,31 +149,28 @@ def yolo_conv_tiny(x_in, filters, name=None):
     return Model(inputs, x, name=name)(x_in)
 
 
-def yolo_output(x_in, filters, anchors, classes, name=None):
+def yolo_output(x_in, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
-    x = conv(x, filters * 2, 3)
-    x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
-
-    x, capsules = block_caps(x, anchors * (classes + 5), 16)
+    x, capsules = block_caps(x, routings=1, classes=anchors * (classes + 5), num_capsule=8, dim_capsule=8)
 
     x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2], anchors, classes + 5)))(capsules)
     return tf.keras.Model(inputs, x, name=name)(x_in)
 
 
-def yolo_v3(anchors, size, channels, classes, training=False):
+def capsules_yolo(anchors, size, channels, classes, training=False):
     masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
 
     x = inputs = Input([size, size, channels], name='input')
-    x_36, x_61, x = conv_net(name='yolo_conv_net')(x)
+    x_36, x_61, x = conv_net(name='yolo_conv_net', channels=channels)(x)
 
     x = yolo_conv(x, 512, name='yolo_conv_0')
-    output_0 = yolo_output(x, 512, len(masks[0]), classes, name='yolo_output_0')
+    output_0 = yolo_output(x, len(masks[0]), classes, name='yolo_output_0')
 
     x = yolo_conv((x, x_61), 256, name='yolo_conv_1')
-    output_1 = yolo_output(x, 256, len(masks[1]), classes, name='yolo_output_1')
+    output_1 = yolo_output(x, len(masks[1]), classes, name='yolo_output_1')
 
     x = yolo_conv((x, x_36), 128, name='yolo_conv_2')
-    output_2 = yolo_output(x, 128, len(masks[2]), classes, name='yolo_output_2')
+    output_2 = yolo_output(x, len(masks[2]), classes, name='yolo_output_2')
 
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')
@@ -189,5 +186,5 @@ def yolo_v3(anchors, size, channels, classes, training=False):
 
 
 if __name__ == '__main__':
-    model = yolo_v3(anchors=yolo_anchors, size=416, channels=3, classes=1, training=True)
+    model = capsules_yolo(anchors=yolo_anchors, size=416, channels=1, classes=10, training=True)
     model.summary()
