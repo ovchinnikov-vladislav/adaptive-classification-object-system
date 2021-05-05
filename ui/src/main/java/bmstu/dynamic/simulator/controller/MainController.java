@@ -1,93 +1,34 @@
 package bmstu.dynamic.simulator.controller;
 
-import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.input.KeyCombination;
-import javafx.scene.layout.GridPane;
+import bmstu.dynamic.simulator.service.ModelService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.reactive.function.server.ServerRequest;
 
+@Controller
+@RequestMapping("/")
+@RequiredArgsConstructor
 public class MainController {
 
-    public MenuItem createMenuItem;
-    public MenuItem openMenuItem;
-    public MenuItem saveMenuItem;
-    public MenuItem settingsMenuItem;
-    public MenuItem exitMenuItem;
-    public MenuItem machineLearningMenuItem;
-    public MenuItem resultLeaningMenuItem;
-    public MenuItem statisticMenuItem;
-    public MenuItem aboutMenuItem;
+    private final ModelService modelService;
 
-    public GridPane machineLearningPane;
-    public GridPane resultLearningPane;
-    public GridPane statisticPane;
+    @GetMapping("/")
+    public String index(Model model) {
+        modelService.prepareStandardModelForTemplate(model);
 
-    public void initialize() {
-        initMainMenu();
-        initModelMenu();
+        return "index";
     }
 
-    private void initMainMenu() {
-        createMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Alt+N"));
-        createMenuItem.setOnAction(event -> {
-            // TODO: заглушка
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Create windows");
-            alert.setContentText("This is example");
-            alert.showAndWait();
-        });
+    @GetMapping("/error/{status}")
+    public String error(Model model, @PathVariable Integer status) {
+        modelService.prepareErrorModelForTemplate(model, status);
 
-        openMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+O"));
-        openMenuItem.setOnAction(event -> {
-            // TODO: заглушка
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Open windows");
-            alert.setContentText("This is example");
-            alert.showAndWait();
-        });
-
-        saveMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+S"));
-        saveMenuItem.setOnAction(event -> {
-            // TODO: заглушка
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Save windows");
-            alert.setContentText("This is example");
-            alert.showAndWait();
-        });
-
-        settingsMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Alt+S"));
-        settingsMenuItem.setOnAction(event -> {
-            // TODO: заглушка
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Settings windows");
-            alert.setContentText("This is example");
-            alert.showAndWait();
-        });
-
-        exitMenuItem.setAccelerator(KeyCombination.keyCombination("Alt+Q"));
-        exitMenuItem.setOnAction(event -> System.exit(0));
-    }
-
-    private void initModelMenu() {
-        machineLearningMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Alt+M"));
-        machineLearningMenuItem.setOnAction(event -> {
-            machineLearningPane.setVisible(true);
-            resultLearningPane.setVisible(false);
-            statisticPane.setVisible(false);
-        });
-        resultLeaningMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Alt+R"));
-        resultLeaningMenuItem.setOnAction(event -> {
-            resultLearningPane.setVisible(true);
-            machineLearningPane.setVisible(false);
-            statisticPane.setVisible(false);
-        });
-        statisticMenuItem.setAccelerator(KeyCombination.keyCombination("Ctrl+Alt+I"));
-        statisticMenuItem.setOnAction(event -> {
-            statisticPane.setVisible(true);
-            machineLearningPane.setVisible(false);
-            resultLearningPane.setVisible(false);
-        });
+        return "error";
     }
 
 }

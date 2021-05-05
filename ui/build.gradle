@@ -1,134 +1,41 @@
-// Для создания *.exe
-import edu.sc.seis.launch4j.tasks.Launch4jLibraryTask
-
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.nio.file.Files
-
 plugins {
-    id 'java' // основные таски для сборки проекта jar
-    id 'idea'
-    id 'edu.sc.seis.launch4j' version '2.4.6' // для создания exe
-    id 'application' // запуск приложения
+    id 'java'
+    id 'org.springframework.boot' version '2.2.4.RELEASE'
+    id "io.freefair.lombok" version "5.0.0-rc4"
 }
+
+apply plugin: 'io.spring.dependency-management'
 
 repositories {
     jcenter()
 }
 
 dependencies {
-    implementation 'org.openpnp:opencv:4.5.1-2'
-    testImplementation 'junit:junit:4.13'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:2.2.1.RELEASE'
+    implementation 'org.springframework.cloud:spring-cloud-starter-sleuth:2.2.1.RELEASE'
+    implementation 'org.springframework.cloud:spring-cloud-starter-zipkin:2.2.1.RELEASE'
+//    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'io.springfox:springfox-swagger2:2.9.2'
+    implementation 'io.springfox:springfox-swagger-ui:2.9.2'
+    implementation 'com.h2database:h2'
+    implementation 'org.postgresql:postgresql'
+    implementation 'com.google.guava:guava:28.1-jre'
+    //template-generator
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:2.3.0.RELEASE'
+    implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:2.4.1'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+//    testImplementation 'org.springframework.security:spring-security-test'
 }
 
-project.ext.version = '1.0-SNAPSHOT'
-project.ext.name = 'ui-adaptive-classification'
-project.ext.mainClassName = 'bmstu.dynamic.simulator.App'
-
-// Определение класса с входной точкой в приложение
-application {
-    mainClassName = project.ext.mainClassName
+bootJar {
+    baseName = 'ui-frontend'
+    version = '1.0.0-SNAPSHOT'
 }
 
-// Установка имени собираемого архива jar проекта
-jar {
-    archiveBaseName.set(project.ext.name as String)
-}
-
-// Сборка jar со всеми классами других либ, т.е. получаем так называемый flatJar (толстый Jar)
-// TODO: Данная стандия в данный момент работает некорректно (JAR-файл собирается, программа не запускается)
-task packageToJarWithDependencies(type: Jar) {
-    manifest {
-        attributes 'Main-Class': project.ext.mainClassName
-    }
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}
-
-packageToJarWithDependencies.dependsOn build
-
-// Копирование всех подгруженных зависимостей в папку libs проекта
-task copyDependencies(type: Copy) {
-    from(configurations.runtimeClasspath)
-    into project.file("$buildDir/libs/libs")
-}
-
-// Сборка jar + установка в class-path манифеста путей к либам, находящимся в папке libs,
-// которая находится в корне с собираемым jar
-task packageToJarAndLibs(type: Jar) {
-    manifest {
-        def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
-        def classPathResult = 'libs/' + classPathArray.join(' libs/')
-
-        attributes 'Main-Class': project.ext.mainClassName
-        attributes 'Class-Path': classPathResult
-    }
-    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : null } }
-    with jar
-}
-
-packageToJarAndLibs.dependsOn(build, copyDependencies)
-
-// Копирование целевого Jar в папку bin
-task copyJarToBin(type: Copy) {
-    from file("$buildDir/libs/" + (project.ext.name as String) + ".jar")
-    into file("$buildDir/bin")
-}
-
-// Указывать в этой стандии в зависимости от требований - либо packageToJarAndLibs, либо packageToJarWithDependencies
-copyJarToBin.dependsOn packageToJarAndLibs
-
-// Сборка exe с помощью Launch4J для исполнения в Windows
-task packageWithExe(type: Launch4jLibraryTask) {
-    def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
-    def classPathResult = 'libs/' + classPathArray.join(';libs/')
-
-    headerType = "gui"
-    libraryDir = "libs"
-    outputDir = "bin"
-    mainClassName = project.ext.mainClassName
-    outfile = (project.ext.name as String) + '.exe'
-    version = project.ext.version
-
-    // icon = "${projectDir}/src/main/resources/images/icon.ico"
-    jar = "../libs/" + (project.ext.name as String) + ".jar"
-
-}
-
-packageWithExe.dependsOn copyJarToBin
-
-// Построение скриптов для запуска в Windows (bat) и Unix (sh)
-task packageWithScripts(type: CreateStartScripts) {
-
-    outputDir = file('build/bin')
-    applicationName = project.ext.name
-    classpath = null
-
-    def classPathArray = configurations.runtimeClasspath.collect { it.getName() }
-    def classPathResult = 'libs/' + classPathArray.join(';libs/')
-
-    mainClass.set('-jar ' + (project.ext.name as String) + '.jar')
-}
-
-packageWithScripts.dependsOn copyJarToBin
-
-// Выполнение всех стадий для упаковки приложения в исполняемые файлы
-task packageAll {
-    doLast {
-        Path path = Paths.get("$buildDir/bin/libs/" + (project.ext.name as String) + '.jar')
-        if (Files.exists(path)) {
-            Files.delete(path)
-        }
-    }
-}
-
-packageAll.dependsOn(packageWithExe, packageWithScripts)
-
-sourceSets {
-    main {
-        output.resourcesDir = "$buildDir/classes/java/main"
-    }
-    test {
-        output.resourcesDir = "$buildDir/classes/java/test"
-    }
+springBoot {
+    mainClassName = 'ml.socshared.Application'
 }

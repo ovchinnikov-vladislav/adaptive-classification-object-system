@@ -1,0 +1,25 @@
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf:2.1.8.RELEASE'
+    implementation 'org.springframework.boot:spring-boot-starter-web:2.1.8.RELEASE'
+    implementation 'org.springframework.data:spring-data-commons:2.1.8.RELEASE'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:2.1.3.RELEASE'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:2.1.3.RELEASE'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.10'
+    implementation 'org.apache.tomcat.embed:tomcat-embed-jasper:9.0.27'
+    implementation 'jstl:jstl:1.2'
+    implementation 'io.jsonwebtoken:jjwt-api:0.10.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.10.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.10.5'
+    implementation 'com.google.code.gson:gson:2.8.2'
+    testImplementation 'junit:junit:4.12'
+}
+
+bootJar {
+    baseName = 'front-end-spring-boot'
+    version = '0.1.0'
+}
+
+springBoot {
+    mainClassName = 'rsoi.lab3.microservices.front.App'
+}
+

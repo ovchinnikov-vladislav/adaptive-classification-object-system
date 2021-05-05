@@ -1,0 +1,205 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta content="text/html;charset=UTF-8">
+    <title>Tasks</title>
+    <link th:href="@{/css/bootstrap.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-grid.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-reboot.css}" rel="stylesheet"/>
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+    <link th:href="@{/css/progress.css}" rel="stylesheet"/>
+    <script th:src="@{/js/jquery-3.4.1.min.js}"></script>
+    <script th:src="@{/js/bootstrap.bundle.js}"></script>
+    <script th:src="@{/js/bootstrap.js}"></script>
+    <script th:src="@{/js/md5.js}"></script>
+    <script th:src="@{/js/log-in.js}"></script>
+    <script th:src="@{/js/task-delete.js}"></script>
+</head>
+<body>
+<header>
+    <!-- Информационное модальное окно -->
+    <div class="modal fade" id="info-modal" style="z-index: 110" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="vertical-alignment-helper">
+            <div class="modal-dialog vertical-align-center">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="myModalLabel">Информация</h4>
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <label id="info-text-modal">...</label>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="btn-ok" type="button" class="btn btn-primary">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения удаления задачи -->
+    <div id="delete-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="delete_modal"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Удаление задачи </h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body edit-content">
+                    Вы действительно хотите удалить задачу?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+                    <button id="btn-delete" type="button" class="btn btn-outline-secondary my_btn">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Навигационная панель -->
+    <nav id="navpanel" class="navbar navbar-secondary bg-secondary">
+        <a href="/" class="navbar-brand text-light">TASKS</a>
+        <ul class="nav justify-content-end">
+            <li class="nav-item ml-3">
+                <a href="/" class="btn btn-secondary btn-lg mr-3 text-light" role="button">Главная</a>
+            </li>
+            <li class="nav-item" th:if="${user.id != null}">
+                <a class="btn btn-secondary btn-lg ml-3 mr-5 text-light" role="button"
+                   th:if="${user.id != null && user.roles.get(0) == 'ROLE_ADMIN'}" th:href="@{'/auth/task'}">Задачи</a>
+            </li>
+            <li class="nav-item" th:if="${user.id == null}">
+                <a class="btn btn-secondary btn-sm mr-3 text-light" role="button" th:href="@{/sign_in}">Регистрация</a>
+            </li>
+            <li class="nav-item" th:if="${user.id == null}">
+                <a class="btn btn-secondary btn-sm text-light" role="button" data-toggle="modal"
+                   onclick="openInputModal()">Вход</a>
+            </li>
+            <li class="nav-item" th:if="${user.id != null}">
+                <div class="row">
+                    <span id="welcome-text" class="text-light text-center mr-3" style="font-size: 0.875rem"
+                          th:text="'Добро пожаловать, ' + ${user.username}"></span>
+                </div>
+                <div class="row justify-content-end">
+                    <a class="btn btn-secondary btn-sm mr-2" th:href="@{/exit}">Выйти</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+<main class="content mt-3 mb-3">
+    <div class="container p-lg-5" th:if="${user.id == null}">
+        <div class="card mx-auto" style="max-width: 35rem;">
+            <div class="card-body justify-content-center">
+                <form id="log-in-form" class="needs-validation" method="post" novalidate>
+                    <h3 class="text-center">Вход</h3>
+                    <hr/>
+                    <div class="form-group">
+                        <label for="user-name">Введите логин (длина от 5 до 50 символов)</label>
+                        <input id="user-name" type="text" class="form-control" placeholder="Логин" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Введите пароль (не менее 8 символов)</label>
+                        <input id="password" type="password" class="form-control" placeholder="Пароль" required>
+                    </div>
+                    <div>
+                        <p id="info-text" style="font-size: 14px; color: darkred; display: none">
+                            Некорректные данные, неверный логин или пароль
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <button id="btn-input" type="button" class="btn btn-outline-secondary my_btn">Войти</button>
+                        <button id="btn-sign-in" type="button" class="btn btn-outline-secondary my_btn">
+                            Зарегистрироваться
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="container p-lg-5" th:if="${user.id != null}">
+        <div class="row">
+            <div class="col">
+                <h3>Ваш список задач</h3>
+            </div>
+            <div class="col text-right">
+                <a id="create-button" role="button" class="btn btn-outline-secondary my_btn btn-lg"
+                   th:href="@{'/auth/task/' + ${uuid}}">Создать новую задачу</a>
+            </div>
+        </div>
+        <hr/>
+        <div id="tasks-div" class="row">
+            <div class="container-fluid" th:if="${tasksPage == null || tasksPage.content.size() == 0}" >
+                <h1 class="text-center" style="color: grey">Созданные задачи не найдены.</h1>
+            </div>
+            <div th:each="task: ${tasksPage != null ? tasksPage.content : null}" class="col-sm-6 col-lg-4 d-flex">
+                <div class="card mt-3" th:if="${task.idUser == user.id}">
+                    <div class="img_wrap">
+                        <img class="card-img-top image-task" th:if="${task.image == null || task.image == ''}"
+                             th:src="@{/img/default-img.png}">
+                        <img class="card-img-top image-task" th:if="${task.image != null && task.image != ''}" th:src="@{'/image/' + ${task.image}}">
+                    </div>
+                    <div class="card-body flex-fill">
+                        <h5 class="card-title" th:utext="${task.nameTask}"></h5>
+                        <p class="card-text" size="10px" th:utext="${task.description}"></p>
+                        <p class="card-text" size="10px">Сложность:</p>
+                        <img width="150" th:src="@{'/img/stars-' + ${task.complexity} + '.png'}">
+                    </div>
+                    <hr/>
+                    <div class="row">
+                        <div class="col text-center container-fluid">
+                            <a th:href="@{'/auth/task/'+${task.id}}"
+                               class="btn btn-outline-secondary my_btn container-fluid">Изменить</a>
+                        </div>
+                        <div class="col text-center container-fluid">
+                            <a th:id="${'delete-button' + task.id}" data-toggle="modal" th:data-iduser="${user.id}"
+                               th:data-idtask="${task.id}" class="btn btn-outline-secondary my_btn container-fluid"
+                               onclick="openDeleteModal(this)">Удалить</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <nav class="mt-3">
+            <ul class="pagination" th:if="${tasksPage != null ? tasksPage.totalPages > 1 : 0}" >
+                <li class="page-item" th:if="${tasksPage.number > 0}">
+                    <a class="page-link" th:href="@{'/auth/task?page=' +${tasksPage.getNumber() - 1} + '&size=' + ${tasksPage.size}}"><<</a>
+                </li>
+                <li class="page-item" th:if="${tasksPage.totalPages > 1 && tasksPage.number > 0}">
+                    <a class="page-link" th:href="@{'/auth/task?page=' +${tasksPage.getNumber() - 1} + '&size=' + ${tasksPage.size}}" th:text="${tasksPage.getNumber()}"></a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" th:href="@{'/auth/task?page=' +${tasksPage.getNumber()} + '&size=' + ${tasksPage.size}}" th:text="${tasksPage.getNumber() + 1}"></a>
+                </li>
+                <li class="page-item" th:if="${tasksPage.totalPages > 3 && tasksPage.number < tasksPage.totalPages - 1}">
+                    <a class="page-link" th:href="@{'/auth/task?page=' +${tasksPage.getNumber() + 1} + '&size=' + ${tasksPage.size}}" th:text="${tasksPage.getNumber()+2}"></a>
+                </li>
+                <li class="page-item" th:if="${tasksPage.number < tasksPage.totalPages - 1}">
+                    <a class="page-link" th:href="@{'/auth/task?page=' +${tasksPage.getNumber() + 1} + '&size=' + ${tasksPage.size}}">>></a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</main>
+
+<footer class="footer bg-secondary mt-3">
+    <div class="footer-copyright text-center py-3 text-light">© 2019 Copyright: Vladislav Ovchinnikov</div>
+</footer>
+
+<div id="overlay" style="position: absolute; background-color: rgba(0, 0, 0, 0.5); display: none">
+    <div id="progress" class="bubblingG">
+    <span id="bubblingG_1">
+    </span>
+        <span id="bubblingG_2">
+    </span>
+        <span id="bubblingG_3">
+    </span>
+    </div>
+</div>
+
+</body>
+</html>

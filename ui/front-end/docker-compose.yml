@@ -1,0 +1,180 @@
+version: '3.3'
+services:
+  test:
+    image: vee97/test
+    environment:
+      - HOST_NAME=test
+      - EUREKA_DEFAULT_ZONE=http://discovery:8761/eureka
+      - REGISTER_WITH_EUREKA=true
+      - FETCH_REGISTRY=true
+      - DATABASE_SERVER=jdbc:postgresql://db:5432/testdb
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=admin
+    ports:
+      - 8083:8083
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - discovery
+      - db
+  task:
+    image: vee97/task
+    environment:
+      - HOST_NAME=task
+      - EUREKA_DEFAULT_ZONE=http://discovery:8761/eureka
+      - REGISTER_WITH_EUREKA=true
+      - FETCH_REGISTRY=true
+      - DATABASE_SERVER=jdbc:postgresql://db:5432/taskdb
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=admin
+    ports:
+      - 8082:8082
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - discovery
+      - db
+  task-executor:
+    image: vee97/task-executor
+    environment:
+      - HOST_NAME=task-executor
+      - EUREKA_DEFAULT_ZONE=http://discovery:8761/eureka
+      - REGISTER_WITH_EUREKA=true
+      - FETCH_REGISTRY=true
+      - DATABASE_SERVER=jdbc:postgresql://db:5432/completedtaskdb
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=admin
+    ports:
+      - 8084:8084
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - discovery
+      - db
+  result:
+    image: vee97/result
+    environment:
+      - HOST_NAME=result
+      - EUREKA_DEFAULT_ZONE=http://discovery:8761/eureka
+      - REGISTER_WITH_EUREKA=true
+      - FETCH_REGISTRY=true
+      - DATABASE_SERVER=jdbc:postgresql://db:5432/resultdb
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=admin
+    ports:
+      - 8085:8085
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - discovery
+      - db
+  session:
+    image: vee97/session
+    environment:
+      - HOST_NAME=session
+      - EUREKA_DEFAULT_ZONE=http://discovery:8761/eureka
+      - REGISTER_WITH_EUREKA=true
+      - FETCH_REGISTRY=true
+      - DATABASE_SERVER=jdbc:postgresql://db:5432/sessiondb
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=admin
+    ports:
+      - 8182:8182
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - discovery
+      - db
+  gateway:
+    image: vee97/gateway
+    environment:
+      - HOST_NAME=gateway
+      - EUREKA_DEFAULT_ZONE=http://discovery:8761/eureka
+      - REGISTER_WITH_EUREKA=true
+      - FETCH_REGISTRY=true
+      - DATABASE_SERVER=jdbc:postgresql://db:5432/operationdb
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=admin
+    ports:
+      - 8080:8080
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - discovery
+      - db
+  frontend:
+    image: vee97/front-end
+    environment:
+      - HOST_NAME=frontend
+      - EUREKA_DEFAULT_ZONE=http://discovery:8761/eureka
+      - REGISTER_WITH_EUREKA=true
+      - FETCH_REGISTRY=true
+    ports:
+      - 80:80
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - discovery
+      - gateway
+  db:
+    image: postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./pg-init-scripts:/docker-entrypoint-initdb.d
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_MULTIPLE_DATABASES=sessiondb,taskdb,testdb,completedtaskdb,operationdb,resultdb
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+  discovery:
+    image: vee97/discovery
+    ports:
+      - 8761:8761
+    networks:
+      - webnet
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+networks:
+  webnet:
+    external: true
+
+
+
+
+

@@ -3,28 +3,24 @@
  */
 package bmstu.dynamic.simulator;
 
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import org.opencv.core.Core;
 
-public class App extends Application {
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-        Parent root = FXMLLoader.load(App.class.getResource("/fxml/main.fxml"));
-
-        Scene scene = new Scene(root);
-        primaryStage.setScene(scene);
-        primaryStage.setMinWidth(450);
-        primaryStage.show();
-    }
+@EnableFeignClients
+@EnableAsync
+@EnableScheduling
+@SpringBootApplication(exclude = {
+        SecurityAutoConfiguration.class
+})
+public class App {
 
     public static void main(String[] args) {
-        nu.pattern.OpenCV.loadShared();
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        launch(args);
+        SpringApplication.run(App.class, args);
     }
+
 }
