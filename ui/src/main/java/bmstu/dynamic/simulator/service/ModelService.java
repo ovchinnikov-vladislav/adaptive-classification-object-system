@@ -9,11 +9,6 @@ import java.time.LocalDate;
 @Service
 public class ModelService {
 
-    public void prepareStandardModelForTemplate(Model model) {
-        model.addAttribute("now_year", LocalDate.now().getYear());
-        model.addAttribute("copyright", "Владислав Овчинников");
-    }
-
     public void prepareErrorModelForTemplate(Model model, Integer status) {
         model.addAttribute("status", "Неопределенная ошибка");
 
@@ -28,7 +23,5 @@ public class ModelService {
             model.addAttribute("text", "Фатальная ошибка (ошибка сервера)");
         }
         model.addAttribute("additional_text",  "Похоже вы нашли баг в матрице...");
-
-        prepareStandardModelForTemplate(model);
     }
 }

@@ -41,7 +41,7 @@
             <div id="content">
 
                 <!-- Topbar -->
-                <div th:replace="fragments/topbar :: topbar"></div>
+                <div th:replace="fragments/topbar :: topbar(${user_attributes.get('name')})"></div>
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
