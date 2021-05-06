@@ -1,0 +1,31 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:fragment="headerfiles">
+    <meta charset="UTF-8" />
+    <title></title>
+</head>
+<body>
+
+<div th:fragment="capsnet_content" class="container-fluid" style="height:100vh;">
+
+    <div class="card shadow mb-4" style="height: 100%;">
+        <div class="card-header py-3">
+            <h3 class="m-0 font-weight-bold text-primary">Моделирование капсульной сети</h3>
+        </div>
+        <div class="card-body" style="height: 100%; width: 100%">
+            <iframe th:src="${capsnet}" onload="resizeIframe(this)" frameborder="0" scrolling="no"
+                    style="position: relative; height: 100%; width: 100%;">
+            </iframe>
+        </div>
+    </div>
+
+    <script>
+        function resizeIframe(obj) {
+            obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
+        }
+    </script>
+
+</div>
+
+</body>
+</html>

@@ -1,5 +1,6 @@
 package bmstu.dynamic.simulator.exception;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.web.ResourceProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
@@ -41,18 +42,12 @@ public class CustomErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
             code = throwable.getMessage().substring(0, 3);
         }
 
+        if (!StringUtils.isNumeric(code)) {
+            code = "500";
+        }
+
         String finalCode = code;
-        return Mono.zip(
-                serverRequest.principal(),
-                serverRequest.bodyToMono(String.class)
-        ).flatMap(tuple -> {
-            Principal principal = tuple.getT1();
-            if (principal.getName() != null) {
-                return ServerResponse.temporaryRedirect(URI.create("/lk_error/" + finalCode)).build();
-            } else {
-                return ServerResponse.temporaryRedirect(URI.create("/error/" + finalCode)).build();
-            }
-        });
+        return ServerResponse.temporaryRedirect(URI.create("/error/" + finalCode)).build();
 
     }
 

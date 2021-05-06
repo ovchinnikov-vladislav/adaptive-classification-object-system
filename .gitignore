@@ -1,4 +1,4 @@
-*/.idea/
+.idea/
 bin
 */build/
 __pycache__

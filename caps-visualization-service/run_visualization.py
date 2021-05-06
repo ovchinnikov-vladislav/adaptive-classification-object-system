@@ -7,12 +7,16 @@ import uuid
 import matplotlib.image as image
 from matplotlib.colors import LinearSegmentedColormap
 from flask import Flask, send_from_directory, jsonify, request
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__, static_folder='client/build')
+cors = CORS(app, resources={r"/": {"origins": "*"}, '/<path:path>': {"origins": "*"}})
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
+@cross_origin(origin='*', headers=['Content-Type', 'Authorization'])
 def serve(path):
     if path == '':
         return send_from_directory('client/build', 'index.html')
@@ -33,6 +37,7 @@ def natural_sortkey(string):
 
 
 @app.route('/images')
+@cross_origin(origin='*', headers=['Content-Type', 'Authorization'])
 def get_images():
     res = {}
     for input_dir in os.listdir('visualizations'):
@@ -67,6 +72,7 @@ def ReLU_function(signal):
 
 
 @app.route('/api/reconstruct', methods=['POST'])
+@cross_origin(origin='*', headers=['Content-Type', 'Authorization'])
 def reconstruct():
     CMAP = LinearSegmentedColormap.from_list('greyscale', ((0, 0, 0), (1, 1, 1)), N=256, gamma=1.0)
 

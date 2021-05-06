@@ -1,6 +1,7 @@
 package bmstu.dynamic.simulator.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2AuthorizedClient;
@@ -14,6 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/fragment")
 @RequiredArgsConstructor
 public class FragmentController {
+
+    @Value("${services.caps-visual.url}")
+    private String capsVisualUrl;
 
     @GetMapping("/sidebar")
     public String sidebar() {

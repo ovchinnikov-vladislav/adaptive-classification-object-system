@@ -8,51 +8,19 @@ spring:
     oauth2:
       resource-server:
         jwt:
-          jwk-set-uri: ${auth.client.url}/realms/bmstu/protocol/openid-connect/certs
+          jwk-set-uri: ${services.auth.url}/realms/bmstu/protocol/openid-connect/certs
       client:
         provider:
           keycloak:
-            issuer-uri: ${auth.client.url}/realms/bmstu
-            authorization-uri: ${auth.client.url}/realms/bmstu/protocol/openid-connect/auth
-            token-uri: ${auth.client.url}/realms/bmstu/protocol/openid-connect/token
-            user-info-uri: ${auth.client.url}/realms/bmstu/protocol/openid-connect/userinfo
+            issuer-uri: ${services.auth.url}/realms/bmstu
+            authorization-uri: ${services.auth.url}/realms/bmstu/protocol/openid-connect/auth
+            token-uri: ${services.auth.url}/realms/bmstu/protocol/openid-connect/token
+            user-info-uri: ${services.auth.url}/realms/bmstu/protocol/openid-connect/userinfo
         registration:
           keycloak:
             client-id: bmstu
             client-secret: 5fac7131-7bcc-41f6-bd2e-e78dfab18dfb
 
-auth.client.url: http://192.168.0.13:8080/auth
-
-#keycloak:
-#  auth-server-url: http://192.168.0.13:8080/auth
-#  enabled: true
-#  public-client: true
-#  realm: bmstu
-#  resource: front
-#  ssl-required: external
-#  credentials:
-#    secret: f16e307c-fe25-4833-9ec3-ec3b0c30a1b0
-#
-#security:
-#  issuer-uri: ${keycloak.auth-server-url:http://192.168.0.13:8080/auth}/realms/${keycloak-realm:bmstu}
-#  enabled: true
-#  oauth2:
-#    client:
-#      access-token-uri: ${security.issuer-uri}/protocol/openid-connect/token
-#      client-id: ${keycloak.resource:front}
-#      client-secret: ${keycloak.credentials.secret:f16e307c-fe25-4833-9ec3-ec3b0c30a1b0}
-#      grant-type: client_credentials
-#      scope: openid
-#      user-authorization-uri: ${security.issuer-uri}/protocol/openid-connect/auth
-#    resource:
-#      id: account
-#      jwt:
-#        key-value: |-
-#          -----BEGIN PUBLIC KEY-----
-#          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAizvZMWuN7S5jNRwhOdT7QTFZ65M2xJEHkbwcIPZuOlyR83lwJ6JYiqS8ax9Od7V+z
-#          fMnd3uPEzooiELW4hFtl5vSEX/XRVdvb5rXvKOKbMFjcXfqNH1tRHqqOPF/p7cGozT21Go/fiRtnZfL3hX7omhLrRS83oS2mIzLVQB20S31Vw
-#          4ofKJ9X5fGJzBEyQalxA2hQ0GO+Y+QwNrF1XupYcNfIFjshAqjHXihjWki7NaueEqVgeqTrtRH2f212XczgKUM41DsD4+9xaMI+z5kpdc08Ty
-#          5RU/wVMPJJ+vQgVMOpfo7MfefACFBVhVzfl+nfDXibRc/BCypGOTZ0o3OCQIDAQAB
-#          -----END PUBLIC KEY-----
-#      token-info-uri: ${security.issuer-uri}/protocol/openid-connect/token/introspect
-#      user-info-uri: ${security.issuer-uri}/protocol/openid-connect/userinfo
+services:
+  auth.url: http://192.168.0.13:8080/auth
+  caps-visual.url: http://localhost:8081/

@@ -34,10 +34,13 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity4:3.0.4.RELEASE'
 
-    // Keycloak
-    implementation 'org.keycloak:keycloak-spring-boot-starter:12.0.4'
-    implementation 'org.keycloak:keycloak-authz-client:12.0.4'
-    implementation 'org.keycloak:keycloak-admin-client:12.0.4'
+    // WebFlux Feign
+    implementation("com.playtika.reactivefeign:feign-reactor-core:2.0.22")
+    implementation("com.playtika.reactivefeign:feign-reactor-spring-configuration:2.0.22")
+    implementation("com.playtika.reactivefeign:feign-reactor-webclient:2.0.22")
+
+    // Apache
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'

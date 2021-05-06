@@ -50,7 +50,7 @@ $(document).ready(function () {
     });
 
     $('#capsnet-content-button').click(function () {
-        var url = '/fragment/examples/buttons_content';
+        var url = '/ml/capsnet_content';
 
         $('#replace_section').load(url, function( response, status, xhr ) {
             if (status === "error") {
