@@ -1,0 +1,6 @@
+.Photo img {
+  width: 100%;
+  height: auto;
+  image-rendering: crisp-edges;
+  border-radius: 2px;
+}
