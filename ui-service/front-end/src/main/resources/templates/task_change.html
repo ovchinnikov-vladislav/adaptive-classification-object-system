@@ -1,0 +1,231 @@
+<html xmlns:th="http://www.thymeleaf.org" version="2.0">
+<head>
+    <title>Tasks</title>
+    <link th:href="@{/css/bootstrap.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-grid.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-reboot.css}" rel="stylesheet">
+    <link th:href="@{/css/bootstrap-slider.css}" rel="stylesheet">
+    <link th:href="@{/css/progress.css}" rel="stylesheet"/>
+    <script th:src="@{/js/jquery-3.4.1.min.js}"></script>
+    <script th:src="@{/js/bootstrap.js}"></script>
+    <script th:src="@{/js/bootstrap.bundle.js}"></script>
+    <script th:src="@{/js/bootstrap-slider.js}"></script>
+
+    <script th:src="@{/js/codemirror.js}"></script>
+    <script th:src="@{/js/clike.js}"></script>
+    <script th:src="@{/js/log-in.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/codemirror.css}">
+    <link rel="stylesheet" th:href="@{/css/idea.css}">
+    <link rel="stylesheet" th:href="@{/css/darcula.css}">
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+    <script th:src="@{/js/task-change.js}"></script>
+    <script th:if="${task.id != null && task.id != zeroUUID}">
+        type_operation = 1
+    </script>
+</head>
+<body>
+<header>
+    <!-- Информационное модальное окно -->
+    <div class="modal fade" id="info-modal" style="z-index: 110" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="vertical-alignment-helper">
+            <div class="modal-dialog vertical-align-center">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="myModalLabel">Информация</h4>
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <label id="info-text-modal">...</label>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="btn-ok" type="button" class="btn btn-primary">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Навигационная панель -->
+    <nav id="navpanel" class="navbar navbar-secondary bg-secondary">
+        <a href="/" class="navbar-brand text-light">TASKS</a>
+        <ul class="nav justify-content-end">
+            <li class="nav-item ml-3">
+                <a href="/" class="btn btn-secondary btn-lg mr-3 text-light" role="button">Главная</a>
+            </li>
+            <li class="nav-item" th:if="${user.id != null}">
+                <a class="btn btn-secondary btn-lg ml-3 mr-5 text-light" role="button"
+                   th:if="${user.id != null && user.roles.get(0) == 'ROLE_ADMIN'}" th:href="@{'/auth/task'}">Задачи</a>
+            </li>
+            <li class="nav-item" th:if="${user.id == null}">
+                <a class="btn btn-secondary btn-sm mr-3 text-light" role="button" th:href="@{/sign_in}">Регистрация</a>
+            </li>
+            <li class="nav-item" th:if="${user.id == null}">
+                <a class="btn btn-secondary btn-sm text-light" role="button" data-toggle="modal"
+                   onclick="openInputModal()">Вход</a>
+            </li>
+            <li class="nav-item" th:if="${user.id != null}">
+                <div class="row">
+                    <span id="welcome-text" class="text-light text-center mr-3" style="font-size: 0.875rem"
+                          th:text="'Добро пожаловать, ' + ${user.username}"></span>
+                </div>
+                <div class="row justify-content-end">
+                    <a class="btn btn-secondary btn-sm mr-2" th:href="@{/exit}">Выйти</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <div class="container p-lg-5" th:if="${user.id == null}">
+        <div class="card mx-auto" style="max-width: 35rem;">
+            <div class="card-body justify-content-center">
+                <form id="log-in-form" class="needs-validation" method="post" novalidate>
+                    <h3 class="text-center">Вход</h3>
+                    <hr/>
+                    <div class="form-group">
+                        <label for="user-name">Введите логин (длина от 5 до 50 символов)</label>
+                        <input id="user-name" type="text" class="form-control" placeholder="Логин" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Введите пароль (не менее 8 символов)</label>
+                        <input id="password" type="password" class="form-control" placeholder="Пароль" required>
+                    </div>
+                    <div>
+                        <p id="info-text" style="font-size: 14px; color: darkred; display: none">
+                            Некорректные данные, неверный логин или пароль
+                        </p>
+                    </div>
+                    <div class="text-center">
+                        <button id="btn-input" type="button" class="btn btn-outline-secondary my_btn">Войти</button>
+                        <button id="btn-sign-in" type="button" class="btn btn-outline-secondary my_btn">
+                            Зарегистрироваться
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="container p-lg-5" th:if="${user.id != null}">
+        <div class="row">
+            <div class="col">
+                <h3>Создание/Редактирование задачи</h3>
+            </div>
+        </div>
+        <hr/>
+        <!--form id="task-form" class="needs-validation" novalidate-->
+            <div class="create_task m-3" >
+                <div class="row">
+                    <div id="img_tasks" class="col-md-auto">
+                        <div id="image" class="row justify-content-center">
+                            <div class="img_wrap" style="width: 200px; height: 200px">
+                                <img width="250" th:if="${task.image == null || task.image == ''}"
+                                     th:src="@{/img/default-img.png}" alt="Image Task" class="image-task img-thumbnail">
+                                <img id="image-task" width="250" th:if="${task.image != null && task.image != ''}" th:src="@{'/image/' + ${task.image}}"
+                                     alt="Image Task" class="image-task img-thumbnail">
+                            </div>
+                        </div>
+                        <div class="row justify-content-center mt-1">
+                            <button id="change-image" class="btn btn-outline-secondary btn-sm my_btn mb-3">Изменить
+                                изображение
+                            </button>
+                            <input id="file-input" type="file" class="form-control" name="file" style="display: none;"/>
+                            <input id="submit-file" type="button" style="display: none;"/>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <label for="name-task">Введите название задания (обязательно)</label>
+                        <input id="name-task" type="text" th:value="${task.nameTask}" class="form-control mb-1"
+                                                              placeholder="Название задания" required>
+                        <p id="name-info-text" style="font-size: 14px; color: darkred; display: none">
+                            Название задания должно быть введено обязательно
+                        </p>
+                        <label for="description-task">Введите краткое описание задания</label>
+                        <textarea id="description-task" class="form-control mb-3" th:text="${task.description}"
+                                                                        placeholder="Краткое описание задания" rows="4"></textarea>
+
+                        <label for="complexity-task">Сложность задания (обязательно): </label><br/>
+                        <b>1</b>
+                        <input id="complexity-task" class="form-control mr-2 ml-2" data-slider-id='slider' type="text"
+                               data-slider-min="1" data-slider-max="5" data-slider-step="1" th:data-slider-value="${task.complexity != null ? task.complexity : 3}" required/>
+                        <b>5</b>
+                    </div>
+                </div>
+                <hr/>
+                <div class="row">
+                    <label for="text-task">Введите подробное описание задания (обязательно)</label>
+                    <textarea id="text-task" class="form-control mb-3" th:text="${task.textTask}"
+                                                             placeholder="Подробное описание задания" rows="4" required></textarea>
+                    <p id="text-task-info-text" style="font-size: 14px; color: darkred; display: none">
+                        Требуется текст задания
+                    </p>
+                </div>
+                <div class="row">
+                    <label for="source-template-task">
+                        Введите шаблон исходного кода (также данное поле можно использовать для проверки тестов)
+                    </label>
+                </div>
+                <div class="row">
+                <textarea id="source-template-task" th:text="${task.templateCode}" class="form-control"
+                          rows="10"></textarea>
+                </div>
+                <hr th:if="${task.withoutTest == 0}"/>
+                <div class="row" th:if="${task.withoutTest == 0}">
+                    <label for="source-test">Введите тесты для задания (обязательно)</label>
+                </div>
+                <div class="row">
+                <textarea id="source-test" th:if="${task.withoutTest == 0}" th:text="${task.test != null ? task.test.sourceCode : null}" class="form-control"
+                          rows="10" required></textarea>
+                </div>
+                <div class="row">
+                    <p id="source-test-info-text" style="font-size: 14px; color: darkred; display: none">
+                        Требуется написать тесты
+                    </p>
+                </div>
+                <hr th:if="${task.withoutTest == 0}"/>
+                <div class="row" th:if="${task.withoutTest == 0}">
+                    <label for="description-test">Введите описание тестов</label>
+                </div>
+                <div class="row">
+                <textarea id="description-test" th:if="${task.withoutTest == 0}" th:text="${task.test != null ? task.test.description : null}" class="form-control"
+                          rows="4" placeholder="Для чего предназначены тесты, какие задачи решают?"></textarea>
+                </div>
+                <div class="row" th:if="${task.withoutTest == 1}">
+                    <p style="font-size: 14px; color: darkred">Сервис тестов недоступен. Вы можете создать задачу сейчас, а тесты позже.</p>
+                </div>
+            </div>
+            <hr/>
+            <div class="row mb-1">
+                <div class="col">
+                    <button id="save_button" type="button" class="btn btn-outline-secondary btn-lg my_btn"
+                            th:href="@{/}">
+                        Сохранить
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-lg my_btn" th:href="@{/}">Отменить
+                    </button>
+                </div>
+            </div>
+        <!--/form-->
+    </div>
+</main>
+
+
+<footer class="footer bg-secondary mt-3">
+    <div class="footer-copyright text-center py-3 text-light">© 2019 Copyright: Vladislav Ovchinnikov</div>
+</footer>
+
+<div id="overlay" style="position: absolute; background-color: rgba(0, 0, 0, 0.5); display: none">
+    <div id="progress" class="bubblingG">
+    <span id="bubblingG_1">
+    </span>
+        <span id="bubblingG_2">
+    </span>
+        <span id="bubblingG_3">
+    </span>
+    </div>
+</div>
+
+</body>
+</html>

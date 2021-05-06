@@ -1,0 +1,23 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:fragment="headerfiles">
+    <meta charset="UTF-8" />
+    <title></title>
+</head>
+<body>
+
+<div th:fragment="video_content" class="container-fluid">
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h3 class="m-0 font-weight-bold text-primary">Видеоанализ</h3>
+        </div>
+        <div class="card-body">
+            [[${video}]]
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

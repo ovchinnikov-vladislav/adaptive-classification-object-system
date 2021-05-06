@@ -1,0 +1,169 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta content="text/html;charset=UTF-8">
+    <title>Tasks</title>
+    <link th:href="@{/css/bootstrap.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-grid.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-reboot.css}" rel="stylesheet"/>
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+    <link th:href="@{/css/progress.css}" rel="stylesheet"/>
+    <script th:src="@{/js/jquery-3.4.1.min.js}"></script>
+    <script th:src="@{/js/bootstrap.bundle.js}"></script>
+    <script th:src="@{/js/bootstrap.js}"></script>
+    <script th:src="@{/js/log-in.js}"></script>
+    <script th:src="@{/js/sign-in.js}"></script>
+</head>
+<body>
+<header>
+    <!-- Информационное модальное окно -->
+    <div class="modal fade" id="info-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="vertical-alignment-helper">
+            <div class="modal-dialog vertical-align-center">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="myModalLabel">Информация</h4>
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <label id="info-text-modal">...</label>
+                    </div>
+                    <div class="modal-footer">
+                        <button id="btn-ok" type="button" class="btn btn-primary">OK</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Модальное окно входа -->
+    <div id="input-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="input_modal"
+         aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Вход в систему </h4>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <form id="log-in-form" method="post" novalidate>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="user-name">Имя пользователя: </label>
+                            <input id="user-name" type="text" class="form-control" placeholder="Логин/e-mail"
+                                   required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Пароль: </label>
+                            <input id="password" type="password" class="form-control" placeholder="Введите пароль"
+                                   required>
+                        </div>
+                        <div>
+                            <p  id="info-text" style="font-size: 14px; color: darkred; display: none">
+                                Некорректные данные, неверный логин или пароль
+                            </p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Закрыть</button>
+                        <button id="btn-input" type="button" class="btn btn-outline-secondary my_btn">Войти</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Навигационная панель -->
+    <nav id="navpanel" class="navbar navbar-secondary bg-secondary">
+        <a href="/" class="navbar-brand text-light">TASKS</a>
+        <ul class="nav justify-content-end">
+            <li class="nav-item ml-3">
+                <a href="/" class="btn btn-secondary btn-lg mr-3 text-light" role="button">Главная</a>
+            </li>
+            <li class="nav-item" th:if="${user.id != null}">
+                <a class="btn btn-secondary btn-lg ml-3 mr-5 text-light" role="button"
+                   th:if="${user.id != null && user.roles.get(0) == 'ROLE_ADMIN'}" th:href="@{'/auth/task'}">Задачи</a>
+            </li>
+            <li class="nav-item" th:if="${user.id == null}">
+                <a class="btn btn-secondary btn-sm mr-3 text-light" role="button" th:href="@{/sign_in}">Регистрация</a>
+            </li>
+            <li class="nav-item" th:if="${user.id == null}">
+                <a class="btn btn-secondary btn-sm text-light" role="button" data-toggle="modal"
+                   onclick="openInputModal()">Вход</a>
+            </li>
+            <li class="nav-item" th:if="${user.id != null}">
+                <div class="row">
+                    <span id="welcome-text" class="text-light text-center mr-3" style="font-size: 0.875rem"
+                          th:text="'Добро пожаловать, ' + ${user.username}"></span>
+                </div>
+                <div class="row justify-content-end">
+                    <a class="btn btn-secondary btn-sm mr-2" th:href="@{/exit}">Выйти</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+<main class="content mt-3">
+    <div class="container" style="margin: 0 auto">
+        <div class="row">
+            <div class="col">
+                <h3>Регистрация</h3>
+            </div>
+        </div>
+        <hr/>
+        <form id="form-sign-in" class="needs-validation" method="post" novalidate>
+            <div class="form-group">
+                <label for="login-text">Введите логин (длина от 5 до 50 символов)</label>
+                <input id="login-text" type="text" class="form-control" placeholder="Логин" required>
+                <p  id="login-info-text" style="font-size: 14px; color: darkred; display: none">
+                    Логин уже существует, или неверная длина
+                </p>
+            </div>
+            <div class="form-group">
+                <label for="email-text">Введите email согласно шаблону (email@domain.com)</label>
+                <input id="email-text" type="email" class="form-control" placeholder="E-mail" required>
+                <p  id="email-info-text" style="font-size: 14px; color: darkred; display: none">
+                    Email уже существует, или некорректен
+                </p>
+            </div>
+            <div class="form-group">
+                <label for="first-name-text">Введите свое Имя</label>
+                <input id="first-name-text" type="text" class="form-control" placeholder="Имя">
+            </div>
+            <div class="form-group">
+                <label for="last-name-text">Введите свою Фамилию</label>
+                <input id="last-name-text" type="text" class="form-control" placeholder="Фамилия">
+            </div>
+            <div class="form-group">
+                <label for="password-text">Введите пароль (не менее 8 символов)</label>
+                <input id="password-text" type="password" class="form-control" placeholder="Пароль" required>
+                <p  id="password-info-text" style="font-size: 14px; color: darkred; display: none">
+                    Пароль некорректен (длина должна быть больше 8 символов)
+                </p>
+            </div>
+            <button id="input-modal-btn" class="btn btn-outline-dark btn-lg mb-2" type="button" onclick="openInputModal()">Вход</button>
+            <button id="btn-sign-in" type="button" class="btn btn-outline-secondary my_btn btn-lg mb-2">Зарегистрироваться</button>
+        </form>
+        <p id="info-reg-text" style="font-size: 14px; color: darkred; display: none">
+
+        </p>
+    </div>
+</main>
+
+<footer class="footer bg-secondary mt-3">
+    <div class="footer-copyright text-center py-3 text-light">© 2019 Copyright: Vladislav Ovchinnikov</div>
+</footer>
+
+<div id="overlay" style="position: absolute; background-color: rgba(0, 0, 0, 0.5); display: none">
+    <div id="progress" class="bubblingG">
+    <span id="bubblingG_1">
+    </span>
+        <span id="bubblingG_2">
+    </span>
+        <span id="bubblingG_3">
+    </span>
+    </div>
+</div>
+</body>
+</html>

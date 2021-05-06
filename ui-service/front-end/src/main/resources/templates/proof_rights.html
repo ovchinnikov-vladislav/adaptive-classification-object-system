@@ -1,0 +1,65 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta content="text/html;charset=UTF-8">
+    <title>Tasks</title>
+    <link th:href="@{/css/bootstrap.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-grid.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-reboot.css}" rel="stylesheet"/>
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+    <link th:href="@{/css/progress.css}" rel="stylesheet"/>
+    <script th:src="@{/js/jquery-3.4.1.min.js}"></script>
+    <script th:src="@{/js/bootstrap.bundle.js}"></script>
+    <script th:src="@{/js/bootstrap.js}"></script>
+    <script th:src="@{/js/md5.js}"></script>
+    <script th:src="@{/js/log-in.js}"></script>
+</head>
+<body>
+<header>
+
+</header>
+
+<main class="content mt-3 mb-3">
+    <div class="container p-lg-5" th:if="${user.id != null}">
+        <div class="card mx-auto" style="max-width: 35rem;">
+            <div class="card-body justify-content-center">
+                <form id="proof-right-form" th:action="${'/oauth?response_type='+response_type+'&client_id=' + client.clientId + '&redirect_uri=' + redirect_uri}" class="needs-validation" method="post"
+                      novalidate>
+                    <h3 class="text-center">Подвтерждение прав</h3>
+                    <hr/>
+                    <div class="form-group">
+                        <h5 th:text="${'Приложение ' + client.applicationName + ' запрашивает права'}"></h5>
+                        <hr/>
+                        <h6 th:text="${'Имя пользователя: ' + user.username}"></h6>
+                        <h6 th:if="${user.email != null}" th:text="${'Email: ' + user.email}"></h6>
+                    </div>
+                    <div class="text-center">
+                        <button id="btn-proof" type="submit" class="btn btn-success">
+                            Подтвердить права
+                        </button>
+                        <button id="btn-cancel" class="btn btn-warning" onclick="cancel()">
+                            Отменить
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer bg-secondary mt-3">
+    <div class="footer-copyright text-center py-3 text-light">© 2019 Copyright: Vladislav Ovchinnikov</div>
+</footer>
+
+<div id="overlay" style="position: absolute; background-color: rgba(0, 0, 0, 0.5); display: none">
+    <div id="progress" class="bubblingG">
+    <span id="bubblingG_1">
+    </span>
+        <span id="bubblingG_2">
+    </span>
+        <span id="bubblingG_3">
+    </span>
+    </div>
+</div>
+
+</body>
+</html>

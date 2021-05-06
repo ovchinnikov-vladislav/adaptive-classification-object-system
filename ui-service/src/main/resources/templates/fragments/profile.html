@@ -1,0 +1,45 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:fragment="headerfiles">
+    <meta charset="UTF-8" />
+    <title></title>
+</head>
+<body>
+
+<div th:fragment="profile_content" class="container-fluid">
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h3 class="m-0 font-weight-bold text-primary">Профиль пользователя</h3>
+        </div>
+        <div class="card-body">
+            <div class="form-group row">
+                <div class="col-sm-6 mb-3 mb-sm-0">
+                    <label for="exampleFirstName">Имя</label>
+                    <input type="text" class="form-control form-control-user" id="exampleFirstName"
+                           placeholder="Имя" th:value="${user_attributes.get('given_name')}" disabled>
+                </div>
+                <div class="col-sm-6">
+                    <label for="exampleLastName">Фамилия</label>
+                    <input type="text" class="form-control form-control-user" id="exampleLastName"
+                           placeholder="Фамилия" th:value="${user_attributes.get('family_name')}" disabled>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="exampleInputEmail">Электронная почта</label>
+                <input type="email" class="form-control form-control-user" id="exampleInputEmail"
+                       placeholder="Электронная почта" th:value="${user_attributes.get('email')}" disabled>
+            </div>
+            <div class="form-group">
+                <label for="exampleUserName">Имя пользователя</label>
+                <input type="email" class="form-control form-control-user" id="exampleUserName"
+                       placeholder="Имя пользователя" th:value="${user_attributes.get('preferred_username')}"
+                       disabled>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout}"
+      lang="ru">
+
+<head>
+
+    <title>AdaptNet Sim - Error</title>
+
+</head>
+
+<body id="page-top">
+
+<section layout:fragment="content">
+    <!-- Begin Page Content -->
+    <div class="container-fluid">
+
+        <!-- 404 Error Text -->
+        <div class="text-center">
+            <div class="error mx-auto">[[${status}]]</div>
+            <p class="lead text-gray-800 mb-5">[[${text}]]</p>
+            <p class="text-gray-500 mb-0">[[${additional_text}]]</p>
+            <a th:href="@{/}">&larr; Назад в ЛК</a>
+        </div>
+
+    </div>
+    <!-- /.container-fluid -->
+</section>
+
+</body>
+
+</html>

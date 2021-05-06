@@ -1,0 +1,93 @@
+jobs:
+  include:
+    - stage: test discovery-service
+      sudo: required
+      dist: trusty
+      language: java
+      jdk:
+        - oraclejdk11
+      before_install:
+        - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
+        - unzip -qq gradle-5.3-bin.zip
+        - export GRADLE_HOME=$PWD/gradle-5.3
+        - export PATH=$GRADLE_HOME/bin:$PATH
+        - gradle -v
+        - cd $TRAVIS_BUILD_DIR/services/discovery-service
+    - stage: test session-service
+      sudo: required
+      dist: trusty
+      language: java
+      jdk:
+        - oraclejdk11
+      before_install:
+        - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
+        - unzip -qq gradle-5.3-bin.zip
+        - export GRADLE_HOME=$PWD/gradle-5.3
+        - export PATH=$GRADLE_HOME/bin:$PATH
+        - gradle -v
+        - cd $TRAVIS_BUILD_DIR/services/session-service
+    - stage: test task-service
+      sudo: required
+      dist: trusty
+      language: java
+      jdk:
+        - oraclejdk11
+      before_install:
+        - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
+        - unzip -qq gradle-5.3-bin.zip
+        - export GRADLE_HOME=$PWD/gradle-5.3
+        - export PATH=$GRADLE_HOME/bin:$PATH
+        - gradle -v
+        - cd $TRAVIS_BUILD_DIR/services/task-service
+    - stage: test test-service
+      sudo: required
+      dist: trusty
+      language: java
+      jdk:
+        - oraclejdk11
+      before_install:
+        - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
+        - unzip -qq gradle-5.3-bin.zip
+        - export GRADLE_HOME=$PWD/gradle-5.3
+        - export PATH=$GRADLE_HOME/bin:$PATH
+        - gradle -v
+        - cd $TRAVIS_BUILD_DIR/services/test-service
+    - stage: test task-executor-service
+      sudo: required
+      dist: trusty
+      language: java
+      jdk:
+        - oraclejdk11
+      before_install:
+        - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
+        - unzip -qq gradle-5.3-bin.zip
+        - export GRADLE_HOME=$PWD/gradle-5.3
+        - export PATH=$GRADLE_HOME/bin:$PATH
+        - gradle -v
+        - cd $TRAVIS_BUILD_DIR/services/task-executor-service
+    - stage: test result-service
+      sudo: required
+      dist: trusty
+      language: java
+      jdk:
+        - oraclejdk11
+      before_install:
+        - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
+        - unzip -qq gradle-5.3-bin.zip
+        - export GRADLE_HOME=$PWD/gradle-5.3
+        - export PATH=$GRADLE_HOME/bin:$PATH
+        - gradle -v
+        - cd $TRAVIS_BUILD_DIR/services/result-service
+    - stage: test gateway-service
+      sudo: required
+      dist: trusty
+      language: java
+      jdk:
+        - oraclejdk11
+      before_install:
+        - wget http://services.gradle.org/distributions/gradle-5.3-bin.zip
+        - unzip -qq gradle-5.3-bin.zip
+        - export GRADLE_HOME=$PWD/gradle-5.3
+        - export PATH=$GRADLE_HOME/bin:$PATH
+        - gradle -v
+        - cd $TRAVIS_BUILD_DIR/services/gateway-service

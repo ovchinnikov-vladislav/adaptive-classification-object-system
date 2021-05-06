@@ -1,0 +1,156 @@
+<html xmlns:th="http://www.thymeleaf.org" version="2.0">
+<head>
+    <title>Tasks</title>
+    <link th:href="@{/css/bootstrap.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-grid.css}" rel="stylesheet"/>
+    <link th:href="@{/css/bootstrap-reboot.css}" rel="stylesheet"/>
+    <link th:href="@{/css/progress.css}" rel="stylesheet"/>
+    <script th:src="@{/js/jquery-3.4.1.min.js}"></script>
+    <script th:src="@{/js/bootstrap.js}"></script>
+    <script th:src="@{/js/bootstrap.bundle.js}"></script>
+    <script th:src="@{/js/codemirror.js}"></script>
+    <script th:src="@{/js/clike.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/codemirror.css}">
+    <link rel="stylesheet" th:href="@{/css/darcula.css}">
+    <link th:href="@{/css/style.css}" rel="stylesheet"/>
+    <script th:src="@{/js/log-in.js}"></script>
+    <script th:src="@{/js/task.js}"></script>
+</head>
+
+<body>
+<header>
+    <!-- Навигационная панель -->
+    <nav id="navpanel" class="navbar navbar-secondary bg-secondary">
+        <a href="/" class="navbar-brand text-light">TASKS</a>
+        <ul class="nav justify-content-end">
+            <li class="nav-item ml-3">
+                <a href="/" class="btn btn-secondary btn-lg mr-3 text-light" role="button">Главная</a>
+            </li>
+            <li class="nav-item" th:if="${user.id != null}">
+                <a class="btn btn-secondary btn-lg ml-3 mr-5 text-light" role="button"
+                   th:if="${user.id != null && user.roles.get(0) == 'ROLE_ADMIN'}" th:href="@{'/auth/task'}">Задачи</a>
+            </li>
+            <li class="nav-item" th:if="${user.id == null}">
+                <a class="btn btn-secondary btn-sm mr-3 text-light" role="button" th:href="@{/sign_in}">Регистрация</a>
+            </li>
+            <li class="nav-item" th:if="${user.id == null}">
+                <a class="btn btn-secondary btn-sm text-light" role="button" data-toggle="modal"
+                   onclick="openInputModal()">Вход</a>
+            </li>
+            <li class="nav-item" th:if="${user.id != null}">
+                <div class="row">
+                    <span id="welcome-text" class="text-light text-center mr-3" style="font-size: 0.875rem"
+                          th:text="'Добро пожаловать, ' + ${user.username}"></span>
+                </div>
+                <div class="row justify-content-end">
+                    <a class="btn btn-secondary btn-sm mr-2" th:href="@{/exit}">Выйти</a>
+                </div>
+            </li>
+        </ul>
+    </nav>
+</header>
+
+<main>
+    <div th:if="${task != null}" id="main">
+        <div class="container p-lg-5" th:if="${user.id == null}">
+            <div class="card mx-auto" style="max-width: 35rem;">
+                <div class="card-body justify-content-center">
+                    <form id="log-in-form" class="needs-validation" method="post" novalidate>
+                        <h3 class="text-center">Вход</h3>
+                        <hr/>
+                        <div class="form-group">
+                            <label for="user-name">Введите логин (длина от 5 до 50 символов)</label>
+                            <input id="user-name" type="text" class="form-control" placeholder="Логин" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="password">Введите пароль (не менее 8 символов)</label>
+                            <input id="password" type="password" class="form-control" placeholder="Пароль" required>
+                        </div>
+                        <div>
+                            <p id="info-text" style="font-size: 14px; color: darkred; display: none">
+                                Некорректные данные, неверный логин или пароль
+                            </p>
+                        </div>
+                        <div class="text-center">
+                            <button id="btn-input" type="button" class="btn btn-outline-secondary my_btn">Войти</button>
+                            <button id="btn-sign-in" type="button" class="btn btn-outline-secondary my_btn">
+                                Зарегистрироваться
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="container p-lg-5" th:if="${user.id != null}">
+            <div class="run_test_title">
+                <div class="row">
+                    <div class="col">
+                        <h3 th:text="${task.nameTask}"></h3>
+                    </div>
+                </div>
+                <hr/>
+                <div class="row card shadow-sm p-3 mb-5 bg-white rounded">
+                    <div class="card-body">
+                        <p th:utext="${task.textTask}"></p>
+                        <hr/>
+                        <div class="row">
+                            <label for="source-template-task">Исходный код</label>
+                            <textarea id="source-template-task" class="form-control"
+                                      th:text="${task.templateCode}"
+                                      rows="10"></textarea>
+                        </div>
+                        <div class="row">
+                            <p id="source-template-task-info" style="font-size: 14px; color: darkred; display: none">
+                                Введите код своего решения.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div id="send-code" class="col">
+                    <button id="send-task-btn" type="submit" class="btn btn-outline-secondary btn-lg my_btn mb-2"
+                            th:data1="${user.id}" th:data2="${task.id}"
+                            th:onclick="sendExecuteTask(this.getAttribute('data1'), this.getAttribute('data2'))">
+                        Отправить на проверку
+                    </button>
+                </div>
+            </div>
+            <div id="result-test" class="mb-1">
+                <div id="card-result" class="card container-fluid"
+                     th:if="${resultTest != null && resultTest.getCountAllTests() != null && resultTest.getCountAllTests() != 0}">
+                    <label class="ml-2 mt-2" th:utext="${'Все тесты: ' + resultTest.getCountAllTests()}"></label>
+                    <label class="ml-2 mt-2" th:utext="${'Успешные: ' + resultTest.getCountSuccessfulTests()}"></label>
+                    <label class="ml-2 mt-2" th:utext="${'Проваленные: ' + resultTest.getCountFailedTests()}"></label>
+                    <label th:if="${result != null && result.mark >= 50}" class="ml-2 mt-2" th:utext="${'Последний результат: ' + result.getMark()}"></label>
+                    <label th:if="${result != null}" class="ml-2 mt-2" th:utext="${'Количество попыток: ' + result.getCountAttempt()}"></label>
+                    <div th:if="${resultTest.fails.size() != 0}" class="card-body" style="width: 100%">
+                        <h5 class="card-title">Проваленные тесты</h5>
+                        <div th:each="result : ${resultTest.fails}">
+                            <p class="card-text" size="10px" th:utext="${result}"></p>
+                        </div>
+                    </div>
+                    <label th:if="${result != null && result.mark < 50}" class="ml-2 mt-2">Результат отрицательный, повторите попытку решения.</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer class="footer bg-secondary mt-3">
+    <div class="footer-copyright text-center py-3 text-light">© 2019 Copyright: Vladislav Ovchinnikov</div>
+</footer>
+
+<div id="overlay" style="position: absolute; background-color: rgba(0, 0, 0, 0.5); display: none">
+    <div id="progress" class="bubblingG">
+    <span id="bubblingG_1">
+    </span>
+        <span id="bubblingG_2">
+    </span>
+        <span id="bubblingG_3">
+    </span>
+    </div>
+</div>
+
+</body>
+</html>

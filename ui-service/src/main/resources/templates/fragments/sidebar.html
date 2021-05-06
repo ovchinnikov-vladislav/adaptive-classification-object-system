@@ -1,0 +1,105 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:fragment="headerfiles">
+    <meta charset="UTF-8" />
+    <title></title>
+</head>
+<body>
+
+<ul th:fragment="sidebar" class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+
+        <!-- Sidebar - Brand -->
+        <a id="main-content-button-1" class="sidebar-brand d-flex align-items-center justify-content-center" href="#">
+            <div class="sidebar-brand-icon rotate-n-15">
+                <i class="fas fa-laugh-wink"></i>
+            </div>
+            <div class="sidebar-brand-text mx-3">AdaptNet Sim</div>
+        </a>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider my-0">
+
+        <!-- Nav Item - Dashboard -->
+        <li class="nav-item active">
+            <a id="main-content-button-2" class="nav-link" href="#">
+                <i class="fas fa-fw fa-tachometer-alt"></i>
+                <span>Инфопанель</span></a>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            Машинное обучение
+        </div>
+
+        <!-- Nav Item - Pages Collapse Menu -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+               aria-expanded="true" aria-controls="collapseTwo">
+                <i class="fas fa-fw fa-cog"></i>
+                <span>Имитатор</span>
+            </a>
+            <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Имитатор:</h6>
+                    <a id="capsnet-content-button" class="collapse-item" href="#">Капсульная сеть</a>
+                    <a id="video-content-button" class="collapse-item" href="#">Видеоанализ</a>
+                </div>
+            </div>
+        </li>
+
+        <!-- Nav Item - Utilities Collapse Menu -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseUtilities"
+               aria-expanded="true" aria-controls="collapseUtilities">
+                <i class="fas fa-fw fa-wrench"></i>
+                <span>Статистика</span>
+            </a>
+            <div id="collapseUtilities" class="collapse" aria-labelledby="headingUtilities"
+                 data-parent="#accordionSidebar">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <h6 class="collapse-header">Статистика:</h6>
+                    <a id="learning-stat-content-button" class="collapse-item" href="#">По обучению</a>
+                    <a id="detection-stat-content-button" class="collapse-item" href="#">По обн. объектов</a>
+                    <a id="classification-stat-content-button" class="collapse-item" href="#">По классификации</a>
+                    <a id="common-stat-content-button" class="collapse-item" href="#">Общая статистика</a>
+                </div>
+            </div>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">
+            Другое
+        </div>
+
+        <!-- Nav Item - Charts -->
+        <li class="nav-item">
+            <a id="charts-content-button" href="#" class="nav-link">
+                <i class="fas fa-fw fa-chart-area"></i>
+                <span>Попытки обучения</span></a>
+        </li>
+
+        <!-- Nav Item - Tables -->
+        <li class="nav-item">
+            <a class="nav-link" >
+                <i class="fas fa-fw fa-table"></i>
+                <span>Отчеты</span></a>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider d-none d-md-block">
+
+        <!-- Sidebar Toggler (Sidebar) -->
+        <div class="text-center d-none d-md-inline">
+            <button class="rounded-circle border-0" id="sidebarToggle"></button>
+        </div>
+
+    </ul>
+
+</body>
+</html>
