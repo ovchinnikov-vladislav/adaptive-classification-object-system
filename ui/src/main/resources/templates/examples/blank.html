@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>AdaptNet Sim - Error</title>
+    <title>AdaptNet Sim - Blank</title>
 
     <!-- Custom fonts for this template-->
     <link th:href="@{/vendor/fontawesome-free/css/all.min.css}" rel="stylesheet" type="text/css">
@@ -28,7 +28,7 @@
     <div id="wrapper">
 
         <!-- Sidebar -->
-        <!--div th:replace="fragments/sidebar :: sidebar"></div-->
+        <div th:replace="fragments/sidebar :: sidebar"></div>
         <!-- End of Sidebar -->
 
         <!-- Content Wrapper -->
@@ -38,19 +38,14 @@
             <div id="content">
 
                 <!-- Topbar -->
-                <!--div th:replace="fragments/topbar :: topbar"></div-->
+                <div th:replace="fragments/topbar :: topbar(${user_attributes.get('name')})"></div>
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
-                <div class="container-fluid" style="margin-top: 50px; height: 60vh">
+                <div class="container-fluid">
 
-                    <!-- 404 Error Text -->
-                    <div class="text-center">
-                        <div class="error mx-auto">[[${status}]]</div>
-                        <p class="lead text-gray-800 mb-5">[[${text}]]</p>
-                        <p class="text-gray-500 mb-0">[[${additional_text}]]</p>
-                        <a th:href="@{/}">&larr; Назад в ЛК</a>
-                    </div>
+                    <!-- Page Heading -->
+                    <h1 class="h3 mb-4 text-gray-800">Blank Page</h1>
 
                 </div>
                 <!-- /.container-fluid -->
@@ -74,7 +69,7 @@
     </a>
 
     <!-- Logout Modal-->
-    <!--div th:replace="fragments/logout :: logout_modal"></div-->
+    <div th:replace="fragments/logout :: logout_modal"></div>
 
     <!-- Bootstrap core JavaScript-->
     <script th:src="@{/vendor/jquery/jquery.min.js}"></script>
