@@ -59,11 +59,6 @@ public class FragmentController {
         return "fragments/settings :: settings_content";
     }
 
-    @GetMapping("/video_content")
-    public String videoContent() {
-        return "fragments/video :: video_content";
-    }
-
     @GetMapping("/activity_content")
     public String lkErrorContent() {
         return "fragments/activity :: activity_content";

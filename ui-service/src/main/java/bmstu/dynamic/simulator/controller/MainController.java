@@ -64,9 +64,4 @@ public class MainController {
         return "pages/activity";
     }
 
-    @GetMapping("/error/{status}")
-    public String error(@PathVariable Integer status, Model model, ServerHttpResponse response) {
-        modelService.prepareErrorModelForTemplate(model, status, response);
-        return "pages/error";
-    }
 }

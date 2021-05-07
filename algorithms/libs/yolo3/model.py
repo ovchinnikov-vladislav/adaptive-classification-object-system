@@ -8,9 +8,9 @@ import time
 
 class YoloModel:
     def __init__(self, num_classes=80,
-                 weights='./model_data/yolov3.tf',
-                 classes='./model_data/coco_classes_ru.txt',
-                 anchors_path='./model_data/yolo_anchors.txt',
+                 weights='../model_data/yolov3.tf',
+                 classes='../model_data/coco_classes_ru.txt',
+                 anchors_path='../model_data/yolo_anchors.txt',
                  size=416):
         anchors = get_anchors(anchors_path)
         self.yolo = yolo_v3(anchors, size=size, channels=3, classes=num_classes)

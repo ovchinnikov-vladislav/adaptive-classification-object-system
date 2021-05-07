@@ -22,7 +22,7 @@
 
 </head>
 
-<body id="page-top">
+<body style="background-color: #f8f9fc">
 
     <!-- Page Wrapper -->
     <div id="wrapper">
@@ -34,17 +34,7 @@
             <div id="content">
 
                 <!-- Begin Page Content -->
-                <div class="container-fluid" style="margin-top: 30vh; height: 100vh">
-
-                    <!-- 404 Error Text -->
-                    <div class="text-center">
-                        <div class="error mx-auto">[[${status}]]</div>
-                        <p class="lead text-gray-800 mb-5">[[${text}]]</p>
-                        <p class="text-gray-500 mb-0">[[${additional_text}]]</p>
-                        <a th:href="@{/}">&larr; Назад в ЛК</a>
-                    </div>
-
-                </div>
+                <div th:replace="fragments/error :: error_content"></div>
                 <!-- /.container-fluid -->
 
             </div>

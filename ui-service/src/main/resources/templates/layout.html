@@ -20,6 +20,7 @@
 
     <!-- Custom styles for this template -->
     <link th:href="@{/css/capssim.css}" rel="stylesheet">
+    <link th:href="@{/css/loader.css}" rel="stylesheet">
 
     <!-- Custom styles for this page -->
     <link th:href="@{/vendor/datatables/dataTables.bootstrap4.min.css}" rel="stylesheet">
@@ -49,10 +50,11 @@
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <section id="replace_section" layout:fragment="content">
+                    <section id="replace-section" layout:fragment="content">
                         <!-- Thymeleaf Fragment -->
                     </section>
 
+                    <div id="loading-ring" class="loader" style="display: none; margin-top: 30vh">Loading...</div>
                 </div>
                 <!-- /.container-fluid -->
 
@@ -85,7 +87,7 @@
 
     <!-- Custom scripts for all pages-->
     <script th:src="@{/js/capssim.min.js}"></script>
-    <script th:src="@{/js/event.js}"></script>
+    <script th:src="@{/js/event_menu.js}"></script>
 
     <!-- Page level plugins -->
     <script th:src="@{/vendor/datatables/jquery.dataTables.min.js}"></script>

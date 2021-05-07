@@ -19,7 +19,7 @@ public class VideoStreamController {
 
     private final VideoStreamService videoStreamService;
 
-    @GetMapping("/")
+    @GetMapping("/stream")
     public Mono<String> streamVideo(Model model,
                                     @RegisteredOAuth2AuthorizedClient OAuth2AuthorizedClient authorizedClient,
                                     @AuthenticationPrincipal OAuth2User oauth2User) {
@@ -30,6 +30,11 @@ public class VideoStreamController {
             model.addAttribute("video", result);
             return "pages/video";
         });
+    }
+
+    @GetMapping("/video_content")
+    public String videoContent() {
+        return "fragments/video :: video_content";
     }
 
 }

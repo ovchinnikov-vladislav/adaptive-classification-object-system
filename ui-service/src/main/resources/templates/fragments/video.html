@@ -6,7 +6,7 @@
 </head>
 <body>
 
-<div th:fragment="video_content" class="container-fluid" style="height: 100vh;">
+<div th:fragment="video_content" class="container-fluid">
 
     <!-- Page Heading -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -16,24 +16,41 @@
     </div>
 
     <div class="row">
-        <div class="col-xl-12 col-lg-7">
+        <div class="col-xl-12 col-lg-12">
             <div class="card shadow mb-4">
                 <!-- Card Header - Dropdown -->
                 <div
                         class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Видео</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Параметры</h6>
                 </div>
                 <!-- Card Body -->
                 <div class="card-body">
-                    <div class="form-group row justify-content-center">
-                        <div class="col-sm-10 mb-3 mb-sm-0">
-                            <input type="text" class="form-control form-control-user" id="exampleFirstName"
-                                   placeholder="http://путь_до_видео">
+                    <div class="row mb-3">
+                        <div class="form-check ml-4">
+                            <input class="form-check-input" type="radio" name="videoRadioButtonGroup"
+                                   id="youtube-video-radio-button" checked>
+                            <label class="form-check-label" for="youtube-video-radio-button">
+                                Youtube-video
+                            </label>
                         </div>
-                        <div class="col-sm-1">
-                            <a href="#" class="btn btn-success btn-circle">
-                                <i class="fas fa-check"></i>
-                            </a>
+                        <div class="form-check ml-2">
+                            <input class="form-check-input" type="radio" name="videoRadioButtonGroup"
+                                   id="video-camera-radio-button">
+                            <label class="form-check-label" for="video-camera-radio-button">
+                                Video-camera
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group row justify-content-center">
+                        <div class="input-group ml-4 mr-4">
+                            <input id="video-addr-input" type="text" class="form-control bg-light border-0 small"
+                                   placeholder="Индекс Youtube-видео из URL, например, My_fX46HMH4"
+                                   aria-label="Search" aria-describedby="basic-addon2">
+                            <div class="input-group-append">
+                                <button class="btn btn-primary" type="button">
+                                    <i class="fas fa-check fa-sm"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -52,7 +69,8 @@
                 </div>
                 <!-- Card Body -->
                 <div class="card-body">
-                    <img src="http://127.0.0.1:5000/video_feed/9XrNe8cpgqU" class="border" style="height: 100%; width: 100%; border-radius: 5px;"/>
+                    <img id="video-content" th:src="@{/img/video-player-placeholder-very-large.png}"
+                         style="height: 100%; width: 100%; border-radius: 5px;"/>
                 </div>
             </div>
         </div>
@@ -66,11 +84,28 @@
                 </div>
                 <!-- Card Body -->
                 <div class="card-body">
-
+                    <p class="mb-0 small">Пока объекты не обнаружены и не классифицированы. Вы не запустили
+                    процесс распознавания или алгоритм пока ничего не обнаружил.</p>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        $(document).ready(function () {
+            $('input[type=radio][name=videoRadioButtonGroup]').change(function() {
+                let video_addr_input = document.getElementById("video-addr-input");
+                switch ($(this).prop('id')) {
+                    case 'youtube-video-radio-button':
+                        video_addr_input.placeholder = 'Индекс Youtube-видео из URL, например, My_fX46HMH4';
+                        break;
+                    case 'video-camera-radio-button':
+                        video_addr_input.placeholder = 'Полный URL-адрес трансляции MJpeg';
+                        break;
+                }
+            });
+        })
+    </script>
 
 </div>
 
