@@ -16,9 +16,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequiredArgsConstructor
 public class FragmentController {
 
-    @Value("${services.caps-visual.url}")
-    private String capsVisualUrl;
-
     @GetMapping("/sidebar")
     public String sidebar() {
         return "fragments/sidebar";

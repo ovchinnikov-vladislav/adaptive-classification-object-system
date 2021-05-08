@@ -3,7 +3,7 @@ from PIL import ImageDraw, ImageFont, Image
 import numpy as np
 import tensorflow as tf
 import cv2
-from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
+import config
 
 YOLOV3_LAYER_LIST = [
     'yolo_darknet',
@@ -153,7 +153,7 @@ def analyze_outputs(img, outputs, class_names, colors):
     boxes, scores, classes, nums = outputs
     wh = np.flip(img.shape[0:2])
     img = Image.fromarray(img)
-    font = ImageFont.truetype(font='font/Roboto-Regular.ttf',
+    font = ImageFont.truetype(font=config.font_cv,
                               size=np.floor(3e-2 * img.size[1] + 0.5).astype('int32'))
     thickness = (img.size[0] + img.size[1]) // 300
     object_detection = []

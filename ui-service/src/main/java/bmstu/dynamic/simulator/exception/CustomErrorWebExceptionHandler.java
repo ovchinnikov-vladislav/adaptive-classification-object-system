@@ -1,5 +1,6 @@
 package bmstu.dynamic.simulator.exception;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.web.ResourceProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
@@ -21,6 +22,7 @@ import java.util.Objects;
 import static org.springframework.web.reactive.function.server.RequestPredicates.all;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
+@Slf4j
 public class CustomErrorWebExceptionHandler extends AbstractErrorWebExceptionHandler {
 
     public CustomErrorWebExceptionHandler(ErrorAttributes errorAttributes, ResourceProperties resourceProperties, ApplicationContext applicationContext) {
@@ -36,6 +38,8 @@ public class CustomErrorWebExceptionHandler extends AbstractErrorWebExceptionHan
         Throwable throwable = (Throwable) serverRequest
                 .attribute("org.springframework.boot.web.reactive.error.DefaultErrorAttributes.ERROR")
                 .orElseThrow(() -> new IllegalStateException("Missing exception attribute in ServerWebExchange"));
+
+        log.error("handle error", throwable);
 
         String code = "";
         if (throwable != null && throwable.getMessage() != null) {

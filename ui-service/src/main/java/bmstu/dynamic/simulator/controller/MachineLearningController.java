@@ -21,7 +21,7 @@ public class MachineLearningController {
 
     private final CapsVisualizationService service;
 
-    @Value("${services.caps-visual.url}")
+    @Value("${services.caps-visual-url}")
     private String capsVisualUrl;
 
     @GetMapping("/capsnet")

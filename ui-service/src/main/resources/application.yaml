@@ -8,19 +8,20 @@ spring:
     oauth2:
       resource-server:
         jwt:
-          jwk-set-uri: ${services.auth.url}/realms/bmstu/protocol/openid-connect/certs
+          jwk-set-uri: ${services.auth-url}/realms/bmstu/protocol/openid-connect/certs
       client:
         provider:
           keycloak:
-            issuer-uri: ${services.auth.url}/realms/bmstu
-            authorization-uri: ${services.auth.url}/realms/bmstu/protocol/openid-connect/auth
-            token-uri: ${services.auth.url}/realms/bmstu/protocol/openid-connect/token
-            user-info-uri: ${services.auth.url}/realms/bmstu/protocol/openid-connect/userinfo
+            issuer-uri: ${services.auth-url}/realms/bmstu
+            authorization-uri: ${services.auth-url}/realms/bmstu/protocol/openid-connect/auth
+            token-uri: ${services.auth-url}/realms/bmstu/protocol/openid-connect/token
+            user-info-uri: ${services.auth-url}/realms/bmstu/protocol/openid-connect/userinfo
         registration:
           keycloak:
             client-id: bmstu
             client-secret: 5fac7131-7bcc-41f6-bd2e-e78dfab18dfb
 
 services:
-  auth.url: http://192.168.0.13:8080/auth
-  caps-visual.url: http://localhost:8081/
+  auth-url: http://192.168.0.13:8080/auth
+  caps-visual-url: http://localhost:8081/
+  machine-learning-url: http://127.0.0.1:5000/

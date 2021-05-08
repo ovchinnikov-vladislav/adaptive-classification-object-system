@@ -1,9 +1,28 @@
 package bmstu.dynamic.simulator.service;
 
+import bmstu.dynamic.simulator.client.MachineLearningClient;
+import bmstu.dynamic.simulator.config.ServicesProperties;
+import com.google.common.net.HttpHeaders;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.openfeign.support.SpringMvcContract;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferFactory;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ServerWebExchange;
+import reactivefeign.ReactiveContract;
+import reactivefeign.webclient.WebReactiveFeign;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -14,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static bmstu.dynamic.simulator.config.VideoStreamConstants.ACCEPT_RANGES;
 import static bmstu.dynamic.simulator.config.VideoStreamConstants.BYTES;
@@ -26,7 +46,20 @@ import static bmstu.dynamic.simulator.config.VideoStreamConstants.VIDEO_CONTENT;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class VideoStreamService {
+
+    private final ServicesProperties properties;
+
+    public Flux<DataBuffer> getYoutubeVideoContent(String videoId) {
+        WebClient client = WebClient.create(properties.getMachineLearningUrl());
+
+        return client.get()
+                .uri("/video_feed/" + videoId)
+                .accept(MediaType.TEXT_HTML)
+                .retrieve()
+                .bodyToFlux(DataBuffer.class);
+    }
 
     /**
      * Prepare the content.
