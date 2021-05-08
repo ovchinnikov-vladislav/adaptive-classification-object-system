@@ -130,7 +130,7 @@ class YoloTrackingModel:
         detections = [Detection(bbox, score, class_name, int(class_id), feature)
                       for bbox, score, class_name, class_id, feature
                       in zip(converted_boxes, scores[0], names, classes, features)
-                      if class_name == 'человек']
+                      if class_name == 'человек' or class_name == 'person']
 
         # run non-maxima suppresion
         boxs = np.array([d.tlwh for d in detections])
