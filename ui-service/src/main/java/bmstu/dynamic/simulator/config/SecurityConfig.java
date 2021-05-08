@@ -1,15 +1,20 @@
 package bmstu.dynamic.simulator.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.client.oidc.web.server.logout.OidcClientInitiatedServerLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.logout.ServerLogoutSuccessHandler;
+import org.springframework.security.web.server.ui.LoginPageGeneratingWebFilter;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 
 import java.net.URI;
 
@@ -25,33 +30,31 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.resource-server.jwt.jwk-set-uri}")
     private String jwtUri;
 
-    private final ReactiveClientRegistrationRepository clientRegistrationRepository;
+    @Autowired
+    ReactiveClientRegistrationRepository clientRegistrationRepository;
+
+    ServerLogoutSuccessHandler oidcLogoutSuccessHandler() {
+        var successHandler = new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
+        successHandler.setPostLogoutRedirectUri(URI.create("http://localhost:8080/"));
+        return successHandler;
+    }
+
 
     @Bean
-    SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) throws Exception {
+    SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
+
         http
                 .csrf().disable()
                 .authorizeExchange()
-                .pathMatchers("/error/**").permitAll()
+                .pathMatchers("/error/**", "/login**", "/video**").permitAll()
                 .pathMatchers("/css/**", "/img/**", "/js/**", "/scss/**", "/vendor/**").permitAll()
                 .anyExchange().authenticated()
-                .and()
-                .oauth2Login()
-                .and()
-                .logout(logout -> logout.logoutSuccessHandler(oidcLogoutSuccessHandler()))
-                .oauth2ResourceServer()
-                .jwt()
-                .jwkSetUri(jwtUri);
+                .and().logout().logoutSuccessHandler(oidcLogoutSuccessHandler())
+                // enable OAuth2/OIDC
+                .and().oauth2Login()
+                .and().oauth2ResourceServer().jwt().jwkSetUri(jwtUri)
+                ;
         return http.build();
-    }
-
-    private ServerLogoutSuccessHandler oidcLogoutSuccessHandler() {
-        OidcClientInitiatedServerLogoutSuccessHandler oidcLogoutSuccessHandler =
-                new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
-
-        oidcLogoutSuccessHandler.setPostLogoutRedirectUri(URI.create("http://localhost:8080/"));
-
-        return oidcLogoutSuccessHandler;
     }
 
 }

@@ -2,7 +2,7 @@ import queue
 import cv2
 import numpy as np
 import time
-from libs.yolo3.model import YoloModel
+from libs.yolo3.model import YoloDetectionModel
 import threading
 from urllib import request
 from PIL import Image
@@ -33,7 +33,7 @@ def thread_output_image():
 
 
 if __name__ == '__main__':
-    yolo = YoloModel()
+    yolo = YoloDetectionModel()
     inputThread = threading.Thread(target=thread_input_image, args=('http://192.168.0.16:8080/shot.jpg', yolo))
     inputThread.start()
     outputThread = threading.Thread(target=thread_output_image)

@@ -4,6 +4,7 @@ import time
 import numpy as np
 import colorsys
 import random
+import streamlink
 import matplotlib.pyplot as plt
 from libs.yolo3.utils import transform_images, convert_boxes
 from libs.deepsort import preprocessing, nn_matching
@@ -12,7 +13,6 @@ from libs.deepsort.tracker import Tracker
 from libs.deepsort.box_encoder import create_box_encoder
 from libs.yolo3.layers import yolo_v3
 from PIL import Image, ImageFont, ImageDraw
-from libs.yolo4.layers import yolo_v4
 from libs.yolo3.utils import get_anchors
 
 
@@ -74,7 +74,12 @@ if __name__ == '__main__':
 
     class_names = [c.strip() for c in open('model_data/coco_classes_ru.txt').readlines()]
 
-    vid = cv2.VideoCapture('other/test.mp4')
+    # vid = cv2.VideoCapture('other/test.mp4')
+    url = f'https://www.youtube.com/watch?v=My_fX46HMH4'
+
+    streams = streamlink.streams(url)
+    vid = cv2.VideoCapture(streams["720p"].url)
+    vid.set(cv2.CAP_PROP_FPS, 16)
 
     fps = 0.0
     count = 0

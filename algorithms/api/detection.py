@@ -1,9 +1,7 @@
-from flask import Blueprint, Response, abort
-from api.model.video_camera import YoutubeDetectionCamera
+from flask import Blueprint, Response
+from api.model.video_camera import YoutubeCamera
 
 detection_api = Blueprint('detection_api', __name__)
-
-model = None
 
 
 def gen(cam):
@@ -16,5 +14,5 @@ def gen(cam):
 
 @detection_api.route('/video_feed/<video_id>')
 def video_feed(video_id):
-    camera = YoutubeDetectionCamera(model, video_id)
+    camera = YoutubeCamera(video_id)
     return Response(gen(camera), mimetype='multipart/x-mixed-replace;boundary=frame')
