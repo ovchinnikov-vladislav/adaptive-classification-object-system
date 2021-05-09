@@ -54,42 +54,6 @@ class YoloDetectionModel:
         return img, object_detection
 
 
-def output(img, tracks, colors):
-    img = Image.fromarray(img)
-    font = ImageFont.truetype(font=config.font_cv,
-                              size=np.floor((3e-2 * img.size[1] + 0.5) / 2).astype('int32'))
-    thickness = 1
-    detection_obj = []
-    for track in tracks:
-        if not track.is_confirmed() or track.time_since_update > 1:
-            continue
-        predicted_class = track.get_class()
-        bbox = track.to_tlbr()
-
-        label = f'{predicted_class} - №{track.track_id} - {track.score:.2f}'
-        draw = ImageDraw.Draw(img)
-        label_size = draw.textsize(label, font)
-
-        x1, y1 = bbox[0], bbox[1]
-        x2, y2 = bbox[2], bbox[3]
-
-        if y1 - label_size[1] >= 0:
-            text_origin = np.array([x1, y1 - label_size[1]])
-        else:
-            text_origin = np.array([x1, y1 + 5])
-
-        # My kingdom for a good redistributable image drawing library.
-        color = colors[int(track.track_id) % len(colors)]
-        color = [int(i * 255) for i in color]
-        for j in range(thickness):
-            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=tuple(color))
-        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=tuple(color))
-        draw.text(text_origin, label, fill=(255, 255, 255), font=font)
-        del draw
-
-    return np.asarray(img), detection_obj
-
-
 class YoloTrackingModel:
     def __init__(self, num_classes=80,
                  deepsort_weights=config.deepsort_model,
@@ -119,7 +83,7 @@ class YoloTrackingModel:
         img_in = tf.expand_dims(image, 0)
         img_in = transform_images(img_in, self.size)
 
-        boxes, scores, classes, nums = self.yolo.predict(img_in)
+        boxes, scores, classes, _ = self.yolo.predict(img_in)
         classes = classes[0]
         names = []
         for i in range(len(classes)):
@@ -146,6 +110,6 @@ class YoloTrackingModel:
         self.tracker.predict()
         self.tracker.update(detections)
 
-        img, det_info = output(image, self.tracker.tracks, colors)
+        img, det_info = analyze_outputs(image, self.tracker.tracks, colors)
 
         return img, det_info

@@ -25,10 +25,11 @@ YOLOV3_TINY_LAYER_LIST = [
 
 
 class ObjectDetection:
-    def __init__(self, clazz, box, score):
+    def __init__(self, clazz, box, score, num=-1):
         self.clazz = clazz
         self.box = box
         self.score = score
+        self.num = num
 
     def get_class(self):
         return self.clazz
@@ -39,11 +40,14 @@ class ObjectDetection:
     def get_score(self):
         return self.score
 
+    def get_num(self):
+        return self.num
+
     def __repr__(self):
-        return f'ObjectDetection[class = {self.clazz}, box = {self.box}, score = {self.score}]'
+        return f'ObjectDetection[class = {self.clazz}, box = {self.box}, score = {self.score}, num = {self.num}]'
 
     def __str__(self):
-        return f'ObjectDetection[class = {self.clazz}, box = {self.box}, score = {self.score}]'
+        return f'ObjectDetection[class = {self.clazz}, box = {self.box}, score = {self.score}, num = {self.num}]'
 
 
 def yolo_boxes(pred, anchors, classes):
@@ -184,6 +188,44 @@ def analyze_outputs(img, outputs, class_names, colors):
         del draw
 
     return np.asarray(img), object_detection
+
+
+def analyze_outputs(img, tracks, colors):
+    img = Image.fromarray(img)
+    font = ImageFont.truetype(font=config.font_cv,
+                              size=np.floor((3e-2 * img.size[1] + 0.5) / 2).astype('int32'))
+    thickness = 1
+    object_detection = []
+    for track in tracks:
+        if not track.is_confirmed() or track.time_since_update > 1:
+            continue
+        predicted_class = track.get_class()
+        bbox = track.to_tlbr()
+
+        label = f'{predicted_class} - №{track.track_id} - {track.score:.2f}'
+        draw = ImageDraw.Draw(img)
+        label_size = draw.textsize(label, font)
+
+        x1, y1 = bbox[0], bbox[1]
+        x2, y2 = bbox[2], bbox[3]
+
+        if y1 - label_size[1] >= 0:
+            text_origin = np.array([x1, y1 - label_size[1]])
+        else:
+            text_origin = np.array([x1, y1 + 5])
+
+        object_detection.append(ObjectDetection(predicted_class, (x1, y1, x2, y2), track.score, track.track_id))
+
+        # My kingdom for a good redistributable image drawing library.
+        color = colors[int(track.track_id) % len(colors)]
+        color = [int(i * 255) for i in color]
+        for j in range(thickness):
+            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=tuple(color))
+        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=tuple(color))
+        draw.text(text_origin, label, fill=(255, 255, 255), font=font)
+        del draw
+
+    return np.asarray(img),  object_detection
 
 
 def draw_labels(x, y, class_names):

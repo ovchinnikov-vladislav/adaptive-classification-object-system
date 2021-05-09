@@ -76,7 +76,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">Видео</h6>
                 </div>
                 <!-- Card Body -->
-                <div class="card-body">
+                <div class="card-body" style="display: flex; align-items: flex-start;">
                     <img id="video-content" th:src="@{/img/video-player-placeholder-very-large.png}"/>
                 </div>
             </div>
@@ -93,6 +93,20 @@
                 <div class="card-body">
                     <p class="mb-0 small">Пока объекты не обнаружены и не классифицированы. Вы не запустили
                     процесс распознавания или алгоритм пока ничего не обнаружил.</p>
+                    <table id="allMovies" class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th width="70%">Здесь будут объекты</th>
+                            <th>Score</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr class="result" data-th-each="d : ${data}">
+                            <td>[[${d.name}]]</td>
+                            <td>[[${d.score}]]</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
