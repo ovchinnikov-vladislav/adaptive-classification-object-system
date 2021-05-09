@@ -43,8 +43,6 @@ class YoutubeCamera:
         url = f'https://www.youtube.com/watch?v={video_id}'
 
         streams = streamlink.streams(url)
-        # self.video = cv2.VideoCapture(streams["720p"].url)
-        # self.video.set(cv2.CAP_PROP_FPS, 16)
         self.threaded_camera = ThreadedCamera(streams["720p"].url)
 
     def get_frame(self):
