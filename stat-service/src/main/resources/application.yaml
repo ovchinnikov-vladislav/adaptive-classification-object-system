@@ -1,6 +1,29 @@
 server:
   port: 8082
 
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: "Stat Service API"
+#  rabbitmq:
+#    listener:
+#      simple:
+#        auto-startup: true
+#        retry:
+#          enabled: true
+#          initial-interval: 1000
+#          max-attempts: 3
+#          multiplier: 5
+#          max-interval: 60000
+
+mongo:
+  hosts: 192.168.0.13
+  ssl: false
+  username: stat
+  password: stat
+  database: stat
+
 #spring:
 #  main:
 #    web-application-type: reactive

@@ -21,8 +21,8 @@ dependencies {
     implementation 'io.springfox:springfox-swagger-ui:2.9.2'
     implementation 'com.h2database:h2'
     implementation 'org.postgresql:postgresql'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
     implementation 'com.google.guava:guava:28.1-jre'
-
     // Security
 //    implementation 'org.springframework.security:spring-security-config'
 //    implementation 'org.springframework.security:spring-security-oauth2-jose'

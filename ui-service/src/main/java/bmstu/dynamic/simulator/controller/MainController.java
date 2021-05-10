@@ -2,6 +2,7 @@ package bmstu.dynamic.simulator.controller;
 
 import bmstu.dynamic.simulator.service.ModelService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +22,7 @@ import reactor.core.publisher.Mono;
 @Controller
 @RequestMapping("/")
 @RequiredArgsConstructor
+@Slf4j
 public class MainController {
 
     private final ModelService modelService;
@@ -33,7 +35,7 @@ public class MainController {
         model.addAttribute("user_attributes", oauth2User.getAttributes());
         model.addAttribute("client_name", authorizedClient.getClientRegistration().getClientName());
 
-        return "pages/index";
+        return "layout";
     }
 
     @GetMapping("/profile")
@@ -53,6 +55,7 @@ public class MainController {
         model.addAttribute("user_id", oauth2User.getName());
         model.addAttribute("user_attributes", oauth2User.getAttributes());
         model.addAttribute("client_name", authorizedClient.getClientRegistration().getClientName());
+
         return "pages/settings";
     }
 

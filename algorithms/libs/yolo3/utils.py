@@ -4,6 +4,9 @@ import numpy as np
 import tensorflow as tf
 import cv2
 import config
+import base64
+from io import BytesIO
+
 
 YOLOV3_LAYER_LIST = [
     'yolo_darknet',
@@ -25,11 +28,12 @@ YOLOV3_TINY_LAYER_LIST = [
 
 
 class ObjectDetection:
-    def __init__(self, clazz, box, score, num=-1):
+    def __init__(self, clazz, box, score, num=-1, img=None):
         self.clazz = clazz
         self.box = box
         self.score = score
         self.num = num
+        self.img = img
 
     def get_class(self):
         return self.clazz
@@ -42,6 +46,9 @@ class ObjectDetection:
 
     def get_num(self):
         return self.num
+
+    def get_img(self):
+        return self.img
 
     def __repr__(self):
         return f'ObjectDetection[class = {self.clazz}, box = {self.box}, score = {self.score}, num = {self.num}]'
@@ -191,9 +198,13 @@ def analyze_outputs(img, outputs, class_names, colors):
 
 
 def analyze_outputs(img, tracks, colors):
+    before_img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    before_img = Image.fromarray(before_img)
     img = Image.fromarray(img)
     font = ImageFont.truetype(font=config.font_cv,
                               size=np.floor((3e-2 * img.size[1] + 0.5) / 2).astype('int32'))
+    draw = ImageDraw.Draw(img)
+
     thickness = 1
     object_detection = []
     for track in tracks:
@@ -203,7 +214,7 @@ def analyze_outputs(img, tracks, colors):
         bbox = track.to_tlbr()
 
         label = f'{predicted_class} - №{track.track_id} - {track.score:.2f}'
-        draw = ImageDraw.Draw(img)
+
         label_size = draw.textsize(label, font)
 
         x1, y1 = bbox[0], bbox[1]
@@ -214,7 +225,14 @@ def analyze_outputs(img, tracks, colors):
         else:
             text_origin = np.array([x1, y1 + 5])
 
-        object_detection.append(ObjectDetection(predicted_class, (x1, y1, x2, y2), track.score, track.track_id))
+        img_crop = before_img.crop((int(x1), int(y1), int(x2), int(y2)))
+        buffered = BytesIO()
+        img_crop.save(buffered, format="JPEG")
+        img_bytes = base64.b64encode(buffered.getvalue())
+        img_str = img_bytes.decode('utf-8')
+
+        object_detection.append(ObjectDetection(predicted_class, (x1, y1, x2, y2), track.score,
+                                                track.track_id, img_str))
 
         # My kingdom for a good redistributable image drawing library.
         color = colors[int(track.track_id) % len(colors)]
@@ -223,7 +241,7 @@ def analyze_outputs(img, tracks, colors):
             draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=tuple(color))
         draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=tuple(color))
         draw.text(text_origin, label, fill=(255, 255, 255), font=font)
-        del draw
+    del draw
 
     return np.asarray(img),  object_detection
 

@@ -40,6 +40,9 @@ class Detection(object):
     def get_class_id(self):
         return self.class_id
 
+    def get_confidence(self):
+        return self.confidence
+
     def to_tlbr(self):
         """Convert bounding box to format `(min x, min y, max x, max y)`, i.e.,
         `(top left, bottom right)`.

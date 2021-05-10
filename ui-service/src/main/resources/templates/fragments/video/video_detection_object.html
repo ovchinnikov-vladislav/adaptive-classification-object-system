@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:fragment="headerfiles">
+    <meta charset="UTF-8"/>
+    <title></title>
+</head>
+<body>
+
+<div th:fragment="detection_objects_fragment" class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Номер</th>
+            <th>Совпадение</th>
+            <th>Класс объекта</th>
+            <th>Событие</th>
+            <th>Фото</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr class="result" data-th-each="d : ${detection_objects}">
+            <td>[[${d.numObject}]]</td>
+            <td>[[${d.score}]]</td>
+            <td>[[${d.clazz}]]</td>
+            <td></td>
+            <td><img style="width: 100px; height: 100px" th:src="${'data:image/jpeg;base64, ' + d.image}"/></td>
+            <td><a id="finish-detection-button" th:with="path=${d.detectionProcessId + '/' + d.numObject}"
+                   th:href="@{${'/video/detection_objects/'} + ${path}}"
+                   class="btn btn-primary btn-icon-split" target="_blank">
+                                        <span class="icon text-white-50">
+                                            <i class="fas fa-flag"></i>
+                                        </span>
+                <span class="text">Показать все изображения</span>
+            </a></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

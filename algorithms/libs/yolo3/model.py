@@ -41,7 +41,6 @@ class YoloDetectionModel:
         t1 = time.time()
         boxes, scores, classes, nums = self.yolo.predict(img)
         t2 = time.time()
-        print('Только время детекции: ' + str(int(1000 * (t2 - t1))))
         boxes, scores, classes, nums = boxes[0], scores[0], classes[0], nums[0]
 
         img = np.array(image)

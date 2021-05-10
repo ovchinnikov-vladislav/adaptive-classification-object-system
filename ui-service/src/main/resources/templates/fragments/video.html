@@ -68,7 +68,7 @@
 
     <div class="row">
 
-        <div class="col-xl-8 col-lg-7">
+        <div class="col-xl-12 col-lg-12">
             <div class="card shadow mb-4">
                 <!-- Card Header - Dropdown -->
                 <div
@@ -76,13 +76,20 @@
                     <h6 class="m-0 font-weight-bold text-primary">Видео</h6>
                 </div>
                 <!-- Card Body -->
-                <div class="card-body" style="display: flex; align-items: flex-start;">
-                    <img id="video-content" th:src="@{/img/video-player-placeholder-very-large.png}"/>
+                <div class="card-body" style="display: flex; align-items: flex-start; position: relative;">
+                    <img id="video-content-image" class="transparent25"
+                         th:src="@{/img/video-player-placeholder-very-large.png}" alt="video"/>
+                    <div id="loading-video-ring" class="loader"
+                         style="display: none; position: absolute; left:0; right:0; top:0; bottom:0; margin:auto;">
+                        Loading...</div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-lg-5">
+    </div>
+
+    <div class="row">
+        <div class="col-xl-12 col-lg-12">
             <div class="card shadow mb-4">
                 <!-- Card Header - Dropdown -->
                 <div
@@ -91,22 +98,10 @@
                 </div>
                 <!-- Card Body -->
                 <div class="card-body">
-                    <p class="mb-0 small">Пока объекты не обнаружены и не классифицированы. Вы не запустили
-                    процесс распознавания или алгоритм пока ничего не обнаружил.</p>
-                    <table id="allMovies" class="table table-striped">
-                        <thead>
-                        <tr>
-                            <th width="70%">Здесь будут объекты</th>
-                            <th>Score</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr class="result" data-th-each="d : ${data}">
-                            <td>[[${d.name}]]</td>
-                            <td>[[${d.score}]]</td>
-                        </tr>
-                        </tbody>
-                    </table>
+                    <div  id="detection-objects-div">
+                        <p class="mb-0 small">Пока объекты не обнаружены и не классифицированы. Вы не запустили
+                            процесс распознавания или алгоритм пока ничего не обнаружил.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -114,6 +109,9 @@
 
     <script>
         $(document).ready(function () {
+            let uuid_session = null;
+            let execute = null;
+
             $('input[type=radio][name=videoRadioButtonGroup]').change(function() {
                 let video_addr_input = document.getElementById("video-addr-input");
                 switch ($(this).prop('id')) {
@@ -127,20 +125,80 @@
             });
 
             $('#start-detection-button').click(function () {
+                uuid_session = generateUUID()
                 if ($('#youtube-video-radio-button').prop('checked') === true) {
-                    let url = '/video/youtube/' + $('#video-addr-input').prop('value');
-                    let video_content = $('#video-content')
-                    video_content.prop('src', url);
+                    let url = '/video/youtube/' + $('#video-addr-input').prop('value') + '/' + uuid_session;
+                    $('#video-content-image').prop('src', url);
+                    url = '/video/detection_objects/' + uuid_session;
+                    replaceDetectionObj(url);
+                    $("#loading-video-ring").css("display","block");
+                } else if ($('#video-camera-radio-button').prop('checked') === true) {
+                    let url = '/video/camera/' + uuid_session + '/?video_addr=' + $('#video-addr-input').prop('value')
+                    $('#video-content-image').prop('src', url)
+                    url = '/video/detection_objects/' + uuid_session;
+                    replaceDetectionObj(url);
+                    $("#loading-video-ring").css("display","block");
                 }
-            })
+            });
+
+            $('#video-content-image').on('load', function () {
+                if ($(this).prop('src').indexOf('/img/video-player-placeholder-very-large.png') < 0) {
+                    $(this).removeClass('transparent25');
+                }
+
+                $("#loading-video-ring").css("display","none");
+            });
 
             $('#finish-detection-button').click(function () {
-                let video_content = $('#video-content')
+                $("#detection-objects-div").html('<p class="mb-0 small">' +
+                    'Пока объекты не обнаружены и не классифицированы. Вы не запустили ' +
+                    'процесс распознавания или алгоритм пока ничего не обнаружил.</p>');
+                if (execute != null) {
+                    clearTimeout(execute);
+                    execute = null;
+                }
+                uuid_session = generateUUID();
+                let video_content = $('#video-content-image');
                 video_content.prop('src', '/img/video-player-placeholder-very-large.png');
-            })
+                video_content.addClass('transparent25');
+            });
+
+            $("#video-content-image").on("error", function () {
+                $(this).addClass('transparent25')
+                $(this).prop("src", "/img/video-player-placeholder-very-large.png");
+                $("#detection-objects-div").html('<p class="mb-0 small">' +
+                    'Пока объекты не обнаружены и не классифицированы. Вы не запустили ' +
+                    'процесс распознавания или алгоритм пока ничего не обнаружил.</p>');
+                if (execute != null) {
+                    clearTimeout(execute);
+                    execute = null;
+                }
+            });
+
+            function replaceDetectionObj(url) {
+                $.ajax({
+                    url: url,
+                    success: function(data, textStatus) {
+                        $("#detection-objects-div").html(data);
+                    },
+                    complete: function() {
+                        execute = setTimeout(function () {
+                            replaceDetectionObj(url);
+                        }, 5000)
+                    }
+                });
+            }
+
+            function generateUUID() {
+                let d = new Date().getTime();
+                return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                    var r = (d + Math.random() * 16) % 16 | 0;
+                    d = Math.floor(d / 16);
+                    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                });
+            }
         })
     </script>
-
 </div>
 
 </body>

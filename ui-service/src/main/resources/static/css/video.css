@@ -1,4 +1,9 @@
-#video-content {
+#video-content-image {
     width: 100%;
     height: 100%;
+}
+
+.transparent25 {
+    filter: alpha(Opacity=25);
+    opacity: 0.25;
 }

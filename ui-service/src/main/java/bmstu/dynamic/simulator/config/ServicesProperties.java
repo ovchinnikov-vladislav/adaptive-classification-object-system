@@ -12,5 +12,6 @@ public class ServicesProperties {
     private String authUrl;
     private String capsVisualUrl;
     private String machineLearningUrl;
+    private String statUrl;
 
 }
