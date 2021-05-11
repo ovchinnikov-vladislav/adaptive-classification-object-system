@@ -16,7 +16,7 @@ parser.add_argument('--pretrained', default=False, type=bool, help='pretrained m
 parser.add_argument('--batch_size', default=32, type=int, help='batch size')
 parser.add_argument('--size', default=416, type=int, help='size image')
 parser.add_argument('--channels', default=3, type=int, help='channels')
-parser.add_argument('--training_path', default='./', help='training data path')
+parser.add_argument('--training_path', default='./', help='train data path')
 parser.add_argument('--update_annotation', default=1, type=int, help='update annotation path to files')
 parser.add_argument('--epochs', default=100, type=int, help='epochs number')
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         ReduceLROnPlateau(verbose=1),
         EarlyStopping(patience=3, verbose=1),
         ModelCheckpoint(training_path + '/checkpoints/yolov3_train_{epoch}.tf', verbose=1, save_weights_only=True),
-        TensorBoard(log_dir='resources/data/logs')
+        TensorBoard(log_dir='../../resources/data/logs')
     ]
 
     history = model.fit(dataset,

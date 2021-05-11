@@ -12,7 +12,7 @@ if __name__ == '__main__':
     epochs = 30
     channels = 1
     class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    training_path = './'
+    training_path = '../../'
     num_classes = len(class_names)
 
     input_shape = (size, size)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         ReduceLROnPlateau(verbose=1),
         EarlyStopping(patience=3, verbose=1),
         ModelCheckpoint(training_path + '/checkpoints/yolov3_train_{epoch}.tf', verbose=1, save_weights_only=True),
-        TensorBoard(log_dir='resources/data/logs')
+        TensorBoard(log_dir='../../resources/data/logs')
     ]
 
     history = model.fit(dataset,

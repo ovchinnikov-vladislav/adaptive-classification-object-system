@@ -14,12 +14,12 @@ resources/data/coco_test_annotation.txt
 downloads/
 tensorboard-logs/
 resources/data/logs/
-basic_capsnet_train_test/capsnet_logs/
-diverse_capsnet_train_test/capsnet_logs/
-res_capsnet_train_test/capsnet_logs/
-res_capsnet_train_test/capsnet_logs/
-complex_capsnet_train_test/capsnet_logs/
-efficient_capsnet_train_test/capsnet_logs/
+train/basic_capsnet_train_test/capsnet_logs/
+train/diverse_capsnet_train_test/capsnet_logs/
+train/res_capsnet_train_test/capsnet_logs/
+train/res_capsnet_train_test/capsnet_logs/
+train/complex_capsnet_train_test/capsnet_logs/
+train/efficient_capsnet_train_test/capsnet_logs/
 log.*
 *.h5
 *.dat
@@ -27,6 +27,6 @@ yolov*
 *.weights
 checkpoint*
 resources/other/
-wider_face/
+resources/data/wider_face/
 resources/data/mnist_detection/
 coco/
