@@ -2,7 +2,7 @@ import numpy as np
 from tensorflow.keras import optimizers
 from libs.capsnets import losses
 from libs.capsnets.models.basic import CapsuleNetworkV1, CapsuleNetworkV2
-from libs import utls
+from libs import utils
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -21,7 +21,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # load data
-    (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
+    (x_train, y_train), (x_test, y_test) = utils.load(args.dataset)
     # define model
 
     if args.model == 'capsnet_v2':

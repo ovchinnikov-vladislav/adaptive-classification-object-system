@@ -1,9 +1,8 @@
 import cv2
 import colorsys
-import tensorflow as tf
 import numpy as np
-from libs.yolo4.utils import transform_images, analyze_outputs, load_weights
-from libs.yolo4.layers import yolo_v4
+from libs.yolo.v4.utils import analyze_outputs
+from libs.yolo.v4.layers import yolo_v4
 
 
 class YoloModel:

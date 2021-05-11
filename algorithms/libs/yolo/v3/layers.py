@@ -2,8 +2,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import (Concatenate, Input, Lambda, UpSampling2D)
-from libs.yolo3.utils import yolo_boxes, yolo_nms
-from libs.darknet53.layers import darknet_conv, darknet53, darknet53_tiny
+from libs.yolo.v3.utils import yolo_boxes, yolo_nms
+from libs.yolo.darknet53.layers import darknet_conv, darknet53, darknet53_tiny
 
 yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90),
                          (156, 198), (373, 326)], np.float32) / 416

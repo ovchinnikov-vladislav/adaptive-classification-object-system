@@ -1,11 +1,9 @@
 import colorsys
 import tensorflow as tf
 import numpy as np
-from libs.yolo3.utils import transform_images, convert_boxes, analyze_tracks_outputs, get_anchors
-from libs.yolo3.layers import yolo_v3, yolo_v3_tiny
-from libs.yolo4.layers import yolo_v4
+from libs.yolo.v3.utils import transform_images, convert_boxes, analyze_tracks_outputs, get_anchors
+from libs.yolo.v3.layers import yolo_v3
 import config
-import time
 from libs.deepsort import preprocessing, nn_matching
 from libs.deepsort.detection import Detection
 from libs.deepsort.tracker import Tracker

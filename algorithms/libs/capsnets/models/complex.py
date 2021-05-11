@@ -4,7 +4,7 @@ from tensorflow.keras.layers import (Input, Conv2D, BatchNormalization, Activati
 from tensorflow.keras.models import Model
 import tensorflow as tf
 from libs.resnets.blocks import residual_block, identity_block, conv_block
-from libs.utls import BaseModelForTraining
+from libs.utils import BaseModelForTraining
 
 
 class CapsuleNetworkWith3Level(BaseModelForTraining):

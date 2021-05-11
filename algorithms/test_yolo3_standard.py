@@ -1,4 +1,4 @@
-from libs.yolo3.model import YoloDetectionModel
+from libs.yolo3 import YoloDetectionModel
 from PIL import Image
 
 

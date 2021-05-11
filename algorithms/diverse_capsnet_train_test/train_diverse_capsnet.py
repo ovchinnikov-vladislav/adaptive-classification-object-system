@@ -1,4 +1,4 @@
-from libs import utls
+from libs import utils
 from libs.capsnets.models.diverse import DiverseCapsuleNetwork
 from tensorflow.keras import optimizers
 from libs.capsnets.losses import margin_loss
@@ -18,7 +18,7 @@ parser.add_argument('--save_dir', default='capsnet_logs')
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
+    (x_train, y_train), (x_test, y_test) = utils.load(args.dataset)
 
     builder = DiverseCapsuleNetwork(name=f'diverse_capsule_networks_{args.dataset}')
     model, _ = builder.build(input_shape=x_train.shape[1:],

@@ -2,7 +2,7 @@ from tensorflow.keras import layers, initializers
 from tensorflow.keras import backend
 import numpy as np
 import tensorflow as tf
-from libs import utls
+from libs import utils
 
 tfv1 = tf.compat.v1
 
@@ -303,7 +303,7 @@ class ConvolutionalCapsule(layers.Layer):
         return tuple(output_sh)
 
 
-class MatrixForTraining(utls.BaseModelForTraining):
+class MatrixForTraining(utils.BaseModelForTraining):
     def __init__(self, name='MatrixCapsuleNet'):
         super(MatrixForTraining, self).__init__(name=name)
         self.batch_size = None
@@ -365,9 +365,9 @@ class MatrixForTraining(utls.BaseModelForTraining):
 
 
 if __name__ == '__main__':
-    from libs import utls
+    from libs import utils
 
-    (x_train, y_train), (x_test, y_test) = utls.load('mnist')
+    (x_train, y_train), (x_test, y_test) = utils.load('mnist')
 
     model = MatrixForTraining()
     model.build(input_shape=(28, 28, 1))

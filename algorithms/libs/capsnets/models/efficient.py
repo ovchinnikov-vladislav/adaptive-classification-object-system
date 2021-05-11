@@ -3,7 +3,7 @@ from libs.capsnets.layers.basic import Length, Decoder
 from libs.capsnets.layers.efficient import PrimaryCapsule2D, Capsule
 from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, Activation
 from tensorflow.keras import Model
-from libs.utls import BaseModelForTraining
+from libs.utils import BaseModelForTraining
 
 
 class EfficientCapsuleNetwork(BaseModelForTraining):

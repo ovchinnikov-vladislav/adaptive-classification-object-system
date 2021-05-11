@@ -1,4 +1,4 @@
-from libs import utls
+from libs import utils
 from libs.capsnets.models.rescaps import ResCapsuleNetworkV1, ResCapsuleNetworkV2, Resnet50ToCapsuleNetwork
 from tensorflow.keras import optimizers
 from libs.capsnets.losses import margin_loss
@@ -20,7 +20,7 @@ parser.add_argument('--model', default='res_capsnet_v2', help='values: res_capsn
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
+    (x_train, y_train), (x_test, y_test) = utils.load(args.dataset)
 
     if args.model == 'res_capsnet_v2':
         model = ResCapsuleNetworkV2(name=f'res_capsnet_v2_{args.dataset}')

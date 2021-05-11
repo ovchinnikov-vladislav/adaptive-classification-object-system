@@ -3,11 +3,11 @@ from libs.capsnets.layers.residual import PrimaryCapsule2DWithConvOutput, Capsul
 from tensorflow.keras.layers import (Input, Conv2D, BatchNormalization, Activation)
 from tensorflow.keras.models import Model
 import tensorflow as tf
-from libs import utls
+from libs import utils
 from libs.resnets.blocks import relu_bn, residual_block, identity_block, conv_block
 
 
-class ResCapsuleNetworkV1(utls.BaseModelForTraining):
+class ResCapsuleNetworkV1(utils.BaseModelForTraining):
     def create(self, input_shape, **kwargs):
         self.is_decoder = True
 
@@ -47,7 +47,7 @@ class ResCapsuleNetworkV1(utls.BaseModelForTraining):
         return train_model, eval_model
 
 
-class ResCapsuleNetworkV2(utls.BaseModelForTraining):
+class ResCapsuleNetworkV2(utils.BaseModelForTraining):
     def create(self, input_shape, **kwargs):
         self.is_decoder = True
 
@@ -81,7 +81,7 @@ class ResCapsuleNetworkV2(utls.BaseModelForTraining):
         return train_model, eval_model
 
 
-class Resnet50ToCapsuleNetwork(utls.BaseModelForTraining):
+class Resnet50ToCapsuleNetwork(utils.BaseModelForTraining):
     def create(self, input_shape, **kwargs):
         self.is_decoder = True
 

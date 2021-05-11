@@ -1,8 +1,7 @@
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint, TensorBoard
-from libs.yolo3.layers import (yolo_v3, yolo_v3_tiny)
-from libs.yolo3.losses import yolo_loss
-from libs.capsyolo.layers import capsules_yolo
-from libs.yolo3.utils import get_anchors, data_generator_wrapper
+from libs.yolo3 import yolo_loss
+from libs.yolo.caps.layers import capsules_yolo
+from libs.yolo3 import get_anchors, data_generator_wrapper
 import tensorflow as tf
 import numpy as np
 
@@ -41,11 +40,11 @@ if __name__ == '__main__':
 
     dataset = tf.data.Dataset.from_generator(
         generator=lambda: map(tuple,
-                              data_generator_wrapper(train_lines, batch_size, input_shape, anchors, num_classes)),
+                              data_generator_wrapper(train_lines, batch_size, input_shape, anchors)),
         output_types=(tf.float32, (tf.float32, tf.float32, tf.float32)),
         output_shapes=(shape_input_image, (shape_output_0_image, shape_output_1_image, shape_output_2_image)))
     val_dataset = tf.data.Dataset.from_generator(
-        generator=lambda: map(tuple, data_generator_wrapper(val_lines, batch_size, input_shape, anchors, num_classes)),
+        generator=lambda: map(tuple, data_generator_wrapper(val_lines, batch_size, input_shape, anchors)),
         output_types=(tf.float32, (tf.float32, tf.float32, tf.float32)),
         output_shapes=(shape_input_image, (shape_output_0_image, shape_output_1_image, shape_output_2_image)))
 

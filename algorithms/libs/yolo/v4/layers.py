@@ -2,8 +2,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Input, Lambda, UpSampling2D
-from libs.yolo3.utils import yolo_boxes, yolo_nms
-from libs.darknet53.layers import darknet_conv, cspdarknet53
+from libs.yolo.v3.utils import yolo_boxes, yolo_nms
+from libs.yolo.darknet53.layers import darknet_conv, cspdarknet53
 
 
 def yolo_output(x_in, filters, anchors, classes, name=None):

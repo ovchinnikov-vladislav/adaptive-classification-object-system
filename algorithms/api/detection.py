@@ -4,7 +4,7 @@ import pika
 import json
 import config
 import logging
-from libs.yolo3.model import YoloDetectionModel, YoloTrackingModel
+from libs.yolo3 import YoloTrackingModel
 
 STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"

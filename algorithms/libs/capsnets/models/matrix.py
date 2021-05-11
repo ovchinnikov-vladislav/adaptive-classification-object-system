@@ -5,7 +5,7 @@ import tensorflow as tf
 from libs.capsnets.losses import spread_loss
 from libs.capsnets.metrics.matrix import matrix_accuracy
 from libs.capsnets.layers.matrix import PrimaryCapsule2D, ConvolutionalCapsule, ClassCapsule
-from libs import utls
+from libs import utils
 
 
 class MatrixCapsuleModel(Model):
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     coord_add = np.array(coord_add, dtype=np.float32) / 28.
 
-    (x_train, y_train), (x_test, y_test) = utls.load('fashion_mnist')
+    (x_train, y_train), (x_test, y_test) = utils.load('fashion_mnist')
     x_val = x_test[:9000]
     y_val = y_test[:9000]
     x_test = x_test[9000:]

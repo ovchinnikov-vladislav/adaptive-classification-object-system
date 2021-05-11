@@ -6,7 +6,7 @@ import libs.capsnets.layers.gamma as gamma_layers
 import libs.capsnets.metrics.gamma as gamma_metrics
 from tensorflow.keras import activations
 from libs.capsnets import losses
-from libs.utls import pgd
+from libs.utils import pgd
 
 
 class GammaCapsNet(tf.keras.Model):

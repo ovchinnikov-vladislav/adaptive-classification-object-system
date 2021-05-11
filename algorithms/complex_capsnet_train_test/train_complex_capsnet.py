@@ -4,7 +4,7 @@ from libs.capsnets.losses import margin_loss
 from libs.capsnets.models.complex import (CapsuleNetworkWith3Level, CapsuleNetworkWith4Level,
                                           ResCapsuleNetworkWith3LevelV1, ResCapsuleNetworkWith3LevelV2,
                                           ResCapsuleNetworkWith3LevelV3, Resnet50WithCapsuleNetworkWith3Level)
-from libs import utls
+from libs import utils
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -23,7 +23,7 @@ parser.add_argument('--model', default='res_capsnet_3level_v3', help='value: cap
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
+    (x_train, y_train), (x_test, y_test) = utils.load(args.dataset)
 
     if args.model == 'capsnet_4level':
         model = CapsuleNetworkWith4Level(name=f'capsnet_4level_{args.dataset}')

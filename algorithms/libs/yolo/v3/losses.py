@@ -1,9 +1,8 @@
 import tensorflow as tf
 from tensorflow.keras.backend import epsilon
-from tensorflow.keras.losses import (binary_crossentropy, categorical_crossentropy, sparse_categorical_crossentropy)
-from libs.yolo3.utils import yolo_boxes
+from tensorflow.keras.losses import (binary_crossentropy, sparse_categorical_crossentropy)
+from libs.yolo.v3.utils import yolo_boxes
 import numpy as np
-import sys
 
 
 def softmax_focal_loss(y_true, y_pred, gamma=2.0, alpha=0.25):

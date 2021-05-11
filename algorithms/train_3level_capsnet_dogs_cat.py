@@ -5,7 +5,7 @@ from tensorflow.keras import callbacks
 from libs.capsnets import losses
 from libs.capsnets.models.rescaps import capsnet_3level, res_capsnet_3level, res50_capsnet_3level
 from libs.capsnets.models.basic import caps_net_without_decoder
-from libs import utls
+from libs import utils
 import argparse
 import shutil, os
 
@@ -119,4 +119,4 @@ if __name__ == '__main__':
 
     print(f'Trained model saved to \'{args.save_dir}/trained_basic_capsnet_model_dogs_cats.h5\'')
 
-    utls.plot_log(args.save_dir + '/log.csv', show=True)
+    utils.plot_log(args.save_dir + '/log.csv', show=True)

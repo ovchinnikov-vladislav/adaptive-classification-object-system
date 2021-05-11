@@ -1,4 +1,4 @@
-from libs import utls
+from libs import utils
 from libs.capsnets.models.complex import (CapsuleNetworkWith3Level, CapsuleNetworkWith4Level,
                                           ResCapsuleNetworkWith3LevelV1, ResCapsuleNetworkWith3LevelV2,
                                           Resnet50WithCapsuleNetworkWith3Level, ResCapsuleNetworkWith3LevelV3)
@@ -20,7 +20,7 @@ parser.add_argument('--model', default='res_capsnet_3level_v3', help='value: cap
 if __name__ == '__main__':
     args = parser.parse_args()
 
-    (x_train, y_train), (x_test, y_test) = utls.load(args.dataset)
+    (x_train, y_train), (x_test, y_test) = utils.load(args.dataset)
 
     if args.model == 'capsnet_4level':
         _, model = CapsuleNetworkWith4Level(name=f'capsnet_4level_{args.dataset}') \
@@ -59,27 +59,27 @@ if __name__ == '__main__':
     # MNIST
     cm = confusion_matrix(np.argmax(y_test, 1), np.argmax(y_pred, 1))
     class_names = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    figure = utls.plot_confusion_matrix(cm, class_names, title='Матрица ошибок (трехуровневая капсульная сеть)', show=True)
+    figure = utils.plot_confusion_matrix(cm, class_names, title='Матрица ошибок (трехуровневая капсульная сеть)', show=True)
     figure.savefig(os.path.join(args.save_dir, f'confusion_matrix_{args.dataset}.png'))
 
     report = classification_report(np.argmax(y_test, 1), np.argmax(y_pred, 1))
-    figure = utls.ClassificationReportPlotWriter.plot(report, title='Отчет классификации (трехуровневая капсульная сеть)', show=True)
+    figure = utils.ClassificationReportPlotWriter.plot(report, title='Отчет классификации (трехуровневая капсульная сеть)', show=True)
     figure.savefig(os.path.join(args.save_dir, f'classification_report_{args.dataset}.png'))
 
-    img = utls.combine_images(np.concatenate([x_test[:50], x_recon[:50]]))
+    img = utils.combine_images(np.concatenate([x_test[:50], x_recon[:50]]))
     image = img * 255
     Image.fromarray(image.astype(np.uint8)).save(os.path.join(args.save_dir, f'real_and_recon_{args.dataset}.png'))
     plt.imshow(plt.imread(os.path.join(args.save_dir, f'real_and_recon_{args.dataset}.png')))
     plt.show()
 
-    utls.plot_log(os.path.join(args.save_dir, f'history_training_{args.dataset}.csv'),
+    utils.plot_log(os.path.join(args.save_dir, f'history_training_{args.dataset}.csv'),
                   'length_accuracy', 'val_length_accuracy',
                   'Точность (accuracy) при обучении', 'Точность (accuracy) при валидации',
                   'Значения метрики точности (accuracy) при обучении и при валидации',
-                  color='b', show=True, save_dir=args.save_dir)
+                   color='b', show=True, save_dir=args.save_dir)
 
-    utls.plot_log(os.path.join(args.save_dir, f'history_training_{args.dataset}.csv'),
+    utils.plot_log(os.path.join(args.save_dir, f'history_training_{args.dataset}.csv'),
                   'length_loss', 'val_length_loss',
                   'Потери (losses) при обучении', 'Потери (losses) при валидации',
                   'Значения метрики потери (loss) при обучении и при валидации',
-                  color='b', show=True, save_dir=args.save_dir)
+                   color='b', show=True, save_dir=args.save_dir)

@@ -1,10 +1,9 @@
 import cv2
-import streamlink
 import numpy as np
 from PIL import Image
 from urllib import request
 from timeit import default_timer as timer
-from libs.yolo3.model import YoloDetectionModel
+from libs.yolo3 import YoloDetectionModel
 import time
 
 
