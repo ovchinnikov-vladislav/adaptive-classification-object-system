@@ -10,8 +10,8 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--tiny', default=False, type=bool, help='yolov3 or yolov3-tiny')
-parser.add_argument('--weights', default='./model_data/yolov3.tf', help='path to weights file')
-parser.add_argument('--classes', default='./model_data/wider_classes.txt', help='path to classes file')
+parser.add_argument('--weights', default='./data/yolov3.tf', help='path to weights file')
+parser.add_argument('--classes', default='./data/wider_classes.txt', help='path to classes file')
 parser.add_argument('--dataset_path', default='D:/tensorflow_datasets/', help='path to download dataset')
 parser.add_argument('--pretrained', default=False, type=bool, help='pretrained model')
 parser.add_argument('--batch_size', default=1, type=int, help='batch size')
@@ -54,11 +54,11 @@ if __name__ == '__main__':
     input_shape = (size, size)
 
     if args.tiny:
-        anchors = get_anchors('./model_data/tiny_yolo_anchors.txt')
+        anchors = get_anchors('resources/data/tiny_yolo_anchors.txt')
         masks = np.array([[3, 4, 5], [0, 1, 2]])
         model = yolo_v3_tiny(anchors, size=size, channels=channels, classes=num_classes, training=True)
     else:
-        anchors = get_anchors('./model_data/yolo_anchors.txt')
+        anchors = get_anchors('resources/data/yolo_anchors.txt')
         masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
         model = capsules_yolo(anchors, size=size, channels=channels, classes=num_classes, training=True)
 
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         ReduceLROnPlateau(verbose=1),
         EarlyStopping(patience=3, verbose=1),
         ModelCheckpoint(training_path + '/checkpoints/yolov3_train_{epoch}.tf', verbose=1, save_weights_only=True),
-        TensorBoard(log_dir='logs')
+        TensorBoard(log_dir='resources/data/logs')
     ]
 
     history = model.fit(dataset,

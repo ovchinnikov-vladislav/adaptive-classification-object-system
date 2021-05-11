@@ -28,7 +28,7 @@ if __name__ == '__main__':
     num_train = len(train_lines)
     num_val = len(val_lines)
 
-    anchors = get_anchors('./model_data/yolo_anchors.txt')
+    anchors = get_anchors('resources/data/yolo_anchors.txt')
     masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
     model = capsules_yolo(anchors, size=size, channels=channels, classes=num_classes, training=True)
 
@@ -56,7 +56,7 @@ if __name__ == '__main__':
         ReduceLROnPlateau(verbose=1),
         EarlyStopping(patience=3, verbose=1),
         ModelCheckpoint(training_path + '/checkpoints/yolov3_train_{epoch}.tf', verbose=1, save_weights_only=True),
-        TensorBoard(log_dir='logs')
+        TensorBoard(log_dir='resources/data/logs')
     ]
 
     history = model.fit(dataset,

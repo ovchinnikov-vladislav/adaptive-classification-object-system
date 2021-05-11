@@ -10,7 +10,7 @@ import argparse
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--tiny', default=False, type=bool, help='yolov3 or yolov3-tiny')
-parser.add_argument('--weights', default='./model_data/yolov3.tf', help='path to weights file')
+parser.add_argument('--weights', default='./data/yolov3.tf', help='path to weights file')
 parser.add_argument('--dataset_path', default='./', help='path to download dataset')
 parser.add_argument('--pretrained', default=False, type=bool, help='pretrained model')
 parser.add_argument('--batch_size', default=32, type=int, help='batch size')
@@ -35,7 +35,8 @@ if __name__ == '__main__':
 
     input_shape = (size, size)
 
-    ann_train_path, ann_test_path, ann_val_path = coco_dataset_annotations(classes, args.dataset_path, update_annotation)
+    ann_train_path, ann_test_path, ann_val_path = coco_dataset_annotations(classes, args.dataset_path,
+                                                                           update_annotation)
 
     with open(ann_train_path) as f:
         train_lines = f.readlines()
@@ -47,11 +48,11 @@ if __name__ == '__main__':
     num_val = len(val_lines)
 
     if args.tiny:
-        anchors = get_anchors('./model_data/tiny_yolo_anchors.txt')
+        anchors = get_anchors('resources/data/tiny_yolo_anchors.txt')
         masks = np.array([[3, 4, 5], [0, 1, 2]])
         model = yolo_v3_tiny(anchors, size=size, channels=channels, classes=1, training=True)
     else:
-        anchors = get_anchors('./model_data/yolo_anchors.txt')
+        anchors = get_anchors('resources/data/yolo_anchors.txt')
         masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
         model = yolo_v3(anchors, size=size, channels=channels, classes=1, training=True)
 
@@ -79,7 +80,7 @@ if __name__ == '__main__':
         ReduceLROnPlateau(verbose=1),
         EarlyStopping(patience=3, verbose=1),
         ModelCheckpoint(training_path + '/checkpoints/yolov3_train_{epoch}.tf', verbose=1, save_weights_only=True),
-        TensorBoard(log_dir='logs')
+        TensorBoard(log_dir='resources/data/logs')
     ]
 
     history = model.fit(dataset,

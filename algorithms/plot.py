@@ -36,8 +36,8 @@ def plot_log(filename1, filename2, training_metric, val_metric, train_name1, tra
 
 
 if __name__ == '__main__':
-    plot_log(filename1=os.path.join('other', 'capsnet-basic-v1-cifar10-logs', 'history_training_cifar10.csv'),
-             filename2=os.path.join('other', 'complex-res-capsnet-3level-v3-cifar10-logs', 'history_training_cifar10.csv'),
+    plot_log(filename1=os.path.join('resources/other', 'capsnet-basic-v1-cifar10-logs', 'history_training_cifar10.csv'),
+             filename2=os.path.join('resources/other', 'complex-res-capsnet-3level-v3-cifar10-logs', 'history_training_cifar10.csv'),
              training_metric='length_accuracy',
              val_metric='val_length_accuracy',
              train_name1='Точность при обучении (исходная капсульная сеть)',
@@ -47,8 +47,8 @@ if __name__ == '__main__':
              title='Точность при обучении и при валидации',
              color1='b', color2='g', show=True)
 
-    plot_log(filename1=os.path.join('other', 'capsnet-basic-v1-cifar10-logs', 'history_training_cifar10.csv'),
-             filename2=os.path.join('other', 'complex-res-capsnet-3level-v3-cifar10-logs', 'history_training_cifar10.csv'),
+    plot_log(filename1=os.path.join('resources/other', 'capsnet-basic-v1-cifar10-logs', 'history_training_cifar10.csv'),
+             filename2=os.path.join('resources/other', 'complex-res-capsnet-3level-v3-cifar10-logs', 'history_training_cifar10.csv'),
              training_metric='length_loss',
              val_metric='val_length_loss',
              train_name1='Потери при обучении (исходная капсульная сеть)',

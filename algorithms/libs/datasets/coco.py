@@ -6,7 +6,7 @@ import tensorflow_datasets as tfds
 def _prepare_annotation(filename, path, dataset, classes):
     value = 0
     class_names = dict()
-    with open('./model_data/coco_classes_en.txt') as f:
+    with open('./data/coco_classes_en.txt') as f:
         clazzs = f.readlines()
 
     for clazz in clazzs:

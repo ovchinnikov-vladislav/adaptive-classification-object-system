@@ -6,60 +6,6 @@ from tensorflow.keras.layers import (Input, UpSampling2D, ZeroPadding2D, Concate
 from tensorflow.keras.regularizers import l2
 from libs.capsnets.layers.efficient import PrimaryCapsule2D, Capsule
 
-yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90),
-                         (156, 198), (373, 326)], np.float32) / 416
-yolo_tiny_anchors = np.array([(10, 14), (23, 27), (37, 58), (81, 82), (135, 169), (344, 319)], np.float32) / 416
-
-
-def yolo_boxes(pred, anchors, classes):
-    # pred: (batch_size, grid, grid, anchors, (x, y, w, h, obj, ...classes))
-    grid_size = tf.shape(pred)[1:3]
-    box_xy, box_wh, objectness, class_probs = tf.split(pred, (2, 2, 1, classes), axis=-1)
-
-    box_xy = tf.sigmoid(box_xy)
-    objectness = tf.sigmoid(objectness)
-    class_probs = tf.sigmoid(class_probs)
-    pred_box = tf.concat((box_xy, box_wh), axis=-1)  # original xywh for loss
-
-    # !!! grid[x][y] == (y, x)
-    grid = tf.meshgrid(tf.range(grid_size[1]), tf.range(grid_size[0]))
-    grid = tf.expand_dims(tf.stack(grid, axis=-1), axis=2)  # [gx, gy, 1, 2]
-
-    box_xy = (box_xy + tf.cast(grid, tf.float32)) / tf.cast(grid_size, tf.float32)
-    box_wh = tf.exp(box_wh) * tf.convert_to_tensor(anchors)
-
-    box_x1y1 = box_xy - box_wh / 2
-    box_x2y2 = box_xy + box_wh / 2
-    bbox = tf.concat([box_x1y1, box_x2y2], axis=-1)
-
-    return bbox, objectness, class_probs, pred_box
-
-
-def yolo_nms(outputs, anchors, masks, classes, yolo_max_boxes=30, yolo_iou_threshold=0.5, yolo_score_threshold=0.5):
-    # boxes, conf, type
-    b, c, t = [], [], []
-
-    for o in outputs:
-        b.append(tf.reshape(o[0], (tf.shape(o[0])[0], -1, tf.shape(o[0])[-1])))
-        c.append(tf.reshape(o[1], (tf.shape(o[1])[0], -1, tf.shape(o[1])[-1])))
-        t.append(tf.reshape(o[2], (tf.shape(o[2])[0], -1, tf.shape(o[2])[-1])))
-
-    bbox = tf.concat(b, axis=1)
-    confidence = tf.concat(c, axis=1)
-    class_probs = tf.concat(t, axis=1)
-
-    scores = confidence * class_probs
-    boxes, scores, classes, valid_detections = tf.image.combined_non_max_suppression(
-        boxes=tf.reshape(bbox, (tf.shape(bbox)[0], -1, 1, 4)),
-        scores=tf.reshape(scores, (tf.shape(scores)[0], -1, tf.shape(scores)[-1])),
-        max_output_size_per_class=yolo_max_boxes,
-        max_total_size=yolo_max_boxes,
-        iou_threshold=yolo_iou_threshold,
-        score_threshold=yolo_score_threshold
-    )
-
-    return boxes, scores, classes, valid_detections
-
 
 def conv(x, filters, size, down_sampling=False,
          activation='leaky', batch_norm=True):
@@ -179,6 +125,7 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')
 
+    from libs.yolo.utils import yolo_boxes, yolo_nms
     boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes), name='yolo_boxes_0')(output_0)
     boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
     boxes_2 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[2]], classes), name='yolo_boxes_2')(output_2)
@@ -190,5 +137,9 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
 
 
 if __name__ == '__main__':
-    model = capsules_yolo(anchors=yolo_anchors, size=416, channels=3, classes=1, training=True)
+    import config
+    from libs.yolo.utils import get_anchors
+    anchors = get_anchors(config.yolo_caps_anchors)
+
+    model = capsules_yolo(anchors=anchors, size=416, channels=3, classes=1, training=True)
     model.summary()
