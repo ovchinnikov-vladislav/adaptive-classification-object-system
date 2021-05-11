@@ -2,7 +2,6 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Concatenate, Input, Lambda, UpSampling2D
-from libs.yolo.utils import yolo_boxes, yolo_nms
 from libs.yolo.darknet53.layers import darknet_conv, cspdarknet53
 
 
@@ -75,12 +74,10 @@ def yolo_v4(anchors, size=None, channels=3, classes=80, training=False):
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov4')
 
-    boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes),
-                     name='yolo_boxes_0')(output_0)
-    boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes),
-                     name='yolo_boxes_1')(output_1)
-    boxes_2 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[2]], classes),
-                     name='yolo_boxes_2')(output_2)
+    from libs.yolo.utils import yolo_boxes, yolo_nms
+    boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes), name='yolo_boxes_0')(output_0)
+    boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
+    boxes_2 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[2]], classes), name='yolo_boxes_2')(output_2)
 
     outputs = Lambda(lambda inp: yolo_nms(inp), name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
 

@@ -2,7 +2,6 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import (Concatenate, Input, Lambda, UpSampling2D)
-from libs.yolo.utils import yolo_boxes, yolo_nms
 from libs.yolo.darknet53.layers import darknet_conv, darknet53, darknet53_tiny
 
 
@@ -68,6 +67,7 @@ def yolo_v3(anchors, size, channels, classes, training=False):
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolo3')
 
+    from libs.yolo.utils import yolo_boxes, yolo_nms
     boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes), name='yolo_boxes_0')(output_0)
     boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
     boxes_2 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[2]], classes), name='yolo_boxes_2')(output_2)
@@ -93,6 +93,7 @@ def yolo_v3_tiny(anchors, size, channels, classes, training=False):
     if training:
         return Model(inputs, (output_0, output_1), name='yolo3')
 
+    from libs.yolo.utils import yolo_boxes, yolo_nms
     boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes), name='yolo_boxes_0')(output_0)
     boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
     outputs = Lambda(lambda inp: yolo_nms(inp), name='yolo_nms')((boxes_0[:3], boxes_1[:3]))

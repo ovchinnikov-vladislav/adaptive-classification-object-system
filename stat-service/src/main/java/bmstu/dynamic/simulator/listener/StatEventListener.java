@@ -71,5 +71,4 @@ public class StatEventListener {
         detectionObjectService.save(detectionObject);
     }
 
-
 }
