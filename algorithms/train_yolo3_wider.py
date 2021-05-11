@@ -1,8 +1,8 @@
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint, TensorBoard
 from libs.yolo.v3.layers import (yolo_v3_tiny)
 from libs.yolo.caps.layers import capsules_yolo
-from libs.yolo3 import yolo_loss
-from libs.yolo3 import get_anchors, data_generator_wrapper
+from libs.yolo.losses import yolo_loss
+from libs.yolo.utils import get_anchors, data_generator_wrapper
 import tensorflow as tf
 import numpy as np
 import argparse

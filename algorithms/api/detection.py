@@ -4,12 +4,12 @@ import pika
 import json
 import config
 import logging
-from libs.yolo3 import YoloTrackingModel
+from libs.yolo.utils import YoloModel
 
 STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 detection_api = Blueprint('detection_api', __name__)
-model = YoloTrackingModel()
+model = YoloModel()
 
 
 def gen(cam, user_id, detection_process_id):
@@ -51,8 +51,8 @@ def gen(cam, user_id, detection_process_id):
 @detection_api.route('/init/<model_name>')
 def init_model(model_name):
     global model
-    if model_name == 'yolov3_tracking':
-        model = YoloTrackingModel()
+    if model_name == 'yolo3_tracking':
+        model = YoloModel()
 
 
 @detection_api.route('/youtube_video_feed/<video_id>/<user_id>/<detection_process_id>')

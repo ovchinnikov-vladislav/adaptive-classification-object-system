@@ -1,4 +1,4 @@
-from libs.yolo3 import YoloDetectionModel
+from libs.yolo.utils import YoloModel
 from PIL import Image
 
 
@@ -17,6 +17,6 @@ def detect_img(yolo):
 
 
 if __name__ == '__main__':
-    yolo = YoloDetectionModel()
+    yolo = YoloModel()
     detect_img(yolo)
 

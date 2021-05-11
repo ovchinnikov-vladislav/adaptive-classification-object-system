@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow.keras.backend import epsilon
 from tensorflow.keras.losses import (binary_crossentropy, sparse_categorical_crossentropy)
-from libs.yolo.v3.utils import yolo_boxes
+from libs.yolo.utils import yolo_boxes
 import numpy as np
 
 

@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 from urllib import request
 from timeit import default_timer as timer
-from libs.yolo3 import YoloDetectionModel
+from libs.yolo.utils import YoloModel
 import time
 
 
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     #  streams = streamlink.streams(url)
     #  print(streams)
     #
-    yolo = YoloDetectionModel()
+    yolo = YoloModel()
     # detect_video_webcam(yolo, streams["360p"].url)
     # detect_video_ipcam(yolo, 'http://192.168.0.16:8080/shot.jpg')
     # detect_video_webcam(yolo, 'rtsp://192.168.0.16:5554/out.h264')

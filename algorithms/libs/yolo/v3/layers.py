@@ -2,12 +2,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import (Concatenate, Input, Lambda, UpSampling2D)
-from libs.yolo.v3.utils import yolo_boxes, yolo_nms
+from libs.yolo.utils import yolo_boxes, yolo_nms
 from libs.yolo.darknet53.layers import darknet_conv, darknet53, darknet53_tiny
-
-yolo_anchors = np.array([(10, 13), (16, 30), (33, 23), (30, 61), (62, 45), (59, 119), (116, 90),
-                         (156, 198), (373, 326)], np.float32) / 416
-yolo_tiny_anchors = np.array([(10, 14), (23, 27), (37, 58), (81, 82), (135, 169), (344, 319)], np.float32) / 416
 
 
 def yolo_conv_input_tuple(x_in, filters):
@@ -70,7 +66,7 @@ def yolo_v3(anchors, size, channels, classes, training=False):
     output_2 = yolo_output(x, 128, len(masks[2]), classes, name='yolo_output_2')
 
     if training:
-        return Model(inputs, (output_0, output_1, output_2), name='yolov3')
+        return Model(inputs, (output_0, output_1, output_2), name='yolo3')
 
     boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes), name='yolo_boxes_0')(output_0)
     boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
@@ -78,7 +74,7 @@ def yolo_v3(anchors, size, channels, classes, training=False):
 
     outputs = Lambda(lambda inp: yolo_nms(inp), name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
 
-    return Model(inputs, outputs, name='yolov3')
+    return Model(inputs, outputs, name='yolo3')
 
 
 def yolo_v3_tiny(anchors, size, channels, classes, training=False):
@@ -95,9 +91,9 @@ def yolo_v3_tiny(anchors, size, channels, classes, training=False):
     output_1 = yolo_output(x, 128, len(masks[1]), classes, name='yolo_output_1')
 
     if training:
-        return Model(inputs, (output_0, output_1), name='yolov3')
+        return Model(inputs, (output_0, output_1), name='yolo3')
 
     boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes), name='yolo_boxes_0')(output_0)
     boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
     outputs = Lambda(lambda inp: yolo_nms(inp), name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
-    return Model(inputs, outputs, name='yolov3_tiny')
+    return Model(inputs, outputs, name='yolo3_tiny')
