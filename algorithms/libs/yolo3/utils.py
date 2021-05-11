@@ -6,7 +6,7 @@ import cv2
 import config
 import base64
 from io import BytesIO
-
+import time
 
 YOLOV3_LAYER_LIST = [
     'yolo_darknet',
@@ -81,7 +81,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, anchors, masks, classes, yolo_max_boxes=30, yolo_iou_threshold=0.5, yolo_score_threshold=0.5):
+def yolo_nms(outputs, yolo_max_boxes=30, yolo_iou_threshold=0.5, yolo_score_threshold=0.5):
     # boxes, conf, type
     b, c, t = [], [], []
 
@@ -104,7 +104,7 @@ def yolo_nms(outputs, anchors, masks, classes, yolo_max_boxes=30, yolo_iou_thres
         score_threshold=yolo_score_threshold
     )
 
-    return boxes, scores, classes, valid_detections
+    return boxes[0], scores[0], classes[0], valid_detections[0]
 
 
 def load_darknet_weights(model, weights_file, tiny=False):
@@ -160,7 +160,7 @@ def load_darknet_weights(model, weights_file, tiny=False):
     wf.close()
 
 
-def analyze_outputs(img, outputs, class_names, colors):
+def analyze_detection_outputs(img, outputs, class_names, colors):
     boxes, scores, classes, nums = outputs
     wh = np.flip(img.shape[0:2])
     img = Image.fromarray(img)
@@ -197,7 +197,7 @@ def analyze_outputs(img, outputs, class_names, colors):
     return np.asarray(img), object_detection
 
 
-def analyze_outputs(img, tracks, colors):
+def analyze_tracks_outputs(img, tracks, colors):
     before_img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     before_img = Image.fromarray(before_img)
     img = Image.fromarray(img)
@@ -225,7 +225,10 @@ def analyze_outputs(img, tracks, colors):
         else:
             text_origin = np.array([x1, y1 + 5])
 
-        img_crop = before_img.crop((int(x1), int(y1), int(x2), int(y2)))
+        img_crop = before_img.crop((int(x1) + (int(x1) - int(x2)) // 2,
+                                    int(y1) + (int(y1) - int(y2)) // 2,
+                                    int(x2) + (int(x2) - int(x1)) // 2,
+                                    int(y2) + (int(y2) - int(y1)) // 2))
         buffered = BytesIO()
         img_crop.save(buffered, format="JPEG")
         img_bytes = base64.b64encode(buffered.getvalue())
@@ -243,7 +246,7 @@ def analyze_outputs(img, tracks, colors):
         draw.text(text_origin, label, fill=(255, 255, 255), font=font)
     del draw
 
-    return np.asarray(img),  object_detection
+    return np.asarray(img), object_detection
 
 
 def draw_labels(x, y, class_names):

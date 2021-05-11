@@ -109,7 +109,7 @@
 
     <script>
         $(document).ready(function () {
-            let uuid_session = null;
+            let uuid_session = generateUUID();
             let execute = null;
 
             $('input[type=radio][name=videoRadioButtonGroup]').change(function() {
@@ -129,14 +129,10 @@
                 if ($('#youtube-video-radio-button').prop('checked') === true) {
                     let url = '/video/youtube/' + $('#video-addr-input').prop('value') + '/' + uuid_session;
                     $('#video-content-image').prop('src', url);
-                    url = '/video/detection_objects/' + uuid_session;
-                    replaceDetectionObj(url);
                     $("#loading-video-ring").css("display","block");
                 } else if ($('#video-camera-radio-button').prop('checked') === true) {
                     let url = '/video/camera/' + uuid_session + '/?video_addr=' + $('#video-addr-input').prop('value')
                     $('#video-content-image').prop('src', url)
-                    url = '/video/detection_objects/' + uuid_session;
-                    replaceDetectionObj(url);
                     $("#loading-video-ring").css("display","block");
                 }
             });
@@ -144,6 +140,7 @@
             $('#video-content-image').on('load', function () {
                 if ($(this).prop('src').indexOf('/img/video-player-placeholder-very-large.png') < 0) {
                     $(this).removeClass('transparent25');
+                    replaceDetectionObj('/video/detection_objects/' + uuid_session);
                 }
 
                 $("#loading-video-ring").css("display","none");

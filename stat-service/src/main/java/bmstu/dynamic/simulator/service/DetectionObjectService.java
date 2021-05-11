@@ -40,6 +40,10 @@ public class DetectionObjectService {
         mongoTemplate.save(detectionObject);
     }
 
+    public void save(DetectionObject detectionObject) {
+        mongoTemplate.save(detectionObject);
+    }
+
     public DetectionObject findById(String id) {
         return mongoTemplate.findById(id, DetectionObject.class);
     }

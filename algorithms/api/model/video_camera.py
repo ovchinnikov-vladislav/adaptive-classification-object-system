@@ -5,7 +5,6 @@ import streamlink
 from PIL import Image
 from urllib import request
 from threading import Thread
-from libs.yolo3.model import YoloDetectionModel, YoloTrackingModel
 
 
 class ThreadedCamera:
@@ -15,7 +14,7 @@ class ThreadedCamera:
 
         # FPS = 1/X
         # X = desired FPS
-        self.FPS = 1 / 60
+        self.FPS = 1 / 30
         self.FPS_MS = int(self.FPS * 1000)
 
         self.status, self.frame = None, None
@@ -38,8 +37,8 @@ class ThreadedCamera:
 
 
 class YoutubeCamera:
-    def __init__(self, video_id):
-        self.model = YoloTrackingModel()
+    def __init__(self, model, video_id):
+        self.model = model
         url = f'https://www.youtube.com/watch?v={video_id}'
 
         streams = streamlink.streams(url)
@@ -62,8 +61,8 @@ class YoutubeCamera:
 
 
 class VideoCamera:
-    def __init__(self, src):
-        self.model = YoloTrackingModel()
+    def __init__(self, model, src):
+        self.model = model
         self.threaded_camera = ThreadedCamera(src)
 
     def get_frame(self):

@@ -15,9 +15,7 @@ def yolo_output(x_in, filters, anchors, classes, name=None):
     return tf.keras.Model(inputs, x, name=name)(x_in)
 
 
-def yolo_v4(size=None, channels=3, classes=80, training=False):
-    anchors = np.array([(12, 16), (19, 36), (40, 28), (36, 75), (76, 55), (72, 146),
-                        (142, 110), (192, 243), (459, 401)], np.float32) / 416
+def yolo_v4(anchors, size=None, channels=3, classes=80, training=False):
     masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
 
     x = inputs = Input([size, size, channels], name='input')
@@ -84,8 +82,7 @@ def yolo_v4(size=None, channels=3, classes=80, training=False):
     boxes_2 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[2]], classes),
                      name='yolo_boxes_2')(output_2)
 
-    outputs = Lambda(lambda inp: yolo_nms(inp, anchors, masks, classes),
-                     name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
+    outputs = Lambda(lambda inp: yolo_nms(inp), name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
 
     return Model(inputs, outputs, name='yolov4')
 
