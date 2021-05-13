@@ -9,14 +9,14 @@ def _pdist(a, b=None):
     return -2 * tf.matmul(a, tf.transpose(b)) + tf.reshape(sq_sum_a, (-1, 1)) + tf.reshape(sq_sum_b, (1, -1))
 
 
-def soft_margin_triplet_loss(features, labels):
+def soft_margin_triplet_loss(y_true, y_pred):
     eps = tf.constant(1e-5, tf.float32)
     nil = tf.constant(0., tf.float32)
     almost_inf = tf.constant(1e+10, tf.float32)
 
-    squared_distance_mat = _pdist(features)
+    squared_distance_mat = _pdist(y_pred)
     distance_mat = tf.sqrt(tf.maximum(nil, eps + squared_distance_mat))
-    label_mat = tf.cast(tf.equal(tf.reshape(labels, (-1, 1)), tf.reshape(labels, (1, -1))), tf.float32)
+    label_mat = tf.cast(tf.equal(tf.reshape(y_true, (-1, 1)), tf.reshape(y_true, (1, -1))), tf.float32)
 
     positive_distance = tf.reduce_max(label_mat * distance_mat, axis=1)
     negative_distance = tf.reduce_min((label_mat * almost_inf) + distance_mat, axis=1)
@@ -25,7 +25,7 @@ def soft_margin_triplet_loss(features, labels):
     return tf.reduce_mean(loss)
 
 
-def magnet_loss(features, labels, margin=1.0, unique_labels=None):
+def magnet_loss(y_true, y_pred, margin=1.0, unique_labels=None):
     nil = tf.constant(0., tf.float32)
     one = tf.constant(1., tf.float32)
     minus_two = tf.constant(-2., tf.float32)
@@ -34,20 +34,20 @@ def magnet_loss(features, labels, margin=1.0, unique_labels=None):
 
     num_per_class = None
     if unique_labels is None:
-        unique_labels, sample_to_unique_y, num_per_class = tf.unique_with_counts(labels)
+        unique_labels, sample_to_unique_y, num_per_class = tf.unique_with_counts(y_true)
         num_per_class = tf.cast(num_per_class, tf.float32)
 
-    y_mat = tf.cast(tf.equal(tf.reshape(labels, (-1, 1)), tf.reshape(unique_labels, (1, -1))), dtype=tf.float32)
+    y_mat = tf.cast(tf.equal(tf.reshape(y_true, (-1, 1)), tf.reshape(unique_labels, (1, -1))), dtype=tf.float32)
 
     # If class_means is None, compute from batch data.
     if num_per_class is None:
         num_per_class = tf.reduce_sum(y_mat, reduction_indices=[0])
-    class_means = tf.reduce_sum(tf.expand_dims(tf.transpose(y_mat), -1) * tf.expand_dims(features, 0),
+    class_means = tf.reduce_sum(tf.expand_dims(tf.transpose(y_mat), -1) * tf.expand_dims(y_pred, 0),
                                 reduction_indices=[1]) / tf.expand_dims(num_per_class, -1)
 
-    squared_distance = _pdist(features, class_means)
+    squared_distance = _pdist(y_pred, class_means)
 
-    num_samples = tf.cast(tf.shape(labels)[0], tf.float32)
+    num_samples = tf.cast(tf.shape(y_true)[0], tf.float32)
     variance = tf.reduce_sum(y_mat * squared_distance) / (num_samples - one)
 
     const = one / (minus_two * (variance + eps))

@@ -29,4 +29,5 @@ checkpoint*
 resources/other/
 resources/data/wider_face/
 resources/data/mnist_detection/
+resources/data/mars/
 coco/

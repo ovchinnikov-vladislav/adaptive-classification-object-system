@@ -18,34 +18,6 @@ def cosine_distance(a, b=None):
 
 def recognition_rate_at_k(probe_x, probe_y, gallery_x, gallery_y, k,
                           measure=pdist):
-    """Compute the recognition rate at a given level `k`.
-    For a given probe and ranked gallery that is sorted according to a distance
-    measure `measure` in descending order, the recognition rate at `k` is::
-        recognition_rate_at_k = num_correct / min(k, num_relevant)
-    where num_correct refers to the fraction of images in the top k entries of
-    the ranked gallery that have the same label as the probe and `num_relevant`
-    refers to the total number of elements in the gallery that have the same
-    label.
-    Parameters
-    ----------
-    probe_x: tf.Tensor
-        A tensor of probe images.
-    probe_y: tf.Tensor
-        A tensor of probe labels.
-    gallery_x: tf.Tensor
-        A tensor of gallery images.
-    gallery_y: tf.Tensor
-        A tensor of gallery labels.
-    k: int
-        See description above.
-    measure: Callable[tf.Tensor, tf.Tensor] -> tf.Tensor
-        A callable that computes for two matrices of row-vectors a matrix of
-        element-wise distances. See `pdist` for an example.
-    Returns
-    -------
-    tf.Tensor
-        Returns a scalar tensor which represents the computed metric.
-    """
     # Build a matrix of shape (num_probes, num_gallery_images) where element
     # (i, j) is 1 if probe image i and the gallery image j have the same
     # identity, otherwise 0.
@@ -86,31 +58,6 @@ def recognition_rate_at_k(probe_x, probe_y, gallery_x, gallery_y, k,
 
 def streaming_mean_cmc_at_k(probe_x, probe_y, gallery_x, gallery_y, k,
                             measure=pdist):
-    """Compute cumulated matching characteristics (CMC) at level `k` over
-    a stream of data (i.e., multiple batches).
-    The function is compatible with TensorFlow-Slim's streaming metrics
-    interface, e.g., `slim.metrics.aggregate_metric_map`.
-    Parameters
-    ----------
-    probe_x: tf.Tensor
-        A tensor of probe images.
-    probe_y: tf.Tensor
-        A tensor of probe labels.
-    gallery_x: tf.Tensor
-        A tensor of gallery images.
-    gallery_y: tf.Tensor
-        A tensor of gallery labels.
-    k: int
-        See description above.
-    measure: Callable[tf.Tensor, tf.Tensor] -> tf.Tensor
-        A callable that computes for two matrices of row-vectors a matrix of
-        element-wise distances. See `pdist` for an example.
-    Returns
-    -------
-    Tuple[tf.Tensor, tf.Tensor]
-        The first element in the tuple is the current result. The second element
-        is an operation that updates the computed metric based on new data.
-    """
     recognition_rate = recognition_rate_at_k(
         probe_x, probe_y, gallery_x, gallery_y, k, measure)
     return slim.metrics.streaming_mean(recognition_rate)

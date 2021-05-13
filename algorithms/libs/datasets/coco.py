@@ -1,12 +1,13 @@
 import shutil
 import os
 import tensorflow_datasets as tfds
+import config
 
 
 def _prepare_annotation(filename, path, dataset, classes):
     value = 0
     class_names = dict()
-    with open('./data/coco_classes_en.txt') as f:
+    with open(config.coco_classes_en) as f:
         clazzs = f.readlines()
 
     for clazz in clazzs:

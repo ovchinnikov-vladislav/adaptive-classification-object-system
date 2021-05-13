@@ -1,7 +1,9 @@
 import tensorflow as tf
 from tensorflow.keras.initializers import TruncatedNormal
 from tensorflow.keras.regularizers import l2
-from tensorflow.keras.layers import Conv2D, Flatten, Dropout, Dense, MaxPooling2D, Layer, BatchNormalization
+from tensorflow.keras.layers import (Input, Conv2D, Flatten, Dropout, Dense,
+                                     MaxPooling2D, Layer, BatchNormalization, Lambda)
+from tensorflow.keras.models import Model
 from . import residual_net
 
 
@@ -36,7 +38,7 @@ class Logits(Layer):
         return super(Logits, self).get_config()
 
 
-def create_network(images, num_classes=None, add_logits=True, weight_decay=1e-8):
+def create_network(inputs_shape, num_classes=None, add_logits=True, weight_decay=1e-8):
     nonlinearity = tf.nn.elu
     conv_weight_init = TruncatedNormal(stddev=1e-3)
     conv_bias_init = tf.zeros_initializer()
@@ -45,7 +47,7 @@ def create_network(images, num_classes=None, add_logits=True, weight_decay=1e-8)
     fc_bias_init = tf.zeros_initializer()
     fc_regularizer = l2(weight_decay)
 
-    network = images
+    network = inputs = Input(shape=inputs_shape)
     network = Conv2D(32, (3, 3), strides=1, padding='same',
                      kernel_initializer=conv_weight_init,
                      bias_initializer=conv_bias_init,
@@ -78,7 +80,7 @@ def create_network(images, num_classes=None, add_logits=True, weight_decay=1e-8)
                                           conv_regularizer, increase_dim=False)
 
     feature_dim = network.shape[-1]
-    network = Flatten(network)
+    network = Flatten()(network)
 
     network = Dropout(0.6)(network)
     network = Dense(feature_dim, kernel_regularizer=fc_regularizer,
@@ -89,22 +91,13 @@ def create_network(images, num_classes=None, add_logits=True, weight_decay=1e-8)
 
     features = network
 
-    features = tf.nn.l2_normalize(features, axis=1)
+    features = Lambda(lambda x: tf.nn.l2_normalize(x, axis=1), name='features_output')(features)
 
     if add_logits:
-        logits = Logits(num_classes, feature_dim)(features)
+        logits = Logits(num_classes, feature_dim, name='logits_output')(features)
+        return Model(inputs, [features, logits])
     else:
-        logits = None
-    return features, logits
-
-
-def create_network_factory(num_classes, add_logits, weight_decay=1e-8):
-    def factory_fn(image):
-        features, logits = create_network(image, num_classes=num_classes,
-                                          add_logits=add_logits, weight_decay=weight_decay)
-        return features, logits
-
-    return factory_fn
+        return Model(inputs, features)
 
 
 def preprocess(image, is_training=False, input_is_bgr=False):
