@@ -95,12 +95,12 @@ def yolo_conv_tiny(x_in, filters, name=None):
     return Model(inputs, x, name=name)(x_in)
 
 
-def yolo_output(x_in, filters, anchors, classes, name=None):
+def yolo_output(x_in, filters, capsules, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
     # x = conv(x, filters * 2, 3)
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
-    x = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=3, strides=1, do_reshape=True)(x)
+    x = PrimaryCapsule2D(num_capsules=capsules, dim_capsules=8, kernel_size=3, strides=1, do_reshape=True)(x)
     capsules = Capsule(num_capsules=anchors * (classes + 5), dim_capsules=filters, routings=1)(x)
 
     x = Lambda(lambda inp: tf.reshape(inp, (-1, filters, filters, anchors, classes + 5)))(capsules)
@@ -115,11 +115,11 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
     x = inputs = Input([size, size, channels], name='input')
     x_36, x_61, x = conv_net(name='yolo_conv_net', size=size, channels=channels)(x)
 
-    output_0 = yolo_output(x, 13, len(masks[0]), classes, name='yolo_output_0')
+    output_0 = yolo_output(x, 13, 32, len(masks[0]), classes, name='yolo_output_0')
 
-    output_1 = yolo_output(x, 26, len(masks[1]), classes, name='yolo_output_1')
+    output_1 = yolo_output(x, 26, 32, len(masks[1]), classes, name='yolo_output_1')
 
-    output_2 = yolo_output(x, 52, len(masks[2]), classes, name='yolo_output_2')
+    output_2 = yolo_output(x, 52, 16, len(masks[2]), classes, name='yolo_output_2')
 
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')
