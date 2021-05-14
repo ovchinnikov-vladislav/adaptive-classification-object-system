@@ -13,10 +13,11 @@ yolo_v4_anchors = os.path.join(path, 'resources', 'data', 'yolo4_anchors.txt')
 yolo_caps_anchors = os.path.join(path, 'resources', 'data', 'yolo_caps_anchors.txt')
 
 coco_classes_ru = os.path.join(path, 'resources', 'data', 'coco_classes_ru.txt')
-coco_classes_en = os.path.join(path, 'resources', 'data' 'coco_classes_en.txt')
+coco_classes_en = os.path.join(path, 'resources', 'data', 'coco_classes_en.txt')
 
 deepsort_model = os.path.join(path, 'resources', 'data', 'deepsort.pb')
 deepsort_caps_model = os.path.join(path, 'resources', 'data', '...')
+mars_datasets = os.path.join(path, 'resources', 'data', 'mars')
 
 font_cv = os.path.join(path, 'resources', 'font', 'FiraMono-Medium.otf')
 

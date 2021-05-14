@@ -47,16 +47,18 @@ class Mars(object):
 
 
 if __name__ == '__main__':
-    dataset = Mars('./mars', num_validation_y=0.1, seed=1234)
+    dataset = Mars('./data/remars', num_validation_y=0.1, seed=1234)
     train_x, train_y, _ = dataset.read_train()
+    val_x, val_y, _ = dataset.read_validation()
 
-    # model = net.create_network(inputs_shape=IMAGE_SHAPE, num_classes=mars.MAX_LABEL + 1, add_logits=True)
-    # model.summary()
-    #
-    # model.compile(optimizer=optimizers.Adam(lr=0.003),
-    #               loss=[sparse_categorical_crossentropy, losses.magnet_loss],
-    #               metrics='accuracy')
-    #
-    # history = model.fit((train_x, train_y),
-    #                     validation_data=,
-    #                     epochs=epochs)
+    model = net.create_network(inputs_shape=IMAGE_SHAPE, num_classes=mars.MAX_LABEL + 1, add_logits=True)
+    model.summary()
+
+    model.compile(optimizer=optimizers.Adam(lr=0.003),
+                  loss=[sparse_categorical_crossentropy, losses.magnet_loss],
+                  metrics='accuracy')
+
+    history = model.fit((train_x, train_y),
+                        validation_data=(val_x, val_y),
+                        epochs=100,
+                        batch_size=64)
