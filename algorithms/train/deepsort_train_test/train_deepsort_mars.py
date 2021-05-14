@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import config
 import tensorflow as tf
 from tensorflow.keras.losses import sparse_categorical_crossentropy
 from tensorflow.keras import optimizers
@@ -47,18 +48,24 @@ class Mars(object):
 
 
 if __name__ == '__main__':
-    dataset = Mars('./data/remars', num_validation_y=0.1, seed=1234)
-    train_x, train_y, _ = dataset.read_train()
-    val_x, val_y, _ = dataset.read_validation()
+    dataset = Mars(config.mars_datasets, num_validation_y=0.1, seed=1234)
+    dataset_train = tf.keras.preprocessing.image_dataset_from_directory(
+        os.path.join(config.mars_datasets, 'bbox_train'), image_size=(128, 64))
+    dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
+        os.path.join(config.mars_datasets, 'bbox_test'), image_size=(128, 64))
 
-    model = net.create_network(inputs_shape=IMAGE_SHAPE, num_classes=mars.MAX_LABEL + 1, add_logits=True)
+    model = net.create_network(inputs_shape=IMAGE_SHAPE, num_classes=mars.MAX_LABEL + 1, add_logits=False)
     model.summary()
 
+    losses = {
+        "features_output": sparse_categorical_crossentropy
+        # "logits_output": losses.magnet_loss,
+    }
+
     model.compile(optimizer=optimizers.Adam(lr=0.003),
-                  loss=[sparse_categorical_crossentropy, losses.magnet_loss],
+                  loss=losses,
                   metrics='accuracy')
 
-    history = model.fit((train_x, train_y),
-                        validation_data=(val_x, val_y),
+    history = model.fit(dataset_train,
                         epochs=100,
                         batch_size=64)

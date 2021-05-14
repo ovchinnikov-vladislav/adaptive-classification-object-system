@@ -2,10 +2,10 @@ import tensorflow as tf
 
 
 def _pdist(a, b=None):
-    sq_sum_a = tf.reduce_sum(tf.square(a), reduction_indices=[1])
+    sq_sum_a = tf.reduce_sum(tf.square(a), axis=1)
     if b is None:
         return -2 * tf.matmul(a, tf.transpose(a)) + tf.reshape(sq_sum_a, (-1, 1)) + tf.reshape(sq_sum_a, (1, -1))
-    sq_sum_b = tf.reduce_sum(tf.square(b), reduction_indices=[1])
+    sq_sum_b = tf.reduce_sum(tf.square(b), axis=1)
     return -2 * tf.matmul(a, tf.transpose(b)) + tf.reshape(sq_sum_a, (-1, 1)) + tf.reshape(sq_sum_b, (1, -1))
 
 
@@ -41,9 +41,9 @@ def magnet_loss(y_true, y_pred, margin=1.0, unique_labels=None):
 
     # If class_means is None, compute from batch data.
     if num_per_class is None:
-        num_per_class = tf.reduce_sum(y_mat, reduction_indices=[0])
+        num_per_class = tf.reduce_sum(y_mat, axis=0)
     class_means = tf.reduce_sum(tf.expand_dims(tf.transpose(y_mat), -1) * tf.expand_dims(y_pred, 0),
-                                reduction_indices=[1]) / tf.expand_dims(num_per_class, -1)
+                                axis=1) / tf.expand_dims(num_per_class, -1)
 
     squared_distance = _pdist(y_pred, class_means)
 
@@ -53,10 +53,10 @@ def magnet_loss(y_true, y_pred, margin=1.0, unique_labels=None):
     const = one / (minus_two * (variance + eps))
     linear = const * squared_distance - y_mat * margin
 
-    maxi = tf.reduce_max(linear, reduction_indices=[1], keepdims=True)
+    maxi = tf.reduce_max(linear, axis=1, keepdims=True)
     loss_mat = tf.exp(linear - maxi)
 
-    a = tf.reduce_sum(y_mat * loss_mat, reduction_indices=[1])
-    b = tf.reduce_sum((one - y_mat) * loss_mat, reduction_indices=[1])
+    a = tf.reduce_sum(y_mat * loss_mat, axis=1)
+    b = tf.reduce_sum((one - y_mat) * loss_mat, axis=1)
     loss = tf.maximum(nil, -tf.math.log(eps + a / (eps + b)))
     return tf.reduce_mean(loss), class_means, variance

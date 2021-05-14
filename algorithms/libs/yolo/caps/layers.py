@@ -4,7 +4,7 @@ from tensorflow.keras import Model
 from tensorflow.keras.layers import (Input, UpSampling2D, ZeroPadding2D, Concatenate,
                                      Conv2D, BatchNormalization, LeakyReLU, Add, Lambda)
 from tensorflow.keras.regularizers import l2
-from libs.capsnets.layers.efficient import PrimaryCapsule2D, Capsule
+from libs.capsnets.layers.basic import PrimaryCapsule2D, Capsule
 
 
 def conv(x, filters, size, down_sampling=False,
@@ -95,13 +95,13 @@ def yolo_conv_tiny(x_in, filters, name=None):
     return Model(inputs, x, name=name)(x_in)
 
 
-def yolo_output(x_in, filters, anchors, classes, capsules, name=None):
+def yolo_output(x_in, filters, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
     # x = conv(x, filters * 2, 3)
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
-    x = PrimaryCapsule2D(filters, 9, capsules, 32)(x)
-    capsules = Capsule(anchors * (classes * 5), 16)(x)
+    x = PrimaryCapsule2D(num_capsules=filters, dim_capsules=8, kernel_size=9, strides=2, do_reshape=True)(x)
+    capsules = Capsule(num_capsules=classes, dim_capsules=16, routings=1)(x)
 
     x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2], anchors, classes + 5)))(capsules)
     return tf.keras.Model(inputs, x, name=name)(x_in)
@@ -114,13 +114,13 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
     x_36, x_61, x = conv_net(name='yolo_conv_net', channels=channels)(x)
 
     x = yolo_conv(x, 512, name='yolo_conv_0')
-    output_0 = yolo_output(x, 32, len(masks[0]), classes, 25, name='yolo_output_0')
+    output_0 = yolo_output(x, 32, len(masks[0]), classes, name='yolo_output_0')
 
     x = yolo_conv((x, x_61), 256, name='yolo_conv_1')
-    output_1 = yolo_output(x, 8, len(masks[1]), classes, 81, name='yolo_output_1')
+    output_1 = yolo_output(x, 8, len(masks[1]), classes, name='yolo_output_1')
 
     x = yolo_conv((x, x_36), 128, name='yolo_conv_2')
-    output_2 = yolo_output(x, 2, len(masks[2]), classes, 121, name='yolo_output_2')
+    output_2 = yolo_output(x, 2, len(masks[2]), classes, name='yolo_output_2')
 
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')
