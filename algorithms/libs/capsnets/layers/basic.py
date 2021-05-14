@@ -99,6 +99,7 @@ class Capsule(layers.Layer):
         self.w = self.add_weight(shape=[self.num_capsules, input_shape[1], self.dim_capsules, input_shape[2]],
                                  dtype=tf.float32,
                                  initializer=tf.random_normal_initializer(stddev=0.1),
+                                 name='w',
                                  trainable=True)
         self.built = True
 

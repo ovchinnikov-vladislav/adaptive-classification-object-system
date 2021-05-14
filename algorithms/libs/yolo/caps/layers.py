@@ -101,7 +101,7 @@ def yolo_output(x_in, filters, capsules, anchors, classes, name=None):
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
     x = PrimaryCapsule2D(num_capsules=capsules, dim_capsules=8, kernel_size=3, strides=1, do_reshape=True)(x)
-    capsules = Capsule(num_capsules=anchors * (classes + 5), dim_capsules=filters * filters, routings=1)(x)
+    capsules = Capsule(num_capsules=anchors * (classes + 5), dim_capsules=filters * filters, routings=3)(x)
 
     x = Lambda(lambda inp: tf.reshape(inp, (-1, filters, filters, anchors, classes + 5)))(capsules)
     model = tf.keras.Model(inputs, x, name=name)
@@ -140,5 +140,5 @@ if __name__ == '__main__':
     from libs.yolo.utils import get_anchors
     anchors = get_anchors(config.yolo_caps_anchors)
 
-    model = capsules_yolo(anchors=anchors, size=312, channels=3, classes=1, training=True)
+    model = capsules_yolo(anchors=anchors, size=160, channels=3, classes=1, training=True)
     model.summary()
