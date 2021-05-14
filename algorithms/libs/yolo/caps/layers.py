@@ -115,11 +115,11 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
     x = inputs = Input([size, size, channels], name='input')
     x_36, x_61, x = conv_net(name='yolo_conv_net', size=size, channels=channels)(x)
 
-    output_0 = yolo_output(x, 13, 32, len(masks[0]), classes, name='yolo_output_0')
+    output_0 = yolo_output(x, 4, 32, len(masks[0]), classes, name='yolo_output_0')
 
-    output_1 = yolo_output(x, 26, 16, len(masks[1]), classes, name='yolo_output_1')
+    output_1 = yolo_output(x, 8, 16, len(masks[1]), classes, name='yolo_output_1')
 
-    output_2 = yolo_output(x, 52, 8, len(masks[2]), classes, name='yolo_output_2')
+    output_2 = yolo_output(x, 16, 8, len(masks[2]), classes, name='yolo_output_2')
 
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')
