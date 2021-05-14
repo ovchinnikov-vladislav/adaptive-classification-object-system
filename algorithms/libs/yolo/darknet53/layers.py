@@ -58,8 +58,8 @@ def csp_block(x, residual_out, repeat, residual_bottleneck=False):
     return x
 
 
-def darknet53(name=None, channels=3):
-    x = inputs = Input([None, None, channels])
+def darknet53(name=None, size=None, channels=3):
+    x = inputs = Input([size, size, channels])
     x = darknet_conv(x, 32, 3)
     x = darknet_block(x, 64, 1)
     x = darknet_block(x, 128, 2)  # skip connection

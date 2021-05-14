@@ -101,10 +101,13 @@ def yolo_output(x_in, filters, anchors, classes, name=None):
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
     x = PrimaryCapsule2D(num_capsules=filters, dim_capsules=8, kernel_size=9, strides=2, do_reshape=True)(x)
-    capsules = Capsule(num_capsules=classes, dim_capsules=16, routings=1)(x)
+    capsules = Capsule(num_capsules=anchors * (classes + 5), dim_capsules=4 * 4,
+                       routings=1)(x)
 
-    x = Lambda(lambda inp: tf.reshape(inp, (-1, tf.shape(inp)[1], tf.shape(inp)[2], anchors, classes + 5)))(capsules)
-    return tf.keras.Model(inputs, x, name=name)(x_in)
+    x = Lambda(lambda inp: tf.reshape(inp, (-1, 4, 4, anchors, classes + 5)))(capsules)
+    model = tf.keras.Model(inputs, x, name=name)
+    model.summary()
+    return model(x_in)
 
 
 def capsules_yolo(anchors, size, channels, classes, training=False):
@@ -114,13 +117,13 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
     x_36, x_61, x = conv_net(name='yolo_conv_net', channels=channels)(x)
 
     x = yolo_conv(x, 512, name='yolo_conv_0')
-    output_0 = yolo_output(x, 32, len(masks[0]), classes, name='yolo_output_0')
+    output_0 = yolo_output(x, 24, len(masks[0]), classes, name='yolo_output_0')
 
     x = yolo_conv((x, x_61), 256, name='yolo_conv_1')
-    output_1 = yolo_output(x, 8, len(masks[1]), classes, name='yolo_output_1')
+    output_1 = yolo_output(x, 24, len(masks[1]), classes, name='yolo_output_1')
 
     x = yolo_conv((x, x_36), 128, name='yolo_conv_2')
-    output_2 = yolo_output(x, 2, len(masks[2]), classes, name='yolo_output_2')
+    output_2 = yolo_output(x, 24, len(masks[2]), classes, name='yolo_output_2')
 
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')
