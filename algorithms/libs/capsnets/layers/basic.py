@@ -29,7 +29,9 @@ class PrimaryCapsule2D(layers.Layer):
         # self.batch = layers.BatchNormalization(axis=-1)
 
     def call(self, inputs, **kwargs):
+        tf.print('PrimaryCaps 1: ', inputs.shape)
         x = self.conv2d(inputs)
+        tf.print('PrimaryCaps 2: ', x.shape)
         # x = self.batch(x)
 
         if not self.do_reshape:
@@ -38,6 +40,8 @@ class PrimaryCapsule2D(layers.Layer):
             return layers.Lambda(squash)(x)
 
         x = layers.Reshape(target_shape=(-1, self.dim_capsules))(x)
+
+        tf.print('PrimaryCaps 3: ', x.shape)
         return layers.Lambda(squash)(x)
 
     def get_config(self):
@@ -103,14 +107,20 @@ class Capsule(layers.Layer):
         self.built = True
 
     def call(self, inputs, **kwargs):
+        tf.print('Capsule 1: ', inputs.shape)
         inputs_expand = tf.expand_dims(inputs, 1)
+        tf.print('Capsule 2: ', inputs_expand.shape)
         u_i = tf.tile(inputs_expand, [1, self.num_capsules, 1, 1])
+        tf.print('Capsule 3: ', u_i.shape)
         u_i = tf.expand_dims(u_i, 4)  # u_i
+        tf.print('Capsule 4: ', u_i.shape)
 
         u_ji_hat = tf.map_fn(lambda x: tf.matmul(self.w, x), elems=u_i)  # u_j|i_hat = Wij * u_i
+        tf.print('Capsule 5: ', u_ji_hat.shape)
 
         # for all capsule i in layer i and capsule j in layer(i + 1): b_ij <- 0
         b_ij = tf.zeros(shape=[tf.shape(u_ji_hat)[0], self.num_capsules, inputs.shape[1], 1, 1])  # b_ij <- 0
+        tf.print('Capsule 6: ', b_ij.shape)
 
         assert self.routings > 0, 'The routings should be > 0.'
         v_j = None
@@ -118,20 +128,27 @@ class Capsule(layers.Layer):
         for i in range(self.routings):
             # for all capsule i in layer i: c_i <- softmax(b_i)
             c_i = tf.nn.softmax(b_ij, axis=1)
+            tf.print('Capsule 7: ', c_i.shape)
 
             # for all capsule j in layer (i + 1): s_j <- Sum_i (c_ij * u_j|i_hat)
             s_j = tf.multiply(c_i, u_ji_hat)  # c_ij * u_j|i_hat
+            tf.print('Capsule 8: ', s_j.shape)
             s_j = tf.reduce_sum(s_j, axis=2, keepdims=True)  # s_j <- Sum_i (c_ij * u_j|i_hat)
+            tf.print('Capsule 9: ', s_j.shape)
 
             # for all capsule j in layer (i + 1): v_j <- squash(s_j)
             v_j = squash(s_j, axis=-2)  # v_j <- squash(s_j)
+            tf.print('Capsule 10: ', v_j.shape)
 
             # Небольшая оптимизация по причине того, что финальным тензором является v_j <- squash(s_j)
             if i < self.routings - 1:
                 # for all capsule i in layer i and capsule j in layer (i + 1): b_ij <- b_ij + u_j|i_hat * v_j
                 outputs_tiled = tf.tile(v_j, [1, 1, inputs.shape[1], 1, 1])
+                tf.print('Capsule 11: ', outputs_tiled.shape)
                 agreement = tf.matmul(u_ji_hat, outputs_tiled, transpose_a=True)  # u_j|i_hat * v_j
+                tf.print('Capsule 12: ', agreement.shape)
                 b_ij = tf.add(b_ij, agreement)  # b_ij <- b_ij + u_j|i_hat * v_j
+                tf.print('Capsule 13: ', b_ij.shape)
 
         return tf.squeeze(v_j, [2, 4])  # return v_j
 

@@ -100,12 +100,12 @@ def yolo_output(x_in, filters, anchors, classes, name=None):
     # x = conv(x, filters * 2, 3)
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
-    x = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=9, strides=2, do_reshape=True)(x)
+    x = PrimaryCapsule2D(num_capsules=32, dim_capsules=8, kernel_size=3, strides=1, do_reshape=True)(x)
     capsules = Capsule(num_capsules=anchors * (classes + 5), dim_capsules=filters, routings=1)(x)
 
     x = Lambda(lambda inp: tf.reshape(inp, (-1, filters, filters, anchors, classes + 5)))(capsules)
     model = tf.keras.Model(inputs, x, name=name)
-    model.summary()
+    # model.summary()
     return model(x_in)
 
 
