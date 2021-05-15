@@ -75,10 +75,7 @@ class Capsule(Layer):
             if i < self.routings - 1:
                 b += tf.matmul(o, hat_inputs, transpose_b=True)
 
-        if self.batch_size is not None:
-            return tf.squeeze(o)
-        else:
-            return o
+        return tf.squeeze(o, [2])
 
     def compute_output_shape(self, input_shape):
         return None, self.num_capsule, self.dim_capsule
@@ -180,7 +177,7 @@ def yolo_output(x_in, filters, grid, anchors, classes, name=None):
     x = tf.keras.layers.Reshape((-1, filters))(x)
     x = Capsule(32, 8, 3, True)(x)
     x = Capsule(32, 8, 3, True)(x)
-    capsules = Capsule(grid, anchors * (classes + 5), 3, True)(x)
+    capsules = Capsule(grid**2, anchors * (classes + 5), 3, True)(x)
 
     x = Lambda(lambda inp: tf.reshape(inp, (-1, grid, grid, anchors, classes + 5)))(capsules)
     model = tf.keras.Model(inputs, x, name=name)
