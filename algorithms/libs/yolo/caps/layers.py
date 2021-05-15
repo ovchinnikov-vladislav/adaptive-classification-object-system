@@ -1,10 +1,84 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import (Input, UpSampling2D, ZeroPadding2D, Concatenate,
+from tensorflow.keras.layers import (Input, UpSampling2D, ZeroPadding2D, Concatenate, Layer,
                                      Conv2D, BatchNormalization, LeakyReLU, Add, Lambda)
 from tensorflow.keras.regularizers import l2
-from libs.capsnets.layers.basic import PrimaryCapsule2D, Capsule
+from libs.capsnets.utls import squash
+
+
+class Capsule(Layer):
+
+    def __init__(self,
+                 num_capsule,
+                 dim_capsule,
+                 routings=3,
+                 share_weights=True,
+                 activation='squash',
+                 **kwargs):
+        super(Capsule, self).__init__(**kwargs)
+        self.num_capsule = num_capsule
+        self.dim_capsule = dim_capsule
+        self.routings = routings
+        self.share_weights = share_weights
+        if activation == 'squash':
+            self.activation = squash
+        else:
+            self.activation = tf.keras.activations.get(activation)
+
+    def get_config(self):
+        config = super().get_config().copy()
+        config.update({
+            'num_capsule': self.num_capsule,
+            'dim_capsule': self.dim_capsule,
+            'routings': self.routings,
+            'share_weight': self.share_weights,
+
+        })
+        return config
+
+    def build(self, input_shape, **kwargs):
+        input_dim_capsule = input_shape[-1]
+        if self.share_weights:
+            self.kernel = self.add_weight(
+                name='capsule_kernel',
+                shape=(1, input_dim_capsule,
+                       self.num_capsule * self.dim_capsule),
+                initializer='glorot_uniform',
+                trainable=True)
+        else:
+            input_num_capsule = input_shape[-2]
+            self.kernel = self.add_weight(
+                name='capsule_kernel',
+                shape=(input_num_capsule, input_dim_capsule,
+                       self.num_capsule * self.dim_capsule),
+                initializer='glorot_uniform',
+                trainable=True)
+
+    def call(self, inputs, **kwargs):
+
+        if self.share_weights:
+            hat_inputs = tf.keras.backend.conv1d(inputs, self.kernel)
+        else:
+            hat_inputs = tf.keras.backend.local_conv1d(inputs, self.kernel, [1], [1])
+
+        batch_size = tf.shape(inputs)[0]
+        input_num_capsule = tf.shape(inputs)[1]
+        hat_inputs = tf.reshape(hat_inputs, (batch_size, input_num_capsule, self.num_capsule, self.dim_capsule))
+        hat_inputs = tf.keras.backend.permute_dimensions(hat_inputs, (0, 2, 1, 3))
+
+        b = tf.keras.backend.zeros_like(hat_inputs[:, :, :, 0])
+        o = None
+        for i in range(self.routings):
+            c = tf.keras.activations.softmax(b, 1)
+            o = self.activation(tf.matmul(c, hat_inputs))
+            if i < self.routings - 1:
+                b += tf.matmul(o, hat_inputs, transpose_b=True)
+
+        return o
+
+    def compute_output_shape(self, input_shape):
+        return None, self.num_capsule, self.dim_capsule
 
 
 def conv(x, filters, size, down_sampling=False,
@@ -95,17 +169,19 @@ def yolo_conv_tiny(x_in, filters, name=None):
     return Model(inputs, x, name=name)(x_in)
 
 
-def yolo_output(x_in, filters, capsules, anchors, classes, name=None):
+def yolo_output(x_in, filters, grid, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
     # x = conv(x, filters * 2, 3)
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
-    x = PrimaryCapsule2D(num_capsules=capsules, dim_capsules=8, kernel_size=3, strides=1, do_reshape=True)(x)
-    capsules = Capsule(num_capsules=anchors * (classes + 5), dim_capsules=filters * filters, routings=3)(x)
+    x = tf.keras.layers.Reshape((-1, filters))(x)
+    x = Capsule(32, 8, 3, True)(x)
+    x = Capsule(32, 8, 3, True)(x)
+    capsules = Capsule(grid, anchors * (classes + 5), 3, True)(x)
 
-    x = Lambda(lambda inp: tf.reshape(inp, (-1, filters, filters, anchors, classes + 5)))(capsules)
+    x = Lambda(lambda inp: tf.reshape(inp, (-1, grid, grid, anchors, classes + 5)))(capsules)
     model = tf.keras.Model(inputs, x, name=name)
-    # model.summary()
+    model.summary()
     return model(x_in)
 
 
@@ -116,13 +192,13 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
     x_36, x_61, x = conv_net(name='yolo_conv_net', size=size, channels=channels)(x)
 
     x = yolo_conv(x, 512, name='yolo_conv_0')
-    output_0 = yolo_output(x, size // 32, 16, len(masks[0]), classes, name='yolo_output_0')
+    output_0 = yolo_output(x, 512, size // 32, len(masks[0]), classes, name='yolo_output_0')
 
     x = yolo_conv((x, x_61), 256, name='yolo_conv_1')
-    output_1 = yolo_output(x, size // 32 * 2, 8, len(masks[1]), classes, name='yolo_output_1')
+    output_1 = yolo_output(x, 256, size // 32 * 2, len(masks[1]), classes, name='yolo_output_1')
 
     x = yolo_conv((x, x_36), 128, name='yolo_conv_2')
-    output_2 = yolo_output(x, size // 32 * 4, 4, len(masks[2]), classes, name='yolo_output_2')
+    output_2 = yolo_output(x, 128, size // 32 * 4, len(masks[2]), classes, name='yolo_output_2')
 
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')
@@ -141,6 +217,7 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
 if __name__ == '__main__':
     import config
     from libs.yolo.utils import get_anchors
+
     anchors = get_anchors(config.yolo_caps_anchors)
 
     model = capsules_yolo(anchors=anchors, size=160, channels=3, classes=1, training=True)
