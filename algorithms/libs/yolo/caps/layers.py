@@ -175,8 +175,6 @@ def yolo_output(x_in, filters, grid, anchors, classes, name=None):
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
     x = tf.keras.layers.Reshape((-1, filters))(x)
-    x = Capsule(32, 8, 3, True)(x)
-    x = Capsule(32, 8, 3, True)(x)
     capsules = Capsule(grid**2, anchors * (classes + 5), 3, True)(x)
 
     x = Lambda(lambda inp: tf.reshape(inp, (-1, grid, grid, anchors, classes + 5)))(capsules)
