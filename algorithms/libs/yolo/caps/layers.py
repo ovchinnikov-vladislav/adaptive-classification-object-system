@@ -67,7 +67,7 @@ class Capsule(Layer):
         hat_inputs = tf.reshape(hat_inputs, (batch_size, input_num_capsule, self.num_capsule, self.dim_capsule))
         hat_inputs = tf.keras.backend.permute_dimensions(hat_inputs, (0, 2, 1, 3))
 
-        b = tf.keras.backend.zeros_like(hat_inputs[:, :, :, :])
+        b = tf.zeros((batch_size, input_num_capsule, 1, self.num_capsule))
 
         o = None
         for i in range(self.routings):
