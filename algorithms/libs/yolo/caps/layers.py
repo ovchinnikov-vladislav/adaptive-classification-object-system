@@ -67,7 +67,8 @@ class Capsule(Layer):
         hat_inputs = tf.reshape(hat_inputs, (batch_size, input_num_capsule, self.num_capsule, self.dim_capsule))
         hat_inputs = tf.keras.backend.permute_dimensions(hat_inputs, (0, 2, 1, 3))
 
-        b = tf.keras.backend.zeros_like(hat_inputs[:, :, :, 0])
+        b = tf.keras.backend.zeros_like(hat_inputs[:, :, :, :])
+
         o = None
         for i in range(self.routings):
             c = tf.keras.activations.softmax(b, 1)
@@ -220,5 +221,5 @@ if __name__ == '__main__':
 
     anchors = get_anchors(config.yolo_caps_anchors)
 
-    model = capsules_yolo(anchors=anchors, size=160, channels=3, classes=1, training=True)
+    model = capsules_yolo(anchors=anchors, size=416, channels=3, classes=1, training=True)
     model.summary()
