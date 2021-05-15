@@ -38,6 +38,7 @@ class Capsule(Layer):
         return config
 
     def build(self, input_shape, **kwargs):
+        self.batch_size = input_shape[0]
         input_dim_capsule = input_shape[-1]
         if self.share_weights:
             self.kernel = self.add_weight(
@@ -62,21 +63,22 @@ class Capsule(Layer):
         else:
             hat_inputs = tf.keras.backend.local_conv1d(inputs, self.kernel, [1], [1])
 
-        batch_size = tf.shape(inputs)[0]
-        input_num_capsule = tf.shape(inputs)[1]
-        hat_inputs = tf.reshape(hat_inputs, (batch_size, input_num_capsule, self.num_capsule, self.dim_capsule))
-        hat_inputs = tf.keras.backend.permute_dimensions(hat_inputs, (0, 2, 1, 3))
-
-        b = tf.zeros((batch_size, input_num_capsule, 1, self.num_capsule))
+        input_num_capsule = inputs.shape[1]
+        hat_inputs = tf.reshape(hat_inputs, (-1, self.num_capsule, input_num_capsule, self.dim_capsule))
+        b = tf.zeros_like(hat_inputs[:, :, :, 0])
+        b = tf.expand_dims(b, axis=2)
 
         o = None
         for i in range(self.routings):
-            c = tf.keras.activations.softmax(b, 1)
+            c = tf.nn.softmax(b, 1)
             o = self.activation(tf.matmul(c, hat_inputs))
             if i < self.routings - 1:
                 b += tf.matmul(o, hat_inputs, transpose_b=True)
 
-        return o
+        if self.batch_size is not None:
+            return tf.squeeze(o)
+        else:
+            return o
 
     def compute_output_shape(self, input_shape):
         return None, self.num_capsule, self.dim_capsule
