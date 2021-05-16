@@ -306,11 +306,12 @@ def yolo_output(x_in, filters, grid, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
-    x = PrimaryCapsule(16, 8, 1, 2)(x)
-    capsules = ConvolutionalCapsule(4, anchors * (classes + 5), kernel_size=1, strides=1)(x)
+    x = conv(x, filters * 2, 3)
+    x = PrimaryCapsule(16, 8, 3, 1)(x)
+    capsules = ConvolutionalCapsule(classes + 5, anchors, kernel_size=3, strides=1)(x)
+    capsules = tf.transpose(capsules, [0, 1, 2, 4, 3])
 
-    x = Lambda(lambda inp: tf.reshape(inp, (-1, grid, grid, anchors, classes + 5)))(capsules)
-    model = tf.keras.Model(inputs, x, name=name)
+    model = tf.keras.Model(inputs, capsules, name=name)
     model.summary()
     return model(x_in)
 
