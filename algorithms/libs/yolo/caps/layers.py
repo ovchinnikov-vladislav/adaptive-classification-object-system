@@ -289,7 +289,24 @@ def yolo_conv(x_in, filters, name=None):
     x = conv(x, filters, 1)
     x = conv(x, filters * 2, 3)
     x = conv(x, filters, 1)
-    return Model(inputs, x, name=name)(x_in)
+    model = Model(inputs, x, name=name)
+    model.summary()
+    return model(x_in)
+
+
+def caps_yolo_conv(x_in, filters, dims, name=None):
+    if isinstance(x_in, tuple):
+        x, inputs = yolo_conv_input_tuple(x_in, filters * dims)
+    else:
+        x = inputs = Input(x_in.shape[1:])
+
+    x = PrimaryCapsule(filters, dims, 3)(x)
+    x = ConvolutionalCapsule(filters, dims, 3, 1)(x)
+    x = tf.reshape(x, (-1, x.shape[1], x.shape[2], x.shape[3] * x.shape[4]))
+    x = ZeroPadding2D(((4, 0), (4, 0)))(x)
+    model = Model(inputs, x, name=name)
+    model.summary()
+    return model(x_in)
 
 
 def yolo_conv_tiny(x_in, filters, name=None):
@@ -325,34 +342,20 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
     masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
 
     x = inputs = Input([size, size, channels], name='input')
-    # x = conv(x, 32, 3)
-    # x = block(x, 64, 1)
-    # x = block(x, 128, 2)  # skip connection
-    # x = x_36 = block(x, 256, 8)  # skip connection
-    # x = x_61 = block(x, 512, 8)
-    # x = block(x, 1024, 4)
+    x = conv(x, 32, 3)
+    x = block(x, 64, 1)
+    x = block(x, 128, 2)  # skip connection
+    x = x_36 = block(x, 256, 8)  # skip connection
+    x = x_61 = block(x, 512, 8)
+    x = block(x, 1024, 4)
 
-    x = Conv2D(256, 9, 2, padding='valid', activation=tf.nn.relu)(x)
-    x = PrimaryCapsule(filters=32, dims=8, kernel_size=3, strides=2)(x)
-    x = ConvolutionalCapsule(filters=16, dims=16, kernel_size=3, strides=2)(x)
-    x = tf.reshape(x, (-1, x.shape[1], x.shape[2], x.shape[3] * x.shape[4]))
-    x = x_36 = ZeroPadding2D(((2, 0), (2, 0)))(x)
-    x = tf.reshape(x, (-1, x.shape[1], x.shape[2], 16, 16))
-    x = ConvolutionalCapsule(filters=32, dims=16, kernel_size=3, strides=2)(x)
-    x = tf.reshape(x, (-1, x.shape[1], x.shape[2], x.shape[3] * x.shape[4]))
-    x = x_61 = ZeroPadding2D(((1, 0), (1, 0)))(x)
-    x = tf.reshape(x, (-1, x.shape[1], x.shape[2], 32, 16))
-    x = ConvolutionalCapsule(filters=64, dims=16, kernel_size=3, strides=2)(x)
-    x = tf.reshape(x, (-1, x.shape[1], x.shape[2], x.shape[3] * x.shape[4]))
-    x = ZeroPadding2D(((1, 0), (1, 0)))(x)
-
-    x = yolo_conv(x, 512, name='yolo_conv_0')
+    x = caps_yolo_conv(x, 32, 16, name='yolo_conv_0')
     output_0 = yolo_output(x, 512, len(masks[0]), classes, name='yolo_output_0')
 
-    x = yolo_conv((x, x_61), 256, name='yolo_conv_1')
+    x = caps_yolo_conv((x, x_61), 16, 16, name='yolo_conv_1')
     output_1 = yolo_output(x, 256, len(masks[1]), classes, name='yolo_output_1')
 
-    x = yolo_conv((x, x_36), 128, name='yolo_conv_2')
+    x = caps_yolo_conv((x, x_36), 8, 16, name='yolo_conv_2')
     output_2 = yolo_output(x, 128, len(masks[2]), classes, name='yolo_output_2')
 
     if training:
@@ -377,19 +380,3 @@ if __name__ == '__main__':
 
     model = capsules_yolo(anchors=anchors, size=416, channels=3, classes=1, training=True)
     model.summary()
-
-    # x = inputs = Input((416, 416, 3))
-    # x = Conv2D(256, 9, 2, padding='valid', activation=tf.nn.relu)(x)
-    # x = PrimaryCapsule(filters=32, dims=8, kernel_size=3, strides=2)(x)
-    # x = ConvolutionalCapsule(filters=16, dims=16, kernel_size=3, strides=2)(x)
-    # x = tf.reshape(x, (-1, x.shape[1], x.shape[2], x.shape[3] * x.shape[4]))
-    # x = x_36 = ZeroPadding2D(((2, 0), (2, 0)))(x)
-    # x = ConvolutionalCapsule(filters=32, dims=16, kernel_size=3, strides=2)(x)
-    # x = tf.reshape(x, (-1, x.shape[1], x.shape[2], x.shape[3] * x.shape[4]))
-    # x = x_61 = ZeroPadding2D(((1, 0), (1, 0)))(x)
-    # x = ConvolutionalCapsule(filters=64, dims=16, kernel_size=3, strides=2)(x)
-    # x = tf.reshape(x, (-1, x.shape[1], x.shape[2], x.shape[3] * x.shape[4]))
-    # x = ZeroPadding2D(((1, 0), (1, 0)))(x)
-    #
-    # model = tf.keras.Model(inputs, (x_36, x_61, x))
-    # model.summary(line_length=156)
