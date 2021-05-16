@@ -1,84 +1,217 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import (Input, UpSampling2D, ZeroPadding2D, Concatenate, Layer,
+from tensorflow.keras.layers import (Input, UpSampling2D, ZeroPadding2D, Concatenate, Layer, Reshape,
                                      Conv2D, BatchNormalization, LeakyReLU, Add, Lambda)
 from tensorflow.keras.regularizers import l2
-from libs.capsnets.utls import squash
 
 
-class Capsule(Layer):
+def _caps_conv2d(inputs, weights, filters_out, kernel_size, strides, padding, iterations):
+    predictions = _predict(inputs, weights, filters_out, kernel_size, strides, padding)
+    outputs = _route(predictions, iterations)
 
-    def __init__(self,
-                 num_capsule,
-                 dim_capsule,
-                 routings=3,
-                 share_weights=True,
-                 activation='squash',
-                 **kwargs):
-        super(Capsule, self).__init__(**kwargs)
-        self.num_capsule = num_capsule
-        self.dim_capsule = dim_capsule
-        self.routings = routings
-        self.share_weights = share_weights
-        if activation == 'squash':
-            self.activation = squash
-        else:
-            self.activation = tf.keras.activations.get(activation)
+    return outputs
+
+
+def _predict(inputs, weights, filters_out, kernel_size, strides, padding):
+    batch_size = tf.shape(inputs)[0]
+    _, height_in, width_in, filters_in, dims_in = inputs.shape
+
+    inputs_flat = tf.reshape(inputs, shape=[-1, height_in, width_in, filters_in * dims_in], name='inputs_flat')
+
+    inputs_patches = tf.image.extract_patches(
+        inputs_flat,
+        sizes=[1, kernel_size[0], kernel_size[1], 1],
+        strides=[1, strides[0], strides[1], 1],
+        rates=[1, 1, 1, 1],
+        padding=padding.upper())
+
+    _, height_out, width_out, _ = inputs_patches.shape
+
+    caps_per_patch = kernel_size[0] * kernel_size[1] * filters_in
+
+    inputs_patches = tf.reshape(inputs_patches, shape=[-1, height_out, width_out, 1, caps_per_patch, dims_in, 1], name='inputs_patches')
+
+    inputs_patches_tiled = tf.tile(inputs_patches, multiples=[1, 1, 1, filters_out, 1, 1, 1], name='inputs_patches_tiled')
+
+    W_tiled = tf.tile(weights, multiples=[batch_size, height_out, width_out, 1, 1, 1, 1], name='W_tiled')
+
+    predictions = tf.matmul(W_tiled, inputs_patches_tiled, name='predictions')
+
+    return predictions
+
+
+def _route(predictions, iterations):
+    batch_size = tf.shape(predictions)[0]
+    _, height, width, filters_out, caps_per_patch, dims_out, _ = predictions.shape.as_list()
+
+    initial_outputs = tf.zeros([batch_size, height, width, filters_out, 1, dims_out, 1], name='initial_outputs')
+
+    logits = tf.zeros([batch_size, height, width, filters_out, caps_per_patch, 1, 1], name='logits')
+
+    def _routing_iteration(loop_counter, logits_old, outputs_old):
+        outputs_old_tiled = tf.tile(outputs_old, multiples=[1, 1, 1, 1, caps_per_patch, 1, 1], name='outputs_old_tiled')
+
+        agreement = tf.matmul(predictions, outputs_old_tiled, transpose_a=True, name='agreement')
+
+        logits = tf.add(logits_old, agreement, name='logits')
+
+        coupling_coefficients = tf.nn.softmax(logits, axis=3, name='coupling_coefficients')
+
+        weighted_predictions = tf.multiply(coupling_coefficients, predictions, name='weighted_predictions')
+
+        centroids = tf.reduce_sum(weighted_predictions, axis=4, keepdims=True, name='centroids')
+
+        outputs = squash(centroids, axis=-2)
+
+        return loop_counter + 1, logits, outputs
+
+    loop_counter = tf.constant(1, name='loop_counter')
+
+    _, _, outputs_sparse = tf.while_loop(
+        cond=lambda c, l, o: tf.less_equal(c, iterations),
+        body=_routing_iteration,
+        loop_vars=[loop_counter, logits, initial_outputs],
+        name='routing_loop'
+    )
+
+    outputs = tf.squeeze(outputs_sparse, axis=[4, -1], name='outputs')
+
+    return outputs
+
+
+def norm(s, axis=-1, epsilon=1e-7, keepdims=False):
+    squared_norm = tf.reduce_sum(tf.square(s), axis=axis, keepdims=keepdims, name='squared_norm')
+    result = tf.sqrt(squared_norm + epsilon, name='norm')
+    return result
+
+
+def squash(s, axis=-1, epsilon=1e-7):
+    squared_norm = tf.reduce_sum(tf.square(s), axis=axis, keepdims=True, name='squared_norm')
+    normal = tf.sqrt(squared_norm + epsilon, name='norm')
+    squash_factor = tf.divide(squared_norm, (1 + squared_norm), name='squash_factor')
+    unit_vector = tf.divide(s, normal, name='unit_vector')
+    squashed = squash_factor * unit_vector
+    return squashed
+
+
+class PrimaryCapsule(Layer):
+    def __init__(self, filters, dims, kernel_size, strides=1, **kwargs):
+        super().__init__(**kwargs)
+        self.filters = filters
+        self.dims = dims
+        self.kernel_size = kernel_size
+        self.strides = strides
+        self.conv = None
+
+    def build(self, input_shape):
+        super().build(input_shape)
+        self.conv = Conv2D(filters=self.filters * self.dims, kernel_size=self.kernel_size,
+                           strides=self.strides, padding='valid', activation=tf.nn.relu)
+
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        tf.assert_rank(inputs, rank=4, message='''`inputs` must be a tensor of feature maps (i.e. of shape
+                                                  (batch_size, height, width, filters))''')
+
+        x = self.conv(inputs)
+        _, height, width, _ = x.shape
+
+        capsules = tf.reshape(x, shape=[-1, height, width, self.filters, self.dims])
+
+        return squash(capsules)
 
     def get_config(self):
-        config = super().get_config().copy()
-        config.update({
-            'num_capsule': self.num_capsule,
-            'dim_capsule': self.dim_capsule,
-            'routings': self.routings,
-            'share_weight': self.share_weights,
+        return super().get_config()
 
-        })
-        return config
 
-    def build(self, input_shape, **kwargs):
-        self.batch_size = input_shape[0]
-        input_dim_capsule = input_shape[-1]
-        if self.share_weights:
-            self.kernel = self.add_weight(
-                name='capsule_kernel',
-                shape=(1, input_dim_capsule,
-                       self.num_capsule * self.dim_capsule),
-                initializer='glorot_uniform',
-                trainable=True)
+class DenseCapsule(Layer):
+    def __init__(self, caps, dims, iterations=2, **kwargs):
+        super().__init__(**kwargs)
+        self.caps = caps
+        self.dims = dims
+        self.iterations = iterations
+        self.filters_in = None
+        self.dims_in = None
+        self.W = None
+
+    def build(self, input_shape):
+        super().build(input_shape)
+
+        inputs_rank = len(input_shape)
+
+        if inputs_rank == 3:
+            _, filters_in, dims_in = input_shape
+        elif inputs_rank == 5:
+            _, height, width, filters, dims_in = input_shape
+            filters_in = height * width * filters
         else:
-            input_num_capsule = input_shape[-2]
-            self.kernel = self.add_weight(
-                name='capsule_kernel',
-                shape=(input_num_capsule, input_dim_capsule,
-                       self.num_capsule * self.dim_capsule),
-                initializer='glorot_uniform',
-                trainable=True)
+            raise Exception('''`inputs` must either be a flat tensor of capsules (i.e.
+                                       of shape (batch_size, caps_in, dims_in)) or a tensor of
+                                       capsule filters (i.e. of shape 
+                                       (batch_size, height, width, filters, dims))''')
+
+        self.filters_in = filters_in
+        self.dims_in = dims_in
+
+        caps_per_patch = 1 * 1 * filters_in
+
+        self.W = self.add_weight(shape=[1, 1, 1, self.caps, caps_per_patch, self.dims, self.dims_in],
+                                 dtype=tf.float32,
+                                 initializer=tf.random_normal_initializer(stddev=0.1),
+                                 name='W',
+                                 trainable=True)
+
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        inputs_filters = Reshape(target_shape=[-1, 1, 1, self.filters_in, self.dims_in])(inputs)
+
+        outputs = _caps_conv2d(inputs_filters, self.W, filters_out=self.caps, kernel_size=(1, 1),
+                               strides=(1, 1), padding='valid', iterations=self.iterations)
+
+        outputs = Reshape(target_shape=[-1, self.caps, self.dims])(outputs)
+
+        return outputs
+
+    def get_config(self):
+        return super().get_config()
+
+
+class ConvolutionalCapsule(Layer):
+    def __init__(self, filters, dims, kernel_size, strides, padding='valid', iterations=2, **kwargs):
+        super().__init__(**kwargs)
+        self.filters = filters
+        self.dims = dims
+        self.kernel_size = kernel_size
+        self.strides = strides
+        self.padding = padding
+        self.iterations = iterations
+        self.W = None
+
+    def build(self, input_shape):
+        super().build(input_shape)
+        _, height, width, filters_in, dims_in = input_shape
+
+        caps_per_patch = self.kernel_size * self.kernel_size * filters_in
+        self.W = self.add_weight(shape=[1, 1, 1, self.filters, caps_per_patch, self.dims, dims_in],
+                                 dtype=tf.float32,
+                                 initializer=tf.random_normal_initializer(stddev=0.1),
+                                 name='W',
+                                 trainable=True)
+
+        self.built = True
 
     def call(self, inputs, **kwargs):
 
-        if self.share_weights:
-            hat_inputs = tf.keras.backend.conv1d(inputs, self.kernel)
-        else:
-            hat_inputs = tf.keras.backend.local_conv1d(inputs, self.kernel, [1], [1])
+        outputs = _caps_conv2d(inputs, self.W, self.filters, (self.kernel_size, self.kernel_size),
+                               (self.strides, self.strides), self.padding, self.iterations)
 
-        input_num_capsule = inputs.shape[1]
-        hat_inputs = tf.reshape(hat_inputs, (-1, self.num_capsule, input_num_capsule, self.dim_capsule))
-        b = tf.zeros_like(hat_inputs[:, :, :, 0])
-        b = tf.expand_dims(b, axis=2)
+        return outputs
 
-        o = None
-        for i in range(self.routings):
-            c = tf.nn.softmax(b, 1)
-            o = self.activation(tf.matmul(c, hat_inputs))
-            if i < self.routings - 1:
-                b += tf.matmul(o, hat_inputs, transpose_b=True)
-
-        return tf.squeeze(o, [2])
-
-    def compute_output_shape(self, input_shape):
-        return None, self.num_capsule, self.dim_capsule
+    def get_config(self):
+        return super().get_config()
 
 
 def conv(x, filters, size, down_sampling=False,
@@ -124,18 +257,28 @@ def block(x, filters, blocks):
 
 def conv_net(name=None, size=None, channels=3):
     x = inputs = Input([size, size, channels])
-    x = conv(x, 32, 3)
-    x = block(x, 64, 1)
-    x = block(x, 128, 2)  # skip connection
-    x = x_36 = block(x, 256, 8)  # skip connection
-    x = x_61 = block(x, 512, 8)
-    x = block(x, 1024, 4)
+    x = Conv2D(256, 9, 2, padding='valid', activation=tf.nn.relu)(x)
+    x = PrimaryCapsule(filters=32, dims=8, kernel_size=9, strides=2)(x)
+    x = ConvolutionalCapsule(filters=8, dims=8, kernel_size=9, strides=1)(x)
+    x = ConvolutionalCapsule(filters=8, dims=8, kernel_size=9, strides=1)(x)
+    x = ConvolutionalCapsule(filters=8, dims=8, kernel_size=9, strides=1)(x)
+    x = ConvolutionalCapsule(filters=8, dims=8, kernel_size=9, strides=1)(x)
+    x = ConvolutionalCapsule(filters=8, dims=8, kernel_size=9, strides=1)(x)
+    x = x_36 = ConvolutionalCapsule(filters=16, dims=8, kernel_size=7, strides=1)(x)
+    x = ConvolutionalCapsule(filters=16, dims=8, kernel_size=9, strides=1)(x)
+    x = ConvolutionalCapsule(filters=16, dims=8, kernel_size=9, strides=1)(x)
+    x = ConvolutionalCapsule(filters=16, dims=8, kernel_size=6, strides=1)(x)
+    x = x_61 = ConvolutionalCapsule(filters=32, dims=8, kernel_size=6, strides=1)(x)
+    x = ConvolutionalCapsule(filters=32, dims=8, kernel_size=9, strides=1)(x)
+    x = ConvolutionalCapsule(filters=32, dims=8, kernel_size=6, strides=1)(x)
+
     return tf.keras.Model(inputs, (x_36, x_61, x), name=name)
 
 
 def yolo_conv_input_tuple(x_in, filters):
     inputs = Input(x_in[0].shape[1:]), Input(x_in[1].shape[1:])
     x, x_skip = inputs
+    x_skip = tf.reshape(x_skip, shape=[-1, x_skip.shape[1], x_skip.shape[2], x_skip.shape[3] * x_skip.shape[4]])
 
     # concat with skip connection
     x = conv(x, filters, 1)
@@ -145,17 +288,13 @@ def yolo_conv_input_tuple(x_in, filters):
     return x, inputs
 
 
-def yolo_conv(x_in, filters, name=None):
+def yolo_caps_conv(x_in, filters, name=None):
     if isinstance(x_in, tuple):
         x, inputs = yolo_conv_input_tuple(x_in, filters)
     else:
+        x_in = tf.reshape(x_in, shape=[-1, x_in.shape[1], x_in.shape[2], x_in.shape[3] * x_in.shape[4]])
         x = inputs = Input(x_in.shape[1:])
 
-    x = conv(x, filters, 1)
-    x = conv(x, filters * 2, 3)
-    x = conv(x, filters, 1)
-    x = conv(x, filters * 2, 3)
-    x = conv(x, filters, 1)
     return Model(inputs, x, name=name)(x_in)
 
 
@@ -174,8 +313,9 @@ def yolo_output(x_in, filters, grid, anchors, classes, name=None):
     # x = conv(x, filters * 2, 3)
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
-    x = tf.keras.layers.Reshape((-1, filters))(x)
-    capsules = Capsule(grid**2, anchors * (classes + 5), 3, True)(x)
+    x = tf.reshape(x, shape=[-1, grid, grid, x_in.shape[3] // 4, 4])
+    capsules = ConvolutionalCapsule(filters, 2, kernel_size=5, strides=1)(x)
+    capsules = ConvolutionalCapsule((grid - (capsules.shape[1] - 5 + 1)) * 2, anchors * (classes + 5), kernel_size=5, strides=1)(capsules)
 
     x = Lambda(lambda inp: tf.reshape(inp, (-1, grid, grid, anchors, classes + 5)))(capsules)
     model = tf.keras.Model(inputs, x, name=name)
@@ -187,16 +327,18 @@ def capsules_yolo(anchors, size, channels, classes, training=False):
     masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
 
     x = inputs = Input([size, size, channels], name='input')
-    x_36, x_61, x = conv_net(name='yolo_conv_net', size=size, channels=channels)(x)
+    feature_net = conv_net(name='yolo_conv_net', size=size, channels=channels)
+    feature_net.summary()
+    x_36, x_61, x = feature_net(x)
 
-    x = yolo_conv(x, 512, name='yolo_conv_0')
-    output_0 = yolo_output(x, 512, size // 32, len(masks[0]), classes, name='yolo_output_0')
+    x = yolo_caps_conv(x, 96, name='yolo_conv_0')
+    output_0 = yolo_output(x, 96, size // 32, len(masks[0]), classes, name='yolo_output_0')
 
-    x = yolo_conv((x, x_61), 256, name='yolo_conv_1')
-    output_1 = yolo_output(x, 256, size // 32 * 2, len(masks[1]), classes, name='yolo_output_1')
+    x = yolo_caps_conv((x, x_61), 96, name='yolo_conv_1')
+    output_1 = yolo_output(x, 96, size // 32 * 2, len(masks[1]), classes, name='yolo_output_1')
 
-    x = yolo_conv((x, x_36), 128, name='yolo_conv_2')
-    output_2 = yolo_output(x, 128, size // 32 * 4, len(masks[2]), classes, name='yolo_output_2')
+    x = yolo_caps_conv((x, x_36), 96, name='yolo_conv_2')
+    output_2 = yolo_output(x, 96, size // 32 * 4, len(masks[2]), classes, name='yolo_output_2')
 
     if training:
         return Model(inputs, (output_0, output_1, output_2), name='yolov3')

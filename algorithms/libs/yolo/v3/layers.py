@@ -53,7 +53,10 @@ def yolo_v3(anchors, size, channels, classes, training=False):
     masks = np.array([[6, 7, 8], [3, 4, 5], [0, 1, 2]])
 
     x = inputs = Input([size, size, channels], name='input')
-    x_36, x_61, x = darknet53(name='yolo_darknet', size=size, channels=channels)(x)
+    darknet = darknet53(name='yolo_darknet', size=size, channels=channels)
+    darknet.summary()
+
+    x_36, x_61, x = darknet(x)
 
     x = yolo_conv(x, 512, name='yolo_conv_0')
     output_0 = yolo_output(x, 512, len(masks[0]), classes, name='yolo_output_0')
