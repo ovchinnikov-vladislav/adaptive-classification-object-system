@@ -307,8 +307,8 @@ def yolo_output(x_in, filters, grid, anchors, classes, name=None):
     # x = conv(x, anchors * (classes + 5), 1, batch_norm=False)
 
     x = conv(x, filters * 2, 3)
-    x = PrimaryCapsule(16, 8, 3, 1)(x)
-    capsules = ConvolutionalCapsule(classes + 5, anchors, kernel_size=3, strides=1)(x)
+    x = PrimaryCapsule(16, 8, 1, 1)(x)
+    capsules = ConvolutionalCapsule(classes + 5, anchors, kernel_size=1, strides=1)(x)
     capsules = tf.transpose(capsules, [0, 1, 2, 4, 3])
 
     model = tf.keras.Model(inputs, capsules, name=name)
