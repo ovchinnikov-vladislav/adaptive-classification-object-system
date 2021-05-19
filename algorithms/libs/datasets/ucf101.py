@@ -57,7 +57,7 @@ def __scan_ucf101_with_labels(data_dir_path, labels):
     return result
 
 
-def download_dataset(data_dist_path, image_width=250, image_height=250, image_gray=False):
+def download_data(data_dist_path, image_width=250, image_height=250, image_gray=False):
     ucf101_data_dir_path = os.path.join(data_dist_path, "UCF-101")
     if not os.path.exists(ucf101_data_dir_path):
         __download_ucf101(data_dist_path)
