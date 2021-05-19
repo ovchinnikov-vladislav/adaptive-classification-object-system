@@ -23,7 +23,7 @@ def reporthook(block_num, block_size, total_size):
         sys.stderr.write("read %d\n" % (read_so_far,))
 
 
-def video_capturing_function(video_directory, dataset, folder_name):
+def video_capturing_function(video_directory, dataset, folder_name, image_width=250, image_height=250, image_gray=True):
     for i in np.arange(len(dataset)):
         video_name = dataset.video_name[i]
         video_read_path = os.path.join(video_name)
@@ -33,24 +33,24 @@ def video_capturing_function(video_directory, dataset, folder_name):
                                os.path.basename(video_name.split(".")[0])
             os.mkdir(train_write_file)
 
-            cap.set(cv2.CAP_PROP_FPS, 20)
-            frameRate = cap.get(5)
-            x = 1
+            cap.set(cv2.CAP_PROP_FPS, 30)
+            frame_rate = 10
             count = 0
             while cap.isOpened():
-                frameId = cap.get(1)  # current frame number
+                frame_id = cap.get(1)  # current frame number
                 ret, frame = cap.read()
                 if not ret:
                     break
-                if frameId % math.floor(frameRate) == 0:
+                if frame_id % math.floor(frame_rate) == 0:
                     filename = "frame_%d.jpg" % count
                     count += 1
-                    frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                    cv2.imwrite(os.path.join(train_write_file, filename), frame_grey)
+                    if image_gray:
+                        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                    resized_frame = cv2.resize(frame, (image_width, image_height))
+                    cv2.imwrite(os.path.join(train_write_file, filename), resized_frame)
             cap.release()
-
-        except:
-            print("File Already Created")
+        except Exception as e:
+            print("File Already Created", e)
 
     return print("All frames written in the: " + folder_name + " Folder")
 
