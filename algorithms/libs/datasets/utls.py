@@ -23,14 +23,23 @@ def reporthook(block_num, block_size, total_size):
         sys.stderr.write("read %d\n" % (read_so_far,))
 
 
-def video_capturing_function(video_directory, dataset, folder_name, image_width=250, image_height=250, image_gray=True):
+def video_capturing_function(video_directory, dataset, folder_name,
+                             image_width=250, image_height=250, image_gray=True, labels=None):
     for i in np.arange(len(dataset)):
         video_name = dataset.video_name[i]
         video_read_path = os.path.join(video_name)
         cap = cv2.VideoCapture(video_read_path)
         try:
-            train_write_file = video_directory + os.path.sep + folder_name + os.path.sep + \
-                               os.path.basename(video_name.split(".")[0])
+            if labels is None:
+                train_write_file = video_directory + os.path.sep + folder_name
+            else:
+                train_write_file = video_directory + os.path.sep + folder_name + os.path.sep + \
+                                   labels[dataset.labels[i]]
+            try:
+                os.mkdir(train_write_file)
+            except:
+                pass
+            train_write_file = os.path.join(train_write_file, os.path.basename(video_name.split(".")[0]))
             os.mkdir(train_write_file)
 
             cap.set(cv2.CAP_PROP_FPS, 30)
@@ -50,7 +59,7 @@ def video_capturing_function(video_directory, dataset, folder_name, image_width=
                     cv2.imwrite(os.path.join(train_write_file, filename), resized_frame)
             cap.release()
         except Exception as e:
-            print("File Already Created", e)
+            print(e)
 
     return print("All frames written in the: " + folder_name + " Folder")
 

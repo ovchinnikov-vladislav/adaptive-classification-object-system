@@ -112,8 +112,8 @@ def download_data(data_dist_path, image_width=250, image_height=250, image_gray=
         print(test_videos_dir + " not exists, then create")
     os.mkdir(test_videos_dir)
 
-    utils.video_capturing_function(ucf101_data_dir_path, train_set, "UCF101_Frames", image_width, image_height, image_gray)
-    utils.video_capturing_function(ucf101_data_dir_path, test_set, "UCF101_Frames", image_width, image_height, image_gray)
+    utils.video_capturing_function(ucf101_data_dir_path, train_set, "UCF101_Frames", image_width, image_height, image_gray, name_class_labels)
+    utils.video_capturing_function(ucf101_data_dir_path, test_set, "UCF101_Frames", image_width, image_height, image_gray, name_class_labels)
 
 
 def load_dataset(data_dist_path, frame_size=10, image_width=250, image_height=250):
@@ -220,4 +220,4 @@ def load_dataset(data_dist_path, frame_size=10, image_width=250, image_height=25
 
 
 if __name__ == '__main__':
-    download_dataset(os.path.join('D:' + os.path.sep + 'tensorflow_datasets', 'UCF-101'), 160, 120)
+    download_data(os.path.join('D:' + os.path.sep + 'tensorflow_datasets', 'UCF-101'), 160, 120)
