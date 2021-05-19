@@ -8,16 +8,16 @@ import libs.datasets.utls as utils
 
 
 def __download_ucf101(data_dir_path):
-    ucf_rar = data_dir_path + '/UCF101.rar'
+    ucf_rar = os.path.join(data_dir_path, 'UCF101.rar')
 
-    URL_LINK = 'https://crcv.ucf.edu/data/UCF101/UCF101.rar'
+    url_link = 'https://crcv.ucf.edu/data/UCF101/UCF101.rar'
 
     if not os.path.exists(data_dir_path):
         os.makedirs(data_dir_path)
 
     if not os.path.exists(ucf_rar):
         print('ucf file does not exist, downloading from Internet')
-        urllib.request.urlretrieve(url=URL_LINK, filename=ucf_rar,
+        urllib.request.urlretrieve(url=url_link, filename=ucf_rar,
                                    reporthook=utils.reporthook)
 
     print('unzipping ucf file')
@@ -25,7 +25,7 @@ def __download_ucf101(data_dir_path):
 
 
 def __scan_ucf101(data_dir_path, limit):
-    input_data_dir_path = data_dir_path + '/UCF-101'
+    input_data_dir_path = os.path.join(data_dir_path, 'UCF-101')
 
     result = dict()
 
@@ -38,16 +38,16 @@ def __scan_ucf101(data_dir_path, limit):
 
 
 def __help_scan_ucf101(input_data_dir_path, f, dir_count, result):
-    file_path = input_data_dir_path + os.path.sep + f
+    file_path = os.path.join(input_data_dir_path, f)
     if not os.path.isfile(file_path):
         dir_count += 1
         for ff in os.listdir(file_path):
-            video_file_path = file_path + os.path.sep + ff
+            video_file_path = os.path.join(file_path, ff)
             result[video_file_path] = f
 
 
 def __scan_ucf101_with_labels(data_dir_path, labels):
-    input_data_dir_path = data_dir_path + '/UCF-101'
+    input_data_dir_path = os.path.join(data_dir_path, 'UCF-101')
 
     result = dict()
 
@@ -58,7 +58,7 @@ def __scan_ucf101_with_labels(data_dir_path, labels):
 
 
 def load_data(data_dist_path, frame_size=10, image_width=250, image_height=250):
-    ucf101_data_dir_path = data_dist_path + "/UCF-101"
+    ucf101_data_dir_path = os.path.join(data_dist_path, "UCF-101")
     if not os.path.exists(ucf101_data_dir_path):
         __download_ucf101(data_dist_path)
 
@@ -68,12 +68,12 @@ def load_data(data_dist_path, frame_size=10, image_width=250, image_height=250):
 
     dir_count = 0
     for f in os.listdir(ucf101_data_dir_path):
-        file_path = ucf101_data_dir_path + os.path.sep + f
+        file_path = os.path.join(ucf101_data_dir_path, f)
         print(file_path)
         if not os.path.isfile(file_path):
             dir_count += 1
             for video in os.listdir(file_path):
-                videos.append(file_path + os.path.sep + video)
+                videos.append(os.path.join(file_path, video))
                 labels.append(dir_count - 1)
                 name_class_labels[dir_count - 1] = f
 
@@ -99,38 +99,34 @@ def load_data(data_dist_path, frame_size=10, image_width=250, image_height=250):
     train_set = train_set.reset_index().drop("index", axis=1)
     test_set = test_set.reset_index().drop("index", axis=1)
 
-    os.rmdir(os.path.join(ucf101_data_dir_path, "Train_Videos"))
-    os.rmdir(os.path.join(ucf101_data_dir_path, "Test_Videos"))
-
-    train_videos_dir = os.path.join(ucf101_data_dir_path, "Train_Videos")
-    test_videos_dir = os.path.join(ucf101_data_dir_path, "Test_Videos")
+    train_videos_dir = os.path.join(ucf101_data_dir_path, "UCF101_Frames")
+    test_videos_dir = os.path.join(ucf101_data_dir_path, "UCF101_Frames")
     try:
-        os.mkdir(train_videos_dir)
-    except FileExistsError as ae:
-        print("Folder Already Created")
+        os.rmdir(train_videos_dir)
+    except FileNotFoundError as e:
+        print(train_videos_dir + " not exists, then create")
+    os.mkdir(train_videos_dir)
     try:
-        os.mkdir(test_videos_dir)
-    except FileExistsError as ae:
-        print("Folder Already Created")
+        os.rmdir(test_videos_dir)
+    except FileNotFoundError as e:
+        print(test_videos_dir + " not exists, then create")
+    os.mkdir(test_videos_dir)
 
-    utils.video_capturing_function(ucf101_data_dir_path, train_set, "Train_Videos")
-    utils.video_capturing_function(ucf101_data_dir_path, test_set, "Test_Videos")
-
-    train_dir_path = ucf101_data_dir_path + os.path.sep + 'Train_Videos'
-    test_dir_path = ucf101_data_dir_path + os.path.sep + 'Test_Videos'
+    utils.video_capturing_function(ucf101_data_dir_path, train_set, "UCF101_Frames")
+    utils.video_capturing_function(ucf101_data_dir_path, test_set, "UCF101_Frames")
 
     train_frames = []
     for i in np.arange(len(train_set.video_name)):
         vid_file_name = os.path.basename(train_set.video_name[i]).split(".")[0]
-        train_frames.append(len(os.listdir(os.path.join(train_dir_path, vid_file_name))))
+        train_frames.append(len(os.listdir(os.path.join(train_videos_dir, vid_file_name))))
 
     test_frames = []
     for i in np.arange(len(test_set.video_name)):
         vid_file_name = os.path.basename(test_set.video_name[i]).split('.')[0]
-        test_frames.append(len(os.listdir(os.path.join(test_dir_path, vid_file_name))))
+        test_frames.append(len(os.listdir(os.path.join(test_videos_dir, vid_file_name))))
 
-    utils.frame_generating_function(train_set, train_dir_path, frame_size=frame_size)
-    utils.frame_generating_function(test_set, test_dir_path, frame_size=frame_size)
+    utils.frame_generating_function(train_set, train_videos_dir, frame_size=frame_size)
+    utils.frame_generating_function(test_set, test_videos_dir, frame_size=frame_size)
 
     train_vid_dat = pd.DataFrame()
     validation_vid_dat = pd.DataFrame()
@@ -144,15 +140,15 @@ def load_data(data_dist_path, frame_size=10, image_width=250, image_height=250):
         train_vid_dat = train_vid_dat.append(train_dat_label, ignore_index=True)
         validation_vid_dat = validation_vid_dat.append(validation_dat_label, ignore_index=True)
 
-    train_dataset = utils.data_load_function_frames(train_vid_dat, train_dir_path,
+    train_dataset = utils.data_load_function_frames(train_vid_dat, train_videos_dir,
                                                     frame_size=frame_size,
                                                     image_width=image_width,
                                                     image_height=image_height)
-    test_dataset = utils.data_load_function_frames(test_set, test_dir_path,
+    test_dataset = utils.data_load_function_frames(test_set, test_videos_dir,
                                                    frame_size=frame_size,
                                                    image_width=image_width,
                                                    image_height=image_height)
-    validation_dataset = utils.data_load_function_frames(validation_vid_dat, train_dir_path,
+    validation_dataset = utils.data_load_function_frames(validation_vid_dat, train_videos_dir,
                                                          frame_size=frame_size,
                                                          image_width=image_width,
                                                          image_height=image_height)
@@ -162,3 +158,7 @@ def load_data(data_dist_path, frame_size=10, image_width=250, image_height=250):
     validation_labels = np.array(validation_vid_dat.labels)
 
     return (train_dataset, train_labels), (test_dataset, test_labels), (validation_dataset, validation_labels)
+
+
+if __name__ == '__main__':
+    load_data(os.path.join('D:' + os.path.sep + 'tensorflow_datasets', 'UCF-101'), 16, 160, 120)

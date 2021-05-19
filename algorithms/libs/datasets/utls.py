@@ -43,7 +43,7 @@ def video_capturing_function(video_directory, dataset, folder_name):
                 if not ret:
                     break
                 if frameId % math.floor(frameRate) == 0:
-                    filename = "frame%d.jpg" % count
+                    filename = "frame_%d.jpg" % count
                     count += 1
                     frame_grey = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                     cv2.imwrite(os.path.join(train_write_file, filename), frame_grey)
@@ -67,7 +67,7 @@ def frame_generating_function(dataset, dir_path, frame_size=10):
                 list_frames = os.listdir(vid_path)
                 frame = os.path.join(vid_path, list_frames[c])
                 count = k + len_frame
-                new_frame = "frame%d.jpg" % count
+                new_frame = "frame_%d.jpg" % count
                 shutil.copy2(frame, os.path.join(vid_path, new_frame))
                 c += 1
         else:
@@ -82,7 +82,7 @@ def data_load_function_frames(dataset, directory, frame_size=10, image_width=250
         vid_dir_path = os.path.join(directory, os.path.basename(vid_name.split(".")[0]))
         frames_to_select = []
         for j in np.arange(0, frame_size):
-            frames_to_select.append('frame%d.jpg' % j)
+            frames_to_select.append('frame_%d.jpg' % j)
         vid_data = []
         for frame in frames_to_select:
             img = Image.open(os.path.join(vid_dir_path, frame))
