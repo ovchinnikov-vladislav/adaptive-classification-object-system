@@ -1,5 +1,5 @@
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint, TensorBoard
-from libs.yolo.losses import yolo_loss
+from libs.yolo.losses import yolo_standard_loss
 from libs.yolo.caps.layers import capsules_yolo
 from libs.yolo.utils import get_anchors, data_generator_wrapper
 import tensorflow as tf
@@ -48,7 +48,7 @@ if __name__ == '__main__':
         output_types=(tf.float32, (tf.float32, tf.float32, tf.float32)),
         output_shapes=(shape_input_image, (shape_output_0_image, shape_output_1_image, shape_output_2_image)))
 
-    loss = [yolo_loss(anchors[mask], classes=num_classes, use_softmax_loss=True) for mask in masks]
+    loss = [yolo_standard_loss(anchors[mask], classes=num_classes, use_softmax_loss=True) for mask in masks]
     optimizer = tf.keras.optimizers.Adam(lr=1e-3)
 
     model.compile(optimizer=optimizer, loss=loss)

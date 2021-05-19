@@ -47,7 +47,7 @@ class ObjectDetection:
 
 
 class YoloModel:
-    def __init__(self, model='yolo3', use_tracking=True, classes=config.coco_classes_ru, size=416):
+    def __init__(self, model='yolo3-person', use_tracking=True, classes=config.coco_classes_ru, size=416):
         self.class_names = [c.strip() for c in open(classes).readlines()]
         num_classes = len(self.class_names)
         self.size = size
@@ -56,6 +56,12 @@ class YoloModel:
         if model == 'yolo3':
             weights = config.yolo_v3_weights
             anchors = get_anchors(config.yolo_v3_anchors)
+            self.yolo = yolo_v3(anchors, size=size, channels=3, classes=num_classes)
+        elif model == 'yolo3-person':
+            weights = config.yolo_v3_person_weights
+            anchors = get_anchors(config.yolo_v3_anchors)
+            self.class_names = ['person']
+            num_classes = len(self.class_names)
             self.yolo = yolo_v3(anchors, size=size, channels=3, classes=num_classes)
         elif model == 'yolo4':
             weights = config.yolo_v4_weights
