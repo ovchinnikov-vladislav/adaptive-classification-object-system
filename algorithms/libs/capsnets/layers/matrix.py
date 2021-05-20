@@ -116,12 +116,9 @@ class ConvolutionalCapsule3D(layers.Layer):
         _, d, h, w, ch, _ = u_padded.shape
         d, h, w, ch = map(int, [d, h, w, ch])
 
-        d_offsets = [[(d_ + k) for k in range(self.kernel_size[0])] for d_ in
-                     range(0, d + 1 - self.kernel_size[0], self.strides[0])]
-        h_offsets = [[(h_ + k) for k in range(self.kernel_size[1])] for h_ in
-                     range(0, h + 1 - self.kernel_size[1], self.strides[1])]
-        w_offsets = [[(w_ + k) for k in range(self.kernel_size[2])] for w_ in
-                     range(0, w + 1 - self.kernel_size[2], self.strides[2])]
+        d_offsets = [[(d_ + k) for k in range(self.kernel_size[0])] for d_ in range(0, d + 1 - self.kernel_size[0], self.strides[0])]
+        h_offsets = [[(h_ + k) for k in range(self.kernel_size[1])] for h_ in range(0, h + 1 - self.kernel_size[1], self.strides[1])]
+        w_offsets = [[(w_ + k) for k in range(self.kernel_size[2])] for w_ in range(0, w + 1 - self.kernel_size[2], self.strides[2])]
 
         d_out, h_out, w_out = len(d_offsets), len(h_offsets), len(w_offsets)
 
@@ -133,13 +130,13 @@ class ConvolutionalCapsule3D(layers.Layer):
         if self.route_mean:
             kernels_reshaped = tf.reshape(w_gathered, (batch_size * d_out * h_out * w_out,
                                                        self.kernel_size[0] * self.kernel_size[1] * self.kernel_size[2],
-                                                       ch, matrix_dim))
+                                                       ch, matrix_dim + 1))
             kernels_reshaped = tf.reduce_mean(kernels_reshaped, axis=1)
             capsules = self.dense_caps((kernels_reshaped[:, :, :-1], kernels_reshaped[:, :, -1:]))
         else:
             kernels_reshaped = tf.reshape(w_gathered, (batch_size * d_out * h_out * w_out,
                                                        self.kernel_size[0], self.kernel_size[1], self.kernel_size[2],
-                                                       ch, matrix_dim))
+                                                       ch, matrix_dim + 1))
             capsules = self.dense_caps((kernels_reshaped[:, :, :, :, :, :-1], kernels_reshaped[:, :, :, :, :, -1:]))
 
         poses = tf.reshape(capsules[0][:, :, :matrix_dim], (batch_size, d_out, h_out, w_out, self.channels, matrix_dim))
@@ -177,14 +174,12 @@ class ClassCapsule(layers.Layer):
 
         if self.ch_same_w:
             self.w = self.add_weight(name=self.name + '_weights',
-                                     shape=(self.ch, self.n_caps_j, int(np.sqrt(self.matrix_dim)),
-                                            int(np.sqrt(self.matrix_dim))),
+                                     shape=(self.ch, self.n_caps_j, int(np.sqrt(self.matrix_dim)), int(np.sqrt(self.matrix_dim))),
                                      initializer=tf.initializers.random_normal(stddev=0.1),
                                      regularizer=tf.keras.regularizers.L2(0.1))
         else:
             self.w = self.add_weight(name=self.name + '_weights',
-                                     shape=(self.n_capsch_i, self.ch, self.n_caps_j, int(np.sqrt(self.matrix_dim)),
-                                            int(np.sqrt(self.matrix_dim))),
+                                     shape=(self.n_capsch_i, self.ch, self.n_caps_j, int(np.sqrt(self.matrix_dim)), int(np.sqrt(self.matrix_dim))),
                                      initializer=tf.initializers.random_normal(stddev=0.1),
                                      regularizer=tf.keras.regularizers.L2(0.1))
 
@@ -213,8 +208,7 @@ class ClassCapsule(layers.Layer):
             u_i, coords, activation = get_subset(u_i, coords, activation, k=self.subset_routing)
             self.n_capsch_i = self.subset_routing
 
-        u_i = tf.reshape(u_i, (
-        batch_size, self.n_capsch_i, self.ch, int(np.sqrt(self.matrix_dim)), int(np.sqrt(self.matrix_dim))))
+        u_i = tf.reshape(u_i, (batch_size, self.n_capsch_i, self.ch, int(np.sqrt(self.matrix_dim)), int(np.sqrt(self.matrix_dim))))
         u_i = tf.expand_dims(u_i, axis=-3)
         u_i = tf.tile(u_i, [1, 1, 1, self.n_caps_j, 1, 1])
 
@@ -295,11 +289,9 @@ def get_subset(u_i, coords, activation, k):
     :param k: Number of capsules which will be routed
     :return: New u_i, coords, and activation which only have k of the most active capsules per channel
     """
-    batch_size, n_capsch_i, ch, matrix_dim = tf.shape(u_i)[0], int(u_i.get_shape().as_list()[1]), tf.shape(u_i)[2], int(
-        u_i.get_shape().as_list()[3])
+    batch_size, n_capsch_i, ch, matrix_dim = tf.shape(u_i)[0], int(u_i.get_shape().as_list()[1]), tf.shape(u_i)[2], int(u_i.get_shape().as_list()[3])
 
-    inputs_res = tf.reshape(tf.concat([u_i, coords, activation], axis=-1),
-                            (batch_size, n_capsch_i, ch, matrix_dim * 2 + 1))
+    inputs_res = tf.reshape(tf.concat([u_i, coords, activation], axis=-1), (batch_size, n_capsch_i, ch, matrix_dim * 2 + 1))
 
     trans = tf.transpose(inputs_res, [0, 2, 1, 3])
 
@@ -386,27 +378,27 @@ def em_routing(v, a_i, beta_v, beta_a, n_iterations=3, inv_temp=0.5, inv_temp_de
 
     # a_j = tf.sigmoid(float(config.inv_temp) * (beta_a - cost)) # may lead to numerical instability
 
-    def condition(mean, stdsqr, act_j, counter):
+    def condition(counter):
         return tf.less(counter, n_iterations)
 
-    def route(mean, stdsqr, act_j, inv_temp, inv_temp_delta, counter):
-        exp = tf.reduce_sum(tf.square(v - mean) / (2 * stdsqr + epsilon), axis=-1)
-        coef = 0 - .5 * tf.reduce_sum(tf.math.log(2 * np.pi * stdsqr + epsilon), axis=-1)
+    def route(r_mean, r_stdsqr, r_act_j, r_inv_temp, r_inv_temp_delta, counter):
+        exp = tf.reduce_sum(tf.square(v - r_mean) / (2 * r_stdsqr + epsilon), axis=-1)
+        coef = 0 - .5 * tf.reduce_sum(tf.math.log(2 * np.pi * r_stdsqr + epsilon), axis=-1)
         log_p_j = coef - exp
 
-        log_ap = tf.reshape(tf.math.log(act_j + epsilon), (batch_size, 1, n_caps_j)) + log_p_j
+        log_ap = tf.reshape(tf.math.log(r_act_j + epsilon), (batch_size, 1, n_caps_j)) + log_p_j
         r_ij = tf.nn.softmax(log_ap + epsilon)  # ap / (tf.reduce_sum(ap, axis=-1, keepdims=True) + epsilon)
 
         r_ij = tf.multiply(tf.expand_dims(r_ij, axis=-1), a_i)
 
         denom = tf.reduce_sum(r_ij, axis=1, keepdims=True)
         m_numer = tf.reduce_sum(v * r_ij, axis=1, keepdims=True)
-        mean = m_numer / (denom + epsilon)
+        r_mean = m_numer / (denom + epsilon)
 
-        s_numer = tf.reduce_sum(r_ij * tf.square(v - mean), axis=1, keepdims=True)
-        stdsqr = s_numer / (denom + epsilon)
+        s_numer = tf.reduce_sum(r_ij * tf.square(v - r_mean), axis=1, keepdims=True)
+        r_stdsqr = s_numer / (denom + epsilon)
 
-        cost_h = (beta_v + tf.math.log(tf.sqrt(stdsqr + epsilon) + epsilon)) * denom
+        cost_h = (beta_v + tf.math.log(tf.sqrt(r_stdsqr + epsilon) + epsilon)) * denom
         cost_h = tf.reduce_sum(cost_h, axis=-1, keepdims=True)
 
         # these are calculated for numerical stability.
@@ -417,11 +409,11 @@ def em_routing(v, a_i, beta_v, beta_a, n_iterations=3, inv_temp=0.5, inv_temp_de
             ) / n_caps_j + epsilon
         )
 
-        inv_temp = inv_temp + counter * inv_temp_delta
-        act_j = tf.sigmoid(inv_temp * (beta_a + (cost_h_mean - cost_h) / (cost_h_stdv + epsilon)))
+        r_inv_temp = r_inv_temp + counter * r_inv_temp_delta
+        r_act_j = tf.sigmoid(r_inv_temp * (beta_a + (cost_h_mean - cost_h) / (cost_h_stdv + epsilon)))
         # act_j = tf.sigmoid(inv_temp * (beta_a - cost_h)) # may lead to numerical instability
 
-        return mean, stdsqr, act_j, tf.add(counter, 1)
+        return r_mean, r_stdsqr, r_act_j, tf.add(counter, 1)
 
     [mean, _, act_j, _] = tf.while_loop(condition, route, [m, s, a_j, inv_temp, inv_temp_delta, 1.0])
 
