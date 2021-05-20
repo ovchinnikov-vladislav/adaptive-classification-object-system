@@ -38,7 +38,8 @@ class PrimaryCapsule3D(layers.Layer):
                                         strides=self.strides, padding=self.padding, activation=self.activation,
                                         name=self.name + '_pose')
         self.activations_conv = layers.Conv3D(filters=self.channels, kernel_size=self.kernel_size,
-                                              strides=self.strides, padding=self.padding, activation=tf.nn.sigmoid,
+                                              strides=self.strides, padding=self.padding,
+                                              activation=tf.keras.activations.sigmoid,
                                               name=self.name + '_activation')
         self.built = True
 
