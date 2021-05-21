@@ -20,6 +20,10 @@ deepsort_model = os.path.join(path, 'resources', 'data', 'deepsort.pb')
 deepsort_caps_model = os.path.join(path, 'resources', 'data', '...')
 mars_datasets = os.path.join(path, 'resources', 'data', 'mars')
 
+ucf24_caps_model = os.path.join(path, 'resources', 'data', 'ucf24-caps.tf')
+ucf24_classes_ru = os.path.join(path, 'resources', 'data', 'ucf24_classes_ru.txt')
+ucf24_classes_en = os.path.join(path, 'resources', 'data', 'ucf24_classes_en.txt')
+
 font_cv = os.path.join(path, 'resources', 'font', 'FiraMono-Medium.otf')
 
 rabbitmq_host = 'amqp://guest:guest@192.168.0.13:5672/'
