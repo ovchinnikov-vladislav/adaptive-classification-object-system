@@ -9,6 +9,74 @@ inv_temp_delta = 0.1
 epsilon = 1e-7
 
 
+class PrimaryCapsule2D(layers.Layer):
+    """
+    Класс, описывающий первичные капсулы с использованием трехмерных сверточных слоев
+    :param inputs: входной тензор
+    :param channels: количество капсул
+    :param kernel_size: размер ядра свертки для выделения карты признаков. Должен описывать два измерения (K_h, K_w).
+    :param strides: шаг свертки при использовании ядра свертки. Должен описывать два измерения (S_h, S_w)
+    :param name: имя слоя
+    :param padding: требуется ли восполнять размер карты признаков путем добавления строк с помощью 'valid' или нет 'same'.
+    :param activation: функция активации для позиционной матрицы.
+    :return: возвращается капсула, как матрица поз и матрица активаций.
+    Позы имеют размерность (N, H_out, W_out, C_out, M) гда M является высота*ширина матрицы поз.
+    Актвации имеют размерность (N, H_out, W_out, C_out, 1).
+    """
+
+    def __init__(self, channels, kernel_size, strides, name='primary_caps_3d',
+                 matrix_dim=(4, 4), padding='valid', activation=None,
+                 pose_kernel_initializer=None, activation_kernel_initializer=None,
+                 pose_bias_initializer=None, activation_bias_initializer=None, **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.channels = channels
+        self.kernel_size = kernel_size
+        self.strides = strides
+        self.padding = padding
+        self.activation = activation
+        self.matrix_dim = matrix_dim[0] * matrix_dim[1]
+        self.poses_conv = None
+        self.activations_conv = None
+        self.pose_kernel_initializer = pose_kernel_initializer
+        self.activation_kernel_initializer = activation_kernel_initializer
+        self.pose_bias_initializer = pose_bias_initializer
+        self.activation_bias_initializer = activation_bias_initializer
+
+    def build(self, input_shape):
+        self.poses_conv = layers.Conv2D(filters=self.channels * self.matrix_dim, kernel_size=self.kernel_size,
+                                        strides=self.strides, padding=self.padding, activation=self.activation,
+                                        kernel_initializer=self.pose_kernel_initializer,
+                                        bias_initializer=self.pose_bias_initializer,
+                                        name=self.name + '_pose')
+        self.activations_conv = layers.Conv2D(filters=self.channels, kernel_size=self.kernel_size,
+                                              strides=self.strides, padding=self.padding,
+                                              activation=tf.nn.sigmoid,
+                                              kernel_initializer=self.activation_kernel_initializer,
+                                              bias_initializer=self.activation_bias_initializer,
+                                              name=self.name + '_activation')
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        if self.poses_conv is None or self.activations_conv is None:
+            raise Exception('PrimaryCapsule3D build is failed')
+        batch_size = tf.shape(inputs)[0]
+
+        poses = self.poses_conv(inputs)
+
+        _, h, w, _ = poses.shape
+        h, w = map(int, [h, w])
+
+        pose = tf.reshape(poses, (batch_size, h, w, self.channels, self.matrix_dim))
+
+        acts = self.activations_conv(inputs)
+        activation = tf.reshape(acts, (batch_size, h, w, self.channels, 1))
+
+        return pose, activation
+
+    def get_config(self):
+        return super().get_config()
+
+
 class PrimaryCapsule3D(layers.Layer):
     """
     Класс, описывающий первичные капсулы с использованием трехмерных сверточных слоев
@@ -72,6 +140,102 @@ class PrimaryCapsule3D(layers.Layer):
         activation = tf.reshape(acts, (batch_size, d, h, w, self.channels, 1))
 
         return pose, activation
+
+    def get_config(self):
+        return super().get_config()
+
+
+class ConvolutionalCapsule2D(layers.Layer):
+    def __init__(self, channels, kernel_size, strides, name='conv_caps_3d',
+                 padding='valid', subset_routing=-1, route_min=0.0, coord_add=False,
+                 rel_center=True, route_mean=True, ch_same_w=True,
+                 beta_v_initializer=tf.initializers.random_normal(stddev=0.1),
+                 beta_a_initializer=tf.initializers.random_normal(stddev=0.1),
+                 weights_initializer=tf.initializers.random_normal(stddev=0.1), **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.channels = channels
+        self.kernel_size = kernel_size
+        self.strides = strides
+        self.padding = padding
+        self.subset_routing = subset_routing
+        self.route_min = route_min
+        self.coord_add = coord_add
+        self.rel_center = rel_center
+        self.route_mean = route_mean
+        self.ch_same_w = ch_same_w
+        self.dense_caps = None
+        self.weights_initializer = weights_initializer
+        self.beta_v_initializer = beta_v_initializer
+        self.beta_a_initializer = beta_a_initializer
+
+    def build(self, input_shape):
+        if self.route_mean:
+            self.dense_caps = ClassCapsule(self.channels, self.name + 'dense_caps',
+                                           route_min=self.route_min, ch_same_w=self.ch_same_w,
+                                           weights_initializer=self.weights_initializer,
+                                           beta_v_initializer=self.beta_v_initializer,
+                                           beta_a_initializer=self.beta_a_initializer)
+        else:
+            self.dense_caps = ClassCapsule(self.channels, self.name + '_dense_caps', subset_routing=self.subset_routing,
+                                           route_min=self.route_min, coord_add=self.coord_add,
+                                           rel_center=self.rel_center, ch_same_w=self.ch_same_w,
+                                           weights_initializer=self.weights_initializer,
+                                           beta_v_initializer=self.beta_v_initializer,
+                                           beta_a_initializer=self.beta_a_initializer)
+
+        self.built = True
+
+    def call(self, inputs, **kwargs):
+        if self.dense_caps is None:
+            raise Exception('ConvolutionalCapsule3D build is failed')
+
+        inputs = tf.concat(inputs, axis=-1)
+
+        # pads the input
+        if self.padding == 'same':
+            h_padding, w_padding = int(float(self.kernel_size[0]) / 2), int(float(self.kernel_size[1]) / 2)
+            u_padded = tf.pad(inputs,
+                              [[0, 0], [h_padding, h_padding], [w_padding, w_padding], [0, 0],
+                               [0, 0]])
+        else:
+            u_padded = inputs
+
+        batch_size = tf.shape(u_padded)[0]
+        matrix_dim = u_padded.shape[-1]
+        _, h, w, ch, _ = u_padded.get_shape().as_list()
+        h, w, ch = map(int, [h, w, ch])
+
+        # gets indices for kernels
+        h_offsets = [[(h_ + k) for k in range(self.kernel_size[0])] for h_ in
+                     range(0, h + 1 - self.kernel_size[0], self.strides[0])]
+        w_offsets = [[(w_ + k) for k in range(self.kernel_size[1])] for w_ in
+                     range(0, w + 1 - self.kernel_size[1], self.strides[1])]
+
+        # output dimensions
+        h_out, w_out = len(h_offsets), len(w_offsets)
+
+        # gathers the capsules into shape (N, H2, W2, KD, KH, KW, Ch_in, 17)
+        h_gathered = tf.gather(u_padded, h_offsets, axis=3)
+        w_gathered = tf.gather(h_gathered, w_offsets, axis=5)
+        w_gathered = tf.transpose(w_gathered, [0, 1, 3, 5, 2, 4, 6])
+
+        # obtains the next layer of capsules
+        if self.route_mean:
+            kernels_reshaped = tf.reshape(w_gathered, [batch_size * h_out * w_out,
+                                                       self.kernel_size[0] * self.kernel_size[1],
+                                                       ch, matrix_dim])
+            kernels_reshaped = tf.reduce_mean(kernels_reshaped, axis=1)
+            capsules = self.dense_caps((kernels_reshaped[:, :, :-1], kernels_reshaped[:, :, -1:]))
+        else:
+            kernels_reshaped = tf.reshape(w_gathered,
+                                          [batch_size * h_out * w_out, self.kernel_size[0], self.kernel_size[1], ch, matrix_dim])
+            capsules = self.dense_caps((kernels_reshaped[:, :, :, :, :, :-1], kernels_reshaped[:, :, :, :, :, -1:]))
+
+        # reshape capsules back into the 3d shape
+        poses = tf.reshape(capsules[0][:, :, :(matrix_dim-1)], (batch_size, h_out, w_out, self.channels, matrix_dim - 1))
+        activations = tf.reshape(capsules[1], (batch_size, h_out, w_out, self.channels, 1))
+
+        return poses, activations
 
     def get_config(self):
         return super().get_config()
@@ -461,3 +625,16 @@ def em_routing(v, a_i, beta_v, beta_a, n_iterations=3):
                                         route, [m, s, a_j, 1.0])
 
     return tf.reshape(mean, (batch_size, n_caps_j, mat_len)), tf.reshape(act_j, (batch_size, n_caps_j, 1))
+
+
+if __name__ == '__main__':
+    input_image = layers.Input(shape=(28, 28, 1))
+
+    x = layers.Conv2D(filters=32, kernel_size=5, strides=2, padding='same', activation=tf.nn.relu, name='conv2d_relu')(input_image)
+    x = PrimaryCapsule2D(matrix_dim=(4, 4), kernel_size=1, channels=32, strides=1, padding='valid', name='primary_caps')(x)
+    x = ConvolutionalCapsule2D(channels=32, kernel_size=(3, 3), strides=(2, 2), name='caps_conv_1')(x)
+    x = ConvolutionalCapsule2D(channels=32, kernel_size=(3, 3), strides=(1, 1), name='caps_conv_2')(x)
+    x = ClassCapsule(n_caps_j=10, name='class_caps')(x)
+
+    model = tf.keras.Model(input_image, x)
+    model.summary(line_length=250)
