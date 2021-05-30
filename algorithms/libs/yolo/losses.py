@@ -189,8 +189,7 @@ def yolo_standard_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0
                 class_loss = sigmoid_focal_loss(true_class_idx, pred_class)
         else:
             if use_softmax_loss:
-                class_loss = obj_mask * sparse_categorical_crossentropy(
-                    true_class_idx, pred_class)
+                class_loss = obj_mask * sparse_categorical_crossentropy(true_class_idx, pred_class)
             else:
                 class_loss = obj_mask * binary_crossentropy(true_class_idx, pred_class, from_logits=True)
 
@@ -205,8 +204,8 @@ def yolo_standard_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0
             diou_loss = tf.reduce_sum(diou_loss, axis=(1, 2, 3))
             location_loss = diou_loss
         else:
-            xy_loss = obj_mask * box_loss_scale * binary_crossentropy(true_xy, pred_xy, from_logits=True)
-            wh_loss = obj_mask * box_loss_scale * tf.reduce_sum(tf.square(true_wh - pred_wh))
+            xy_loss = obj_mask * box_loss_scale * tf.reduce_sum(tf.square(true_xy - pred_xy), axis=-1)
+            wh_loss = obj_mask * box_loss_scale * tf.reduce_sum(tf.square(true_wh - pred_wh), axis=-1)
             xy_loss = tf.reduce_sum(xy_loss, axis=(1, 2, 3))
             wh_loss = tf.reduce_sum(wh_loss, axis=(1, 2, 3))
             location_loss = xy_loss + wh_loss
@@ -215,8 +214,6 @@ def yolo_standard_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0
         obj_loss = tf.reduce_sum(obj_loss, axis=(1, 2, 3))
         class_loss = tf.reduce_sum(class_loss, axis=(1, 2, 3))
 
-        loss = location_loss + obj_loss + class_loss
-
-        return loss, location_loss, obj_loss, class_loss
+        return location_loss + obj_loss + class_loss
 
     return calc_yolo_loss
