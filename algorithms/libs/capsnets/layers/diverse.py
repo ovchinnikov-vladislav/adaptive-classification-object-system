@@ -8,7 +8,7 @@ from tensorflow.keras.layers import Conv2D, Dense, GlobalAveragePooling2D
 from tensorflow.keras.layers import Activation, BatchNormalization, Lambda
 from tensorflow.keras.layers import DepthwiseConv2D
 from tensorflow.keras import backend as K
-from libs.capsnets.utls import squash
+from libs.capsnets.utils import squash
 from libs.capsnets.layers import basic
 
 weight_decay = 1E-4

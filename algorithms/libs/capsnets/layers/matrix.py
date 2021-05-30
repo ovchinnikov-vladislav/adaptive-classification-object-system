@@ -215,9 +215,9 @@ class ConvolutionalCapsule2D(layers.Layer):
         h_out, w_out = len(h_offsets), len(w_offsets)
 
         # gathers the capsules into shape (N, H2, W2, KD, KH, KW, Ch_in, 17)
-        h_gathered = tf.gather(u_padded, h_offsets, axis=3)
-        w_gathered = tf.gather(h_gathered, w_offsets, axis=5)
-        w_gathered = tf.transpose(w_gathered, [0, 1, 3, 5, 2, 4, 6])
+        h_gathered = tf.gather(u_padded, h_offsets, axis=1)
+        w_gathered = tf.gather(h_gathered, w_offsets, axis=3)
+        w_gathered = tf.transpose(w_gathered, [0, 1, 3, 2, 4, 5, 6])
 
         # obtains the next layer of capsules
         if self.route_mean:
@@ -228,11 +228,13 @@ class ConvolutionalCapsule2D(layers.Layer):
             capsules = self.dense_caps((kernels_reshaped[:, :, :-1], kernels_reshaped[:, :, -1:]))
         else:
             kernels_reshaped = tf.reshape(w_gathered,
-                                          [batch_size * h_out * w_out, self.kernel_size[0], self.kernel_size[1], ch, matrix_dim])
+                                          [batch_size * h_out * w_out, self.kernel_size[0], self.kernel_size[1], ch,
+                                           matrix_dim])
             capsules = self.dense_caps((kernels_reshaped[:, :, :, :, :, :-1], kernels_reshaped[:, :, :, :, :, -1:]))
 
         # reshape capsules back into the 3d shape
-        poses = tf.reshape(capsules[0][:, :, :(matrix_dim-1)], (batch_size, h_out, w_out, self.channels, matrix_dim - 1))
+        poses = tf.reshape(capsules[0][:, :, :(matrix_dim - 1)],
+                           (batch_size, h_out, w_out, self.channels, matrix_dim - 1))
         activations = tf.reshape(capsules[1], (batch_size, h_out, w_out, self.channels, 1))
 
         return poses, activations
@@ -333,7 +335,8 @@ class ConvolutionalCapsule3D(layers.Layer):
             capsules = self.dense_caps((kernels_reshaped[:, :, :, :, :, :-1], kernels_reshaped[:, :, :, :, :, -1:]))
 
         # reshape capsules back into the 3d shape
-        poses = tf.reshape(capsules[0][:, :, :(matrix_dim-1)], (batch_size, d_out, h_out, w_out, self.channels, matrix_dim - 1))
+        poses = tf.reshape(capsules[0][:, :, :(matrix_dim - 1)],
+                           (batch_size, d_out, h_out, w_out, self.channels, matrix_dim - 1))
         activations = tf.reshape(capsules[1], (batch_size, d_out, h_out, w_out, self.channels, 1))
 
         return poses, activations
@@ -502,7 +505,8 @@ def get_subset(u_i, coords, activation, k):
     batch_size, n_capsch_i, ch = tf.shape(u_i)[0], int(u_i.get_shape().as_list()[1]), tf.shape(u_i)[2]
     matrix_dim = u_i.shape[-1]
 
-    inputs_res = tf.reshape(tf.concat([u_i, coords, activation], axis=-1), (batch_size, n_capsch_i, ch, matrix_dim * 2 + 1))
+    inputs_res = tf.reshape(tf.concat([u_i, coords, activation], axis=-1),
+                            (batch_size, n_capsch_i, ch, matrix_dim * 2 + 1))
 
     trans = tf.transpose(inputs_res, [0, 2, 1, 3])
 
@@ -627,14 +631,82 @@ def em_routing(v, a_i, beta_v, beta_a, n_iterations=3):
     return tf.reshape(mean, (batch_size, n_caps_j, mat_len)), tf.reshape(act_j, (batch_size, n_caps_j, 1))
 
 
-if __name__ == '__main__':
-    input_image = layers.Input(shape=(28, 28, 1))
+class MatrixCapsuleModel(tf.keras.Model):
+    def train_step(self, data):
+        x, y = data
+        with tf.GradientTape() as tape:
+            pose, activation = self(x, training=True)
+            margin = self.optimizer.learning_rate(self.optimizer.iterations)
+            loss = spread_loss(y, activation, margin)
+        trainable_vars = self.trainable_variables
+        gradients = tape.gradient(loss, trainable_vars)
 
-    x = layers.Conv2D(filters=32, kernel_size=5, strides=2, padding='same', activation=tf.nn.relu, name='conv2d_relu')(input_image)
-    x = PrimaryCapsule2D(matrix_dim=(4, 4), kernel_size=1, channels=32, strides=1, padding='valid', name='primary_caps')(x)
-    x = ConvolutionalCapsule2D(channels=32, kernel_size=(3, 3), strides=(2, 2), name='caps_conv_1')(x)
-    x = ConvolutionalCapsule2D(channels=32, kernel_size=(3, 3), strides=(1, 1), name='caps_conv_2')(x)
+        self.optimizer.apply_gradients(zip(gradients, trainable_vars))
+        self.compiled_metrics.update_state(y, activation)
+        metrics = {m.name: m.result() for m in self.metrics}
+        metrics['spread_loss'] = loss
+        metrics['margin'] = margin
+        return metrics
+
+    def test_step(self, data):
+        x, y = data
+        pose, activation = self(x, training=False)
+        margin = self.optimizer.learning_rate(self.optimizer.iterations)
+        loss = spread_loss(y, activation, margin)
+
+        self.compiled_metrics.update_state(y, activation)
+
+        metrics = {m.name: m.result() for m in self.metrics}
+        metrics['spread_loss'] = loss
+        metrics['margin'] = margin
+        return metrics
+
+
+if __name__ == '__main__':
+    from libs import utils
+    from libs.capsnets.losses import spread_loss
+
+    (x_train, y_train), (x_test, y_test) = utils.load('mnist')
+    x_train = np.expand_dims(x_train, 1)
+    x_test = np.expand_dims(x_test, 1)
+    x_val = x_test[:9000]
+    y_val = y_test[:9000]
+    x_test = x_test[9000:]
+    y_test = y_test[9000:]
+
+    epochs = 15
+    batch_size = 24
+
+    input_image = layers.Input(shape=(1, 28, 28, 1))
+
+    x = layers.Conv3D(filters=32, kernel_size=5, strides=2, padding='same', activation=tf.nn.relu, name='conv2d_relu')(
+        input_image)
+    x = PrimaryCapsule3D(matrix_dim=(4, 4), kernel_size=(1, 3, 3), channels=32, strides=1, padding='valid',
+                         name='primary_caps')(x)
+    x = ConvolutionalCapsule3D(channels=32, kernel_size=(1, 3, 3), strides=(1, 2, 2), name='caps_conv_1')(x)
+    x = ConvolutionalCapsule3D(channels=32, kernel_size=(1, 3, 3), strides=(1, 1, 1), name='caps_conv_2')(x)
     x = ClassCapsule(n_caps_j=10, name='class_caps')(x)
 
-    model = tf.keras.Model(input_image, x)
+    model = MatrixCapsuleModel(input_image, x)
     model.summary(line_length=250)
+
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=tf.keras.optimizers.schedules.PiecewiseConstantDecay(
+        boundaries=[(len(x_train) // batch_size * x) for x in range(1, 8)],
+        values=[x / 10.0 for x in range(2, 10)])),
+        metrics='categorical_accuracy')
+
+    model.fit(x_train, y_train,
+              batch_size=batch_size,
+              epochs=epochs,
+              validation_data=(x_val, y_val))
+
+    model.save_weights('matrix_em_weights.tf')
+
+    print(y_train[500])
+    value = tf.expand_dims(x_train[500], axis=0)
+    print(value.shape)
+    pose, activation = model.predict(value)
+    predictions = activation.reshape((-1, 10))
+    fin_pred = np.mean(predictions, axis=0)
+    print(fin_pred)
+    print(np.argmax(fin_pred))

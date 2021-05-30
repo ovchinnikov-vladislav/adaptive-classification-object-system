@@ -50,7 +50,7 @@ def cross_ent_loss(output, x, y, regularization):
     return loss_all, reconstruction_loss, output
 
 
-def spread_loss(output, pose_out, x, y, m, regularization=None):
+def spread_loss_old(output, pose_out, x, y, m, regularization=None):
     num_class = output.shape[-1]
     data_size = x.shape[1]
 
@@ -82,4 +82,17 @@ def spread_loss(output, pose_out, x, y, m, regularization=None):
     #     loss_all = tf.add_n([loss] + [0.0005 * data_size * data_size * reconstruction_loss])
 
     # return loss_all, loss, reconstruction_loss, pose_out
+    return loss
+
+
+def spread_loss(y_true, y_pred, margin):
+    activations_shape = y_pred.shape
+    mask_t = tf.equal(y_true, 1)
+    mask_i = tf.equal(y_true, 0)
+
+    activations_t = tf.reshape(tf.boolean_mask(y_pred, mask_t), shape=(tf.shape(y_pred)[0], 1))
+    activations_i = tf.reshape(tf.boolean_mask(y_pred, mask_i), [tf.shape(y_pred)[0], activations_shape[1] - 1])
+
+    loss = tf.reduce_sum(tf.square(tf.maximum(0.0, margin - (activations_t - activations_i))))
+
     return loss

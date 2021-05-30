@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.keras import layers, initializers, regularizers, constraints
 from tensorflow.python.keras.utils import conv_utils
-from libs.capsnets.utls import own_batch_dot
+from libs.capsnets.utils import own_batch_dot
 from tensorflow.keras.backend import epsilon
 
 

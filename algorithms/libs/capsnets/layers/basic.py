@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras.backend import epsilon
 import numpy as np
-from libs.capsnets.utls import squash
+from libs.capsnets.utils import squash
 
 
 class PrimaryCapsule2D(layers.Layer):

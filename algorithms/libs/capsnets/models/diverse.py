@@ -3,7 +3,7 @@ from tensorflow.keras import layers, models
 from tensorflow.keras import backend as K
 from libs.capsnets.layers.diverse import Capsule, PrimaryCapsule2D, Length, bottleneck
 from tensorflow.keras.layers import Concatenate
-from libs.capsnets.utls import squash
+from libs.capsnets.utils import squash
 from libs.utils import BaseModelForTraining
 
 

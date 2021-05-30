@@ -3,7 +3,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras.backend import epsilon, sqrt, sum, square
 from tensorflow.keras.layers import BatchNormalization, Add
-from libs.capsnets.utls import squash
+from libs.capsnets.utils import squash
 from libs.capsnets.layers import basic
 
 

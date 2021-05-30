@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras import layers
-from libs.capsnets.utls import efficient_squash
+from libs.capsnets.utils import efficient_squash
 
 
 class PrimaryCapsule2D(layers.Layer):

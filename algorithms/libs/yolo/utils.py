@@ -47,7 +47,7 @@ class ObjectDetection:
 
 
 class YoloModel:
-    def __init__(self, model='yolo3-person', use_tracking=True, classes=config.coco_classes_ru, size=416):
+    def __init__(self, model='yolo3', use_tracking=True, classes=config.coco_classes_en, size=416):
         self.class_names = [c.strip() for c in open(classes).readlines()]
         num_classes = len(self.class_names)
         self.size = size
@@ -453,10 +453,15 @@ def analyze_tracks_outputs(img, tracks, colors):
         else:
             text_origin = np.array([x1, y1 + 5])
 
-        img_crop = before_img.crop((int(x1) + (int(x1) - int(x2)) // 2,
-                                    int(y1) + (int(y1) - int(y2)) // 2,
-                                    int(x2) + (int(x2) - int(x1)) // 2,
-                                    int(y2) + (int(y2) - int(y1)) // 2))
+        # img_crop = before_img.crop((int(x1) + (int(x1) - int(x2)) // 2,
+        #                             int(y1) + (int(y1) - int(y2)) // 2,
+        #                             int(x2) + (int(x2) - int(x1)) // 2,
+        #                             int(y2) + (int(y2) - int(y1)) // 2))
+        img_crop = before_img.crop((int(x1) + (int(x1) - int(x2) - int(x2) // 4),
+                                    int(y1) + (int(y1) - int(y2)),
+                                    int(x2) + (int(x2) - int(x1)) + 100,
+                                    int(y2) + (int(y2) - int(y1) - int(y1) // 2)))
+
         buffered = BytesIO()
         img_crop.save(buffered, format="JPEG")
         img_bytes = base64.b64encode(buffered.getvalue())
