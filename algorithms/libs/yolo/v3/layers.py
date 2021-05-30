@@ -54,7 +54,6 @@ def yolo_v3(anchors, size, channels, classes, training=False):
 
     x = inputs = Input([size, size, channels], name='input')
     darknet = darknet53(name='yolo_darknet', size=size, channels=channels)
-    darknet.summary()
 
     x_36, x_61, x = darknet(x)
 
