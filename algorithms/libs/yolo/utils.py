@@ -201,14 +201,14 @@ def transform_targets(y_train, anchors, anchor_masks, size):
     grid_size = size // 32
 
     # calculate anchor index for true boxes
-    anchors = tf.cast(anchors, tf.float64)
+    anchors = tf.cast(anchors, tf.float32)
     anchor_area = anchors[..., 0] * anchors[..., 1]
     box_wh = y_train[..., 2:4] - y_train[..., 0:2]
     box_wh = tf.tile(tf.expand_dims(box_wh, -2), (1, 1, tf.shape(anchors)[0], 1))
     box_area = box_wh[..., 0] * box_wh[..., 1]
     intersection = tf.minimum(box_wh[..., 0], anchors[..., 0]) * tf.minimum(box_wh[..., 1], anchors[..., 1])
     iou = intersection / (box_area + anchor_area - intersection)
-    anchor_idx = tf.cast(tf.argmax(iou, axis=-1), tf.float64)
+    anchor_idx = tf.cast(tf.argmax(iou, axis=-1), tf.float32)
     anchor_idx = tf.expand_dims(anchor_idx, axis=-1)
 
     y_train = tf.concat([y_train, anchor_idx], axis=-1)
