@@ -16,7 +16,7 @@ STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 detection_api = Blueprint('detection_api', __name__)
 detection_model = YoloModel()
-video_model = VideoClassCapsNetModel()
+# video_model = VideoClassCapsNetModel()
 
 
 def gen(cam, user_id, detection_process_id):
@@ -65,7 +65,7 @@ def gen(cam, user_id, detection_process_id):
                 else:
                     num_frames, height, width, _ = frames_numpy.shape
 
-                    video_io.vwrite('video.avi', frames_numpy)
+                    # video_io.vwrite('video.avi', frames_numpy)
                     # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                     # video = cv2.VideoWriter('video.avi', fourcc, 1, (width, height))
                     #
@@ -74,8 +74,8 @@ def gen(cam, user_id, detection_process_id):
                     #     video.write(f)
                     #
                     # video.release()
-                    print(video_model.predict(frames_numpy))
-                    objects_frame[obj.get_num()] = []
+                    # print(video_model.predict(frames_numpy))
+                    # objects_frame[obj.get_num()] = []
 
                 # json_dumps = json.dumps(json_str)
                 # rmq_channel.basic_publish(exchange=STAT_EXCHANGE_NAME,

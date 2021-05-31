@@ -6,6 +6,7 @@ import os
 import math
 import sys
 import ssl
+import hashlib
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -26,7 +27,7 @@ def reporthook(block_num, block_size, total_size):
 def video_capturing_function(video_directory, dataset, folder_name,
                              image_width=250, image_height=250, image_gray=True, labels=None):
     for i in np.arange(len(dataset)):
-        video_name = dataset.video_name[i]
+        video_name = dataset.video_path[i]
         video_read_path = os.path.join(video_name)
         cap = cv2.VideoCapture(video_read_path)
         try:
@@ -39,11 +40,11 @@ def video_capturing_function(video_directory, dataset, folder_name,
                 os.mkdir(train_write_file)
             except:
                 pass
-            train_write_file = os.path.join(train_write_file, os.path.basename(video_name.split(".")[0]))
+            train_write_file = os.path.join(train_write_file, hashlib.md5(os.path.basename(dataset.video_path[i]).split(".")[0].encode("utf-8")).hexdigest())
             os.mkdir(train_write_file)
 
             cap.set(cv2.CAP_PROP_FPS, 30)
-            frame_rate = 10
+            frame_rate = 1
             count = 0
             while cap.isOpened():
                 frame_id = cap.get(1)  # current frame number

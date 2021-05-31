@@ -3,7 +3,7 @@ import os
 path = os.path.dirname(os.path.abspath(__file__))
 
 yolo_v3_weights = os.path.join(path, 'resources', 'data', 'yolov3.tf')
-yolo_v3_person_weights = os.path.join(path, 'resources', 'data', 'yolov3-person.tf')
+yolo_v3_person_weights = os.path.join(path, 'resources', 'data', 'yolov3_person.tf')
 yolo_v3_tiny_weights = os.path.join(path, 'resources', 'data', 'yolov3-tiny.tf')
 yolo_v4_weights = os.path.join(path, 'resources', 'data', 'yolov4.tf')
 yolo_caps_weights = os.path.join(path, 'resources', 'data', '...')

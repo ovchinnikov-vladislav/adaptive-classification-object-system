@@ -60,7 +60,7 @@ class YoloModel:
         elif model == 'yolo3-person':
             weights = config.yolo_v3_person_weights
             anchors = get_anchors(config.yolo_v3_anchors)
-            self.class_names = ['person']
+            self.class_names = ['cat', 'dog', 'person']
             num_classes = len(self.class_names)
             self.yolo = yolo_v3(anchors, size=size, channels=3, classes=num_classes)
         elif model == 'yolo4':
@@ -503,14 +503,7 @@ def analyze_tracks_outputs(img, tracks, colors):
         else:
             text_origin = np.array([x1, y1 + 5])
 
-        # img_crop = before_img.crop((int(x1) + (int(x1) - int(x2)) // 2,
-        #                             int(y1) + (int(y1) - int(y2)) // 2,
-        #                             int(x2) + (int(x2) - int(x1)) // 2,
-        #                             int(y2) + (int(y2) - int(y1)) // 2))
-        img_crop = before_img.crop((int(x1) + (int(x1) - int(x2) - int(x2) // 4),
-                                    int(y1) + (int(y1) - int(y2)),
-                                    int(x2) + (int(x2) - int(x1)) + 100,
-                                    int(y2) + (int(y2) - int(y1) - int(y1) // 2)))
+        img_crop = before_img.crop((int(x1), int(y1), int(x2), int(y2)))
 
         buffered = BytesIO()
         img_crop.save(buffered, format="JPEG")
@@ -556,7 +549,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, yolo_max_boxes=30, yolo_iou_threshold=0.5, yolo_score_threshold=0.5):
+def yolo_nms(outputs, yolo_max_boxes=30, yolo_iou_threshold=0.5, yolo_score_threshold=0.4):
     # boxes, conf, type
     b, c, t = [], [], []
 
