@@ -1,5 +1,5 @@
 from tensorflow.keras import layers
-from libs.capsnets.layers.matrix import PrimaryCapsule3D, ConvolutionalCapsule3D, ClassCapsule
+from libs.capsnets.layers.matrix import PrimaryCapsule3D, ConvolutionalCapsule3D, ClassCapsule, VideoClassCapsuleNetworkModel
 import tensorflow as tf
 import numpy as np
 
@@ -35,7 +35,7 @@ if __name__ == '__main__':
                              ch_same_w=True)(sec_caps)
     digit_preds = tf.reshape(pred_caps[1], (-1, num_classes))
 
-    model = tf.keras.Model(inputs, digit_preds)
+    model = VideoClassCapsuleNetworkModel(inputs, digit_preds)
     model.load_weights(config.ucf24_caps_model)
 
     video = vread('D:/tensorflow_datasets/UCF-101/UCF-101/HorseRiding/v_HorseRiding_g02_c05.avi')

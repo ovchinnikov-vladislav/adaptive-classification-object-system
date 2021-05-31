@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.utils import shuffle
 import libs.datasets.utls as utils
 import hashlib
+import shutil
 
 
 def __download_hmdb51(data_dir_path, classes=[]):
@@ -111,12 +112,12 @@ def download_data(data_dist_path, image_width=250, image_height=250, image_gray=
     train_videos_dir = os.path.join(hmdb51_data_dir_path, "hmdb51_frames")
     test_videos_dir = os.path.join(hmdb51_data_dir_path, "hmdb51_frames")
     try:
-        os.rmdir(train_videos_dir)
+        shutil.rmtree(train_videos_dir)
     except FileNotFoundError as e:
         print(train_videos_dir + " not exists, then create")
     os.mkdir(train_videos_dir)
     try:
-        os.rmdir(test_videos_dir)
+        shutil.rmtree(test_videos_dir)
     except FileNotFoundError as e:
         print(test_videos_dir + " not exists, then create")
     os.mkdir(test_videos_dir)
