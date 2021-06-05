@@ -632,41 +632,75 @@ def em_routing(v, a_i, beta_v, beta_a, n_iterations=3):
     return tf.reshape(mean, (batch_size, n_caps_j, mat_len)), tf.reshape(act_j, (batch_size, n_caps_j, 1))
 
 
-class VideoClassCapsuleNetworkModel(tf.keras.Model):
-    def train_step(self, data):
-        x, y = data
-        with tf.GradientTape() as tape:
-            act = self(x, training=True)
-            margin = self.optimizer.learning_rate(self.optimizer.iterations)
-            loss = self.spread_loss(y, act, margin)
-        trainable_vars = self.trainable_variables
-        gradients = tape.gradient(loss, trainable_vars)
-
-        self.optimizer.apply_gradients(zip(gradients, trainable_vars))
-        self.compiled_metrics.update_state(y, act)
-        metrics = {m.name: m.result() for m in self.metrics}
-        metrics['spread_loss'] = loss
-        metrics['margin'] = margin
-        return metrics
-
-    def test_step(self, data):
-        x, y = data
-        pose, activation = self(x, training=False)
-        margin = self.optimizer.learning_rate(self.optimizer.iterations)
-        loss = self.spread_loss(y, activation, margin)
-
-        self.compiled_metrics.update_state(y, activation)
-
-        metrics = {m.name: m.result() for m in self.metrics}
-        metrics['spread_loss'] = loss
-        metrics['margin'] = margin
-        return metrics
-
-    def get_config(self):
-        return super(self).get_config()
-
-
 if __name__ == '__main__':
-    model = VideoClassCapsuleNetworkModel()
-    model.build(input_shape=(None, 8, 112, 112, 3))
-    model.summary()  # 81,206,318
+    from libs import utils
+
+    (x_train, y_train), (x_test, y_test) = utils.load('mnist')
+
+    input_image = layers.Input(shape=(28, 28, 1))
+
+    x = layers.Conv2D(filters=32, kernel_size=5, strides=2, padding='same', activation=tf.nn.relu, name='conv2d_relu')(input_image)
+    x = PrimaryCapsule2D(matrix_dim=(4, 4), kernel_size=1, channels=32, strides=1, padding='valid', name='primary_caps')(x)
+    x = ConvolutionalCapsule2D(channels=32, kernel_size=(3, 3), strides=(2, 2), name='caps_conv_1')(x)
+    x = ConvolutionalCapsule2D(channels=32, kernel_size=(3, 3), strides=(1, 1), name='caps_conv_2')(x)
+    x = ClassCapsule(n_caps_j=10, name='class_caps')(x)
+    x = layers.Lambda(lambda x: tf.reshape(x, (-1, 10)))(x[1])
+
+    model = tf.keras.Model(input_image, x)
+    model.summary(line_length=250)
+
+    class MarginChangeCallback(tf.keras.callbacks.Callback):
+        def __init__(self, margin, max_value=0.9, step=0.1):
+            super().__init__()
+            self.margin = margin
+            self.step = step
+            self.max_value = max_value
+
+        def on_epoch_end(self, epoch, logs=None):
+            if tf.keras.backend.get_value(self.margin) < self.max_value:
+                tf.keras.backend.set_value(self.margin, tf.keras.backend.get_value(self.margin) + self.step)
+
+
+    margin = tf.keras.backend.variable(0.2, dtype=tf.float32)
+
+    margin_callback = MarginChangeCallback(margin)
+
+    def caps_accuracy(y_true, y_pred):
+        y_true = tf.cast(tf.argmax(input=y_true, axis=1), tf.float32)
+        y_pred = tf.cast(tf.argmax(input=y_pred, axis=1), tf.float32)
+        correct = tf.cast(tf.equal(y_pred, y_true), tf.float32)
+        return tf.reduce_mean(correct)
+
+    def spread_loss(y_true, y_pred):
+        a_i = tf.expand_dims(y_pred, axis=1)
+        y = tf.expand_dims(y_true, axis=2)
+        a_t = tf.matmul(a_i, y)
+
+        loss = tf.square(tf.maximum(0.0, margin - (a_t - a_i)))
+        loss = tf.matmul(loss, 1. - y)
+
+        class_loss = tf.reduce_mean(loss)
+
+        return class_loss
+
+
+    def margin_metric(y_true, y_pred):
+        return margin
+
+    model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.0001, beta_1=0.5, epsilon=1e-6),
+                  loss=spread_loss,
+                  metrics=[caps_accuracy, margin_metric])
+
+    # model.fit(x_train, y_train, validation_data=(x_test, y_test), batch_size=32, epochs=10, callbacks=[margin_callback])
+    model.load_weights('D:/model_matrix.tf')
+
+    count_error = 0
+    for i in range(len(x_test)):
+        y_pred = model.predict(np.expand_dims(x_test[i], axis=0))
+        test_value = np.argmax(y_test[i])
+        pred_value = np.argmax(y_pred)
+        if test_value != pred_value:
+            count_error += 1
+        print(test_value, pred_value)
+
+    print('количество ошибок', count_error, 'на', len(x_test), 'примеров')

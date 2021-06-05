@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 from urllib import request
 from timeit import default_timer as timer
-from libs.yolo.utils import YoloModel
+from libs.detection.utils import ObjectDetectionModel
 import time
 
 
@@ -127,14 +127,14 @@ if __name__ == '__main__':
     #  streams = streamlink.streams(url)
     #  print(streams)
     #
-    yolo = YoloModel()
-    # detect_video_webcam(yolo, streams["360p"].url)
-    # detect_video_ipcam(yolo, 'http://192.168.0.16:8080/shot.jpg')
-    # detect_video_webcam(yolo, 'rtsp://192.168.0.16:5554/out.h264')
-    #  detect_video_webcam(yolo, 'rtsp://10.75.118.98:5554/out.h264')
+    yolo = ObjectDetectionModel()
+    # detect_video_webcam(object_detection_model, streams["360p"].url)
+    # detect_video_ipcam(object_detection_model, 'http://192.168.0.16:8080/shot.jpg')
+    # detect_video_webcam(object_detection_model, 'rtsp://192.168.0.16:5554/out.h264')
+    #  detect_video_webcam(object_detection_model, 'rtsp://10.75.118.98:5554/out.h264')
     detect_video_webcam(yolo, 'https://webcam.feonet.net/8600bac9-812a-4359-a138-e8d6cc282604')
-    # detect_video_ipcam_print_image(yolo, 'http://192.168.0.16:8080/shot.jpg')
+    # detect_video_ipcam_print_image(object_detection_model, 'http://192.168.0.16:8080/shot.jpg')
     # img = Image.open('416x416.jpg')
     # img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
     #
-    # img, object_detection = yolo.detect_image(img)
+    # img, object_detection = object_detection_model.detect_image(img)

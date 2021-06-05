@@ -1,7 +1,7 @@
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint, TensorBoard
-from libs.yolo.losses import yolo_standard_loss
-from libs.yolo.caps.layers import capsules_yolo
-from libs.yolo.utils import get_anchors, data_generator_wrapper
+from libs.detection.losses import yolo_standard_loss
+from libs.detection.caps.layers import capsules_yolo
+from libs.detection.utils import get_anchors, data_generator_wrapper
 import tensorflow as tf
 import numpy as np
 

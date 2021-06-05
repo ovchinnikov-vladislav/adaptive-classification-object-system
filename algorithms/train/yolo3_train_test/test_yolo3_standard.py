@@ -1,4 +1,4 @@
-from libs.yolo.utils import YoloModel
+from libs.detection.utils import ObjectDetectionModel
 from PIL import Image
 
 
@@ -13,10 +13,10 @@ def detect_img(yolo):
         else:
             r_image = yolo.detect_image(image)
             r_image.show()
-  #  yolo.close_session()
+  #  object_detection_model.close_session()
 
 
 if __name__ == '__main__':
-    yolo = YoloModel()
+    yolo = ObjectDetectionModel()
     detect_img(yolo)
 

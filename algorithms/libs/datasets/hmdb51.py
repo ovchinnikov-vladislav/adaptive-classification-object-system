@@ -143,5 +143,4 @@ def download_data(data_dist_path, image_width=250, image_height=250, image_gray=
 
 
 if __name__ == '__main__':
-    classes = ['chew', 'clap', 'drink', 'eat', 'fall_floor', 'jump', 'laugh', 'pick', 'run', 'sit', 'smile', 'stand', 'talk', 'walk']
-    download_data(os.path.join('D:' + os.path.sep + 'tensorflow_datasets', 'hmdb51'), 160, 120, classes=classes)
+    download_data(os.path.join('D:' + os.path.sep + 'tensorflow_datasets', 'hmdb51'), 160, 120)

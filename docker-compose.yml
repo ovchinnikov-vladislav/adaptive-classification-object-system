@@ -1,0 +1,63 @@
+version: '3'
+
+volumes:
+  postgres_data:
+      driver: local
+  stat_pgql_data:
+      driver: local
+
+services:
+  postgres:
+      container_name: dissert_keycloak_pgql
+      image: postgres
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      ports:
+        - 6432:5432
+      environment:
+        POSTGRES_DB: keycloak
+        POSTGRES_USER: keycloak
+        POSTGRES_PASSWORD: password
+
+  keycloak:
+      container_name: dissert_keycloak
+      image: quay.io/keycloak/keycloak:latest
+      environment:
+        DB_VENDOR: POSTGRES
+        DB_ADDR: postgres
+        DB_DATABASE: keycloak
+        DB_USER: keycloak
+        DB_SCHEMA: public
+        DB_PASSWORD: password
+        KEYCLOAK_USER: admin
+        KEYCLOAK_PASSWORD: Pa55w0rd
+        # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
+        #JDBC_PARAMS: "ssl=true"
+      ports:
+        - 8080:8080
+      volumes:
+        - ./keycloak-themes/:/opt/jboss/keycloak/themes
+      depends_on:
+        - postgres
+
+  mongo:
+      image: mongo:4.0
+      container_name: dissert_mongo
+      environment:
+        - MONGO_INITDB_ROOT_USERNAME=root
+        - MONGO_INITDB_ROOT_PASSWORD=root
+      ports:
+        - 27018:27017
+      volumes:
+        - ./mongo-db-script:/docker-entrypoint-initdb.d/
+
+  rabbitmq:
+      image: rabbitmq:3.7.18-management
+      container_name: dissert_rabbitmq
+      environment:
+        - RABBITMQ_DEFAULT_USER=guest
+        - RABBITMQ_DEFAULT_PASS=guest
+      ports:
+        - 15672:15672
+        - 5672:5672
+  
