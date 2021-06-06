@@ -40,7 +40,7 @@ def prepare_event_frames(video_dir, frame_dir, image_width=250, image_height=250
 
 
 if __name__ == '__main__':
-    classes = ['A001', 'A002', 'A008', 'A009', 'A027', 'A028', 'A029', 'A030', 'A043']
+    classes = ['A030', 'A043']
 
     training = 70
 

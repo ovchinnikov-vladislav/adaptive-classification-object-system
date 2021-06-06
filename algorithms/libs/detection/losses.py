@@ -191,7 +191,7 @@ def yolo_standard_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0
             if use_softmax_loss:
                 class_loss = obj_mask * sparse_categorical_crossentropy(true_class_idx, pred_class)
             else:
-                class_loss = obj_mask * binary_crossentropy(true_class_idx, pred_class, from_logits=True)
+                class_loss = obj_mask * binary_crossentropy(true_class_idx, pred_class)
 
         if use_giou_loss:
             giou = box_giou(true_box, pred_box)
