@@ -74,7 +74,7 @@ def yolo_v3(anchors, size, channels, classes, training=False):
     boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
     boxes_2 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[2]], classes), name='yolo_boxes_2')(output_2)
 
-    outputs = Lambda(lambda inp: yolo_nms(inp), name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
+    outputs = Lambda(lambda inp: yolo_nms(inp, num_classes=classes), name='yolo_nms')((boxes_0[:3], boxes_1[:3], boxes_2[:3]))
 
     return Model(inputs, outputs, name='yolo3')
 
@@ -98,14 +98,5 @@ def yolo_v3_tiny(anchors, size, channels, classes, training=False):
     from libs.detection.utils import yolo_boxes, yolo_nms
     boxes_0 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[0]], classes), name='yolo_boxes_0')(output_0)
     boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
-    outputs = Lambda(lambda inp: yolo_nms(inp), name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
+    outputs = Lambda(lambda inp: yolo_nms(inp, num_classes=classes), name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
     return Model(inputs, outputs, name='yolo3_tiny')
-
-
-if __name__ == '__main__':
-    import config
-    from libs.detection.utils import get_anchors
-    anchors = get_anchors(config.yolo_caps_anchors)
-
-    model = yolo_v3(anchors=anchors, size=416, channels=3, classes=1, training=True)
-    model.summary()

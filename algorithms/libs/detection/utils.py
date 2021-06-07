@@ -550,7 +550,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, yolo_max_boxes=18, yolo_iou_threshold=0.5, yolo_score_threshold=0.2):
+def yolo_nms(outputs, yolo_max_boxes=18, yolo_iou_threshold=0.5, yolo_score_threshold=0.2, num_classes=80):
     # boxes, conf, type
     b, c, t = [], [], []
 
@@ -563,7 +563,11 @@ def yolo_nms(outputs, yolo_max_boxes=18, yolo_iou_threshold=0.5, yolo_score_thre
     confidence = tf.concat(c, axis=1)
     class_probs = tf.concat(t, axis=1)
 
-    scores = confidence * class_probs
+    if num_classes > 1:
+        scores = confidence * class_probs
+    else:
+        scores = confidence
+
     boxes, scores, classes, valid_detections = tf.image.combined_non_max_suppression(
         boxes=tf.reshape(bbox, (tf.shape(bbox)[0], -1, 1, 4)),
         scores=tf.reshape(scores, (tf.shape(scores)[0], -1, tf.shape(scores)[-1])),
