@@ -26,9 +26,9 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
         frame, det_info = cam.get_frame()
 
         try:
-            rmq_parameters = pika.URLParameters(config.rabbitmq_addr)
-            rmq_connection = pika.BlockingConnection(rmq_parameters)
-            rmq_channel = rmq_connection.channel()
+            # rmq_parameters = pika.URLParameters(config.rabbitmq_addr)
+            # rmq_connection = pika.BlockingConnection(rmq_parameters)
+            # rmq_channel = rmq_connection.channel()
 
             for obj in det_info:
                 json_str = {
@@ -78,12 +78,12 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
                 #     objects_frame[obj.get_num()] = []
 
                 json_dumps = json.dumps(json_str)
-                rmq_channel.basic_publish(exchange=STAT_EXCHANGE_NAME,
-                                          routing_key=STAT_FANOUT_QUEUE_NAME,
-                                          body=json_dumps.encode('utf-8'))
+                # rmq_channel.basic_publish(exchange=STAT_EXCHANGE_NAME,
+                #                           routing_key=STAT_FANOUT_QUEUE_NAME,
+                #                           body=json_dumps.encode('utf-8'))
             i += 1
 
-            rmq_connection.close()
+            # rmq_connection.close()
         except Exception as e:
             logging.error(e)
 

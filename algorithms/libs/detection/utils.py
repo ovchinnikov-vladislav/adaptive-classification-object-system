@@ -90,7 +90,7 @@ class ObjectDetectionModel:
 
             self.encoder = create_box_encoder(config.deepsort_model, batch_size=1)
             self.metric = nn_matching.NearestNeighborDistanceMetric('cosine', max_cosine_distance, nn_budget)
-            self.tracker = Tracker(self.metric)
+            self.tracker = Tracker(self.metric, num_classes=1)
         else:
             # Generate colors for drawing bounding boxes.
             hsv_tuples = [(x / len(self.class_names), 1., 1.) for x in range(len(self.class_names))]
@@ -102,7 +102,7 @@ class ObjectDetectionModel:
 
     def clear_tracker(self):
         if self.use_tracking:
-            self.tracker = Tracker(self.metric)
+            self.tracker = Tracker(self.metric, num_classes=1)
         else:
             raise Exception('it is detection model')
 
@@ -550,7 +550,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, yolo_max_boxes=18, yolo_iou_threshold=0.5, yolo_score_threshold=0.2, num_classes=80):
+def yolo_nms(outputs, yolo_max_boxes=18, yolo_iou_threshold=0.5, yolo_score_threshold=0.5, num_classes=80):
     # boxes, conf, type
     b, c, t = [], [], []
 

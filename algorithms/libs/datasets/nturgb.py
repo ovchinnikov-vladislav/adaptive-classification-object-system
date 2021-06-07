@@ -30,7 +30,7 @@ def prepare_event_frames(video_dir, frame_dir, model, image_width=250, image_hei
                     if detection.get_class() == 'person':
                         x1, y1, x2, y2 = detection.get_box()
                         try:
-                            frame = frame[y1:y2, x1:x2]
+                            frame = frame[y1-50:y2+50, x1-50:x2+50]
                             resized_frame = cv2.resize(frame, (image_width, image_height))
                             cv2.imwrite(os.path.join(train_write_file, filename), resized_frame)
                         except:
@@ -73,8 +73,8 @@ if __name__ == '__main__':
                                  os.path.join(dataset_dir,  frames_name_dir), model)
             frame_path = frames_name_dir + '/' + video.split('_rgb.')[0]
             if len(os.listdir(os.path.join(dataset_dir, frame_path))) < 16:
-                shutil.rmtree(frame_path)
-                print('deleted ' + frame_path)
+                shutil.rmtree(os.path.join(dataset_dir, frame_path))
+                print('deleted ' + os.path.join(dataset_dir, frame_path))
                 continue
 
             if count < len(videos) * 70 // 100:
