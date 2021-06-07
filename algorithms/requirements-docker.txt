@@ -1,5 +1,4 @@
 Flask==1.1.2
-tensorflow==2.4.0
 tensorflow-datasets==4.2.0
 pillow==8.1.2
 pandas==0.25.3

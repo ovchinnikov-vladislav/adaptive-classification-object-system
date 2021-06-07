@@ -5,17 +5,15 @@ from libs.detection.utils import ObjectDetectionModel
 import config
 
 
-def prepare_event_frames(video_dir, frame_dir, image_width=250, image_height=250, image_gray=False):
+def prepare_event_frames(video_dir, frame_dir, model, image_width=250, image_height=250, image_gray=False):
     video_read_path = video_dir
     cap = cv2.VideoCapture(video_read_path)
-    model = ObjectDetectionModel(classes=[class_name.split('\n')[0] for class_name in open(config.coco_classes_en).readlines()],
-                                 weights='D:/MasterDissertation/models/yolov3.tf', model='yolo3', use_tracking=False)
     try:
         train_write_file = os.path.join(frame_dir, os.path.basename(video_dir).split('_rgb.')[0])
         os.makedirs(train_write_file)
 
         cap.set(cv2.CAP_PROP_FPS, 30)
-        frame_rate = 10
+        frame_rate = 3
         count = 0
         while cap.isOpened():
             frame_id = cap.get(1)
@@ -31,16 +29,24 @@ def prepare_event_frames(video_dir, frame_dir, image_width=250, image_height=250
                 for detection in detections:
                     if detection.get_class() == 'person':
                         x1, y1, x2, y2 = detection.get_box()
-                        frame = frame[y1:y2, x1:x2]
-                        resized_frame = cv2.resize(frame, (image_width, image_height))
-                        cv2.imwrite(os.path.join(train_write_file, filename), resized_frame)
+                        try:
+                            frame = frame[y1:y2, x1:x2]
+                            resized_frame = cv2.resize(frame, (image_width, image_height))
+                            cv2.imwrite(os.path.join(train_write_file, filename), resized_frame)
+                        except:
+                            continue
         cap.release()
     except Exception as e:
         print(e)
 
 
 if __name__ == '__main__':
-    classes = ['A030', 'A043']
+    import shutil
+
+    model = ObjectDetectionModel(classes=[class_name.split('\n')[0] for class_name in open(config.coco_classes_en).readlines()],
+                                 weights='D:/MasterDissertation/models/yolov3.tf', model='yolo3', use_tracking=False)
+
+    classes = ['A001', 'A002', 'A008', 'A009', 'A027', 'A028', 'A029', 'A030', 'A043']
 
     training = 70
 
@@ -63,11 +69,14 @@ if __name__ == '__main__':
 
         count = 0
         for video in videos:
-            skeleton_file = os.path.join(dataset_dir, 'skeleton', video.split('_rgb.')[0] + '.skeleton')
             prepare_event_frames(os.path.join(dataset_dir, name_dir, video),
-                                 os.path.join(dataset_dir,  frames_name_dir))
-
+                                 os.path.join(dataset_dir,  frames_name_dir), model)
             frame_path = frames_name_dir + '/' + video.split('_rgb.')[0]
+            if len(os.listdir(os.path.join(dataset_dir, frame_path))) < 16:
+                shutil.rmtree(frame_path)
+                print('deleted ' + frame_path)
+                continue
+
             if count < len(videos) * 70 // 100:
                 count += 1
                 with open(os.path.join(dataset_dir, 'annotation-train.txt'), 'a') as annotation_train_file:

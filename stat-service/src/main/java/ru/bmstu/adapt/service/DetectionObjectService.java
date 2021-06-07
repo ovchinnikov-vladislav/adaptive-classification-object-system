@@ -60,7 +60,7 @@ public class DetectionObjectService {
 
         Set<Integer> resultIds = new HashSet<>();
         List<DetectionObject> result = new ArrayList<>();
-        for (var elem : objects) {
+        for (DetectionObject elem : objects) {
             if (!resultIds.contains(elem.getNumObject())) {
                 resultIds.add(elem.getNumObject());
                 result.add(elem);
