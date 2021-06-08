@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: 8080
 
 spring:
   main:
@@ -7,7 +7,7 @@ spring:
   application:
     name: "Stat Service API"
   rabbitmq:
-    host: 192.168.0.13
+    host: localhost
     username: guest
     password: guest
     listener:
@@ -21,7 +21,7 @@ spring:
           max-interval: 60000
 
 mongo:
-  hosts: 192.168.0.13
+  hosts: localhost
   ssl: false
   username: stat
   password: stat

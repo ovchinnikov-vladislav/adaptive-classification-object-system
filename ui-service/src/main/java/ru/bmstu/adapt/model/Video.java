@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.model;
+package ru.bmstu.adapt.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;

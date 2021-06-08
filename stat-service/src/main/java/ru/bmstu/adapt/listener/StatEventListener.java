@@ -1,9 +1,9 @@
-package bmstu.dynamic.simulator.listener;
+package ru.bmstu.adapt.listener;
 
-import bmstu.dynamic.simulator.domain.DetectionObject;
-import bmstu.dynamic.simulator.domain.StatEvent;
-import bmstu.dynamic.simulator.dto.DetectionObjectRequest;
-import bmstu.dynamic.simulator.service.DetectionObjectService;
+import ru.bmstu.adapt.domain.DetectionObject;
+import ru.bmstu.adapt.domain.StatEvent;
+import ru.bmstu.adapt.domain.StatEventType;
+import ru.bmstu.adapt.service.DetectionObjectService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,12 +11,10 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
-import static bmstu.dynamic.simulator.config.RabbitConfig.STAT_FANOUT_QUEUE_NAME;
+import static ru.bmstu.adapt.config.RabbitConfig.STAT_FANOUT_QUEUE_NAME;
 
 @Component
 @Slf4j
@@ -29,12 +27,10 @@ public class StatEventListener {
     @RabbitListener(queues = {STAT_FANOUT_QUEUE_NAME})
     public void receiveFromFanout(Message message) {
         try {
-            final var statEvent = objectMapper.readValue(message.getBody(), StatEvent.class);
+            StatEvent statEvent = objectMapper.readValue(message.getBody(), StatEvent.class);
 
-            switch (statEvent.getType()) {
-                case OBJECT_DETECTION:
-                    saveDetectionObject(statEvent);
-                    break;
+            if (statEvent.getType() == StatEventType.OBJECT_DETECTION) {
+                saveDetectionObject(statEvent);
             }
         } catch (Exception exc) {
             log.error("Stat-event was not generated -> {}", exc.getMessage());

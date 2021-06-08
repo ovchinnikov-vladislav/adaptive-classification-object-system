@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.exception;
+package ru.bmstu.adapt.exception;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,6 +1,6 @@
-package bmstu.dynamic.simulator.exception;
+package ru.bmstu.adapt.exception;
 
-import bmstu.dynamic.simulator.exception.impl.NotFoundWebException;
+import ru.bmstu.adapt.exception.impl.NotFoundWebException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.model;
+package ru.bmstu.adapt.model;
 
 public class NeuralNetworkUI {
 }

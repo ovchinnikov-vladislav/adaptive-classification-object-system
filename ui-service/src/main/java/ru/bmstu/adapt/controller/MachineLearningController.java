@@ -1,7 +1,6 @@
-package bmstu.dynamic.simulator.controller;
+package ru.bmstu.adapt.controller;
 
-import bmstu.dynamic.simulator.client.CapsVisualizationClient;
-import bmstu.dynamic.simulator.service.CapsVisualizationService;
+import ru.bmstu.adapt.service.CapsVisualizationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

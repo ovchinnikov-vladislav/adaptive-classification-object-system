@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  zipkin:
+    base-url:
   main:
     web-application-type: reactive
   security:
@@ -18,11 +20,16 @@ spring:
             user-info-uri: ${services.auth-url}/realms/bmstu/protocol/openid-connect/userinfo
         registration:
           keycloak:
-            client-id: bmstu
-            client-secret: 5fac7131-7bcc-41f6-bd2e-e78dfab18dfb
+            client-id: ${auth.client-id}
+            client-secret: ${auth.client-secret}
+
+auth:
+  client-id: bmstu
+  client-secret: 5fac7131-7bcc-41f6-bd2e-e78dfab18dfb
 
 services:
   auth-url: http://localhost:9999/auth
+  external-auth-url: http://localhost:9999
   caps-visual-url: http://localhost:8081/
-  machine-learning-url: http://127.0.0.1:5000/
+  ml-url: http://127.0.0.1:5000/
   stat-url: http://localhost:8082/

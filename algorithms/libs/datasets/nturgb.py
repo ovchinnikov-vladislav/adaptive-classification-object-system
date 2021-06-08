@@ -21,8 +21,6 @@ def prepare_event_frames(video_dir, frame_dir, model, image_width=250, image_hei
             if not ret:
                 break
             if frame_id % math.floor(frame_rate) == 0:
-                filename = "frame_%d.jpg" % count
-                count += 1
                 if image_gray:
                     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 _, detections = model.detect_image(frame)
@@ -32,9 +30,11 @@ def prepare_event_frames(video_dir, frame_dir, model, image_width=250, image_hei
                         try:
                             frame = frame[y1-50:y2+50, x1-50:x2+50]
                             resized_frame = cv2.resize(frame, (image_width, image_height))
+                            filename = "frame_%d.jpg" % count
+                            count += 1
                             cv2.imwrite(os.path.join(train_write_file, filename), resized_frame)
-                        except:
-                            continue
+                        except Exception as e:
+                            print(e)
         cap.release()
     except Exception as e:
         print(e)
@@ -72,7 +72,7 @@ if __name__ == '__main__':
             prepare_event_frames(os.path.join(dataset_dir, name_dir, video),
                                  os.path.join(dataset_dir,  frames_name_dir), model)
             frame_path = frames_name_dir + '/' + video.split('_rgb.')[0]
-            if len(os.listdir(os.path.join(dataset_dir, frame_path))) < 16:
+            if len(os.listdir(os.path.join(dataset_dir, frame_path))) < 20:
                 shutil.rmtree(os.path.join(dataset_dir, frame_path))
                 print('deleted ' + os.path.join(dataset_dir, frame_path))
                 continue

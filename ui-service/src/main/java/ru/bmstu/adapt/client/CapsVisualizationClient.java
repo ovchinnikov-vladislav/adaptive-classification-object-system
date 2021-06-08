@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.client;
+package ru.bmstu.adapt.client;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import reactivefeign.spring.config.ReactiveFeignClient;

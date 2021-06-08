@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.dto;
+package ru.bmstu.adapt.dto;
 
 import lombok.Data;
 

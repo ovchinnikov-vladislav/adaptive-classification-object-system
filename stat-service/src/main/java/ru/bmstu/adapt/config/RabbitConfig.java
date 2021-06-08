@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.config;
+package ru.bmstu.adapt.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.val;

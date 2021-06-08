@@ -8,56 +8,105 @@ volumes:
 
 services:
   postgres:
-      container_name: dissert_keycloak_pgql
-      image: postgres
-      volumes:
-        - postgres_data:/var/lib/postgresql/data
-      ports:
-        - 6432:5432
-      environment:
-        POSTGRES_DB: keycloak
-        POSTGRES_USER: keycloak
-        POSTGRES_PASSWORD: password
+    container_name: keycloak_pgql
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - 6432:5432
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: password
 
   keycloak:
-      container_name: dissert_keycloak
-      image: quay.io/keycloak/keycloak:latest
-      environment:
-        DB_VENDOR: POSTGRES
-        DB_ADDR: postgres
-        DB_DATABASE: keycloak
-        DB_USER: keycloak
-        DB_SCHEMA: public
-        DB_PASSWORD: password
-        KEYCLOAK_USER: admin
-        KEYCLOAK_PASSWORD: Pa55w0rd
-        # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
-        #JDBC_PARAMS: "ssl=true"
-      ports:
-        - 8080:8080
-      volumes:
-        - ./keycloak-themes/:/opt/jboss/keycloak/themes
-      depends_on:
-        - postgres
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:latest
+    environment:
+      DB_VENDOR: POSTGRES
+      DB_ADDR: postgres
+      DB_DATABASE: keycloak
+      DB_USER: keycloak
+      DB_SCHEMA: public
+      DB_PASSWORD: password
+      KEYCLOAK_USER: admin
+      KEYCLOAK_PASSWORD: Pa55w0rd
+      # Uncomment the line below if you want to specify JDBC parameters. The parameter below is just an example, and it shouldn't be used in production without knowledge. It is highly recommended that you read the PostgreSQL JDBC driver documentation in order to use it.
+      #JDBC_PARAMS: "ssl=true"
+    ports:
+      - 9999:8080
+    volumes:
+      - ./keycloak-themes/:/opt/jboss/keycloak/themes
+    depends_on:
+      - postgres
 
   mongo:
-      image: mongo:4.0
-      container_name: dissert_mongo
-      environment:
-        - MONGO_INITDB_ROOT_USERNAME=root
-        - MONGO_INITDB_ROOT_PASSWORD=root
-      ports:
-        - 27018:27017
-      volumes:
-        - ./mongo-db-script:/docker-entrypoint-initdb.d/
+    image: mongo:4.0
+    container_name: mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - 27018:27017
+    volumes:
+      - ./mongo-db-script:/docker-entrypoint-initdb.d/
 
   rabbitmq:
-      image: rabbitmq:3.7.18-management
-      container_name: dissert_rabbitmq
-      environment:
-        - RABBITMQ_DEFAULT_USER=guest
-        - RABBITMQ_DEFAULT_PASS=guest
-      ports:
-        - 15672:15672
-        - 5672:5672
+    image: rabbitmq:3.7.18-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - 15672:15672
+      - 5672:5672
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - 9411:9411
   
+  stat_service:
+    build: ./stat-service/
+    container_name: stat
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      MONGO_HOSTS: mongo
+      MONGO_USERNAME: stat
+      MONGO_PASSWORD: stat
+      MONGO_DATABASE: stat
+      SPRING_ZIPKIN_BASE_URL: http://zipkin:9411
+    ports:
+      - 8082:8080
+    depends_on:
+      - rabbitmq
+      - mongo
+
+  
+  ml_service:
+    build: ./algorithms
+    container_name: ml_service
+    environment:
+      RABBITMQ_ADDR: amqp://guest:guest@rabbitmq:5672
+    ports:
+      - 5000:5000
+
+  ui_service:
+    build: ./ui-service/
+    container_name: ui
+    environment:
+      AUTH_CLIENT_ID: bmstu
+      AUTH_CLIENT_SECRET: 68483093-42c1-4ca0-9e86-03a8588eac3a
+      SERVICES_AUTH_URL: http://${IP_MAIN}:9999/auth
+      SERVICES_STAT_URL: http://stat_service:8080/
+      SERVICES_ML_URL: http://ml_service:5000/
+      SPRING_ZIPKIN_BASE_URL: http://zipkin:9411
+    ports:
+      - 8080:8080
+    depends_on:
+      - keycloak
+      - stat_service
+    

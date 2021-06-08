@@ -1,7 +1,7 @@
-package bmstu.dynamic.simulator.service;
+package ru.bmstu.adapt.service;
 
-import bmstu.dynamic.simulator.domain.DetectionObject;
-import bmstu.dynamic.simulator.dto.DetectionObjectRequest;
+import ru.bmstu.adapt.domain.DetectionObject;
+import ru.bmstu.adapt.dto.DetectionObjectRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
@@ -11,7 +11,6 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;

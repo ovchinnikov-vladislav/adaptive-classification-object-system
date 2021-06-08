@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.config;
+package ru.bmstu.adapt.config;
 
 //import lombok.RequiredArgsConstructor;
 //import org.springframework.beans.factory.annotation.Value;

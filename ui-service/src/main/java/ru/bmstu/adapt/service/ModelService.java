@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.service;
+package ru.bmstu.adapt.service;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpResponse;

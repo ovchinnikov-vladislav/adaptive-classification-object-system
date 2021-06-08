@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.controller.advice;
+package ru.bmstu.adapt.controller.advice;
 
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;

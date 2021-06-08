@@ -1,8 +1,8 @@
-package bmstu.dynamic.simulator.rest;
+package ru.bmstu.adapt.rest;
 
-import bmstu.dynamic.simulator.domain.DetectionObject;
-import bmstu.dynamic.simulator.dto.DetectionObjectRequest;
-import bmstu.dynamic.simulator.service.DetectionObjectService;
+import ru.bmstu.adapt.dto.DetectionObjectRequest;
+import ru.bmstu.adapt.domain.DetectionObject;
+import ru.bmstu.adapt.service.DetectionObjectService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

@@ -15,8 +15,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:2.2.1.RELEASE'
-//    implementation 'org.springframework.cloud:spring-cloud-starter-sleuth:2.2.1.RELEASE'
-//    implementation 'org.springframework.cloud:spring-cloud-starter-zipkin:2.2.1.RELEASE'
+    implementation 'org.springframework.cloud:spring-cloud-starter-sleuth:2.2.1.RELEASE'
+    implementation 'org.springframework.cloud:spring-cloud-starter-zipkin:2.2.1.RELEASE'
     implementation 'io.springfox:springfox-swagger2:2.9.2'
     implementation 'io.springfox:springfox-swagger-ui:2.9.2'
     implementation 'com.h2database:h2'
@@ -39,10 +39,10 @@ dependencies {
 }
 
 bootJar {
-    baseName = 'ui-frontend'
+    baseName = 'stat-service'
     version = '1.0.0-SNAPSHOT'
 }
 
 springBoot {
-    mainClassName = 'ml.socshared.Application'
+    mainClassName = 'ru.bmstu.adapt.App'
 }

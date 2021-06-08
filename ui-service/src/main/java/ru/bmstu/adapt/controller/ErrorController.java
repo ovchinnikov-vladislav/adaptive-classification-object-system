@@ -1,6 +1,6 @@
-package bmstu.dynamic.simulator.controller;
+package ru.bmstu.adapt.controller;
 
-import bmstu.dynamic.simulator.service.ModelService;
+import ru.bmstu.adapt.service.ModelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Controller;

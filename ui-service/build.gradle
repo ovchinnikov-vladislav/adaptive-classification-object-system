@@ -47,10 +47,10 @@ dependencies {
 }
 
 bootJar {
-    baseName = 'ui-frontend'
+    baseName = 'ui-frontend-service'
     version = '1.0.0-SNAPSHOT'
 }
 
 springBoot {
-    mainClassName = 'ml.socshared.Application'
+    mainClassName = 'ru.bmstu.adapt.App'
 }

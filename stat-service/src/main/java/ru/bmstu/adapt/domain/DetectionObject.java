@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.domain;
+package ru.bmstu.adapt.domain;
 
 import lombok.Builder;
 import lombok.Data;

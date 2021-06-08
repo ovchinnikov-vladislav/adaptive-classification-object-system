@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.exception;
+package ru.bmstu.adapt.exception;
 
 import org.springframework.http.HttpStatus;
 

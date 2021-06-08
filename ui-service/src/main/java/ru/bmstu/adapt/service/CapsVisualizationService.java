@@ -1,13 +1,8 @@
-package bmstu.dynamic.simulator.service;
+package ru.bmstu.adapt.service;
 
-import bmstu.dynamic.simulator.client.CapsVisualizationClient;
+import ru.bmstu.adapt.client.CapsVisualizationClient;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.openfeign.support.SpringMvcContract;
 import org.springframework.stereotype.Service;
-import reactivefeign.ReactiveContract;
-import reactivefeign.webclient.WebReactiveFeign;
 import reactor.core.publisher.Mono;
 
 @Service

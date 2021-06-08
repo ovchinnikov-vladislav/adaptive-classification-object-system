@@ -1,6 +1,6 @@
-package bmstu.dynamic.simulator.exception.impl;
+package ru.bmstu.adapt.exception.impl;
 
-import bmstu.dynamic.simulator.exception.AbstractWebHandleableException;
+import ru.bmstu.adapt.exception.AbstractWebHandleableException;
 import org.springframework.http.HttpStatus;
 
 public class NotFoundWebException extends AbstractWebHandleableException {

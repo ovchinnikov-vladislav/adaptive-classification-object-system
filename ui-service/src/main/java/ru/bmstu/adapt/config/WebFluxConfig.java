@@ -1,14 +1,11 @@
-package bmstu.dynamic.simulator.config;
+package ru.bmstu.adapt.config;
 
-import bmstu.dynamic.simulator.client.CapsVisualizationClient;
-import bmstu.dynamic.simulator.client.MachineLearningClient;
+import ru.bmstu.adapt.client.CapsVisualizationClient;
+import ru.bmstu.adapt.client.MachineLearningClient;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.openfeign.support.SpringMvcContract;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
 import reactivefeign.ReactiveContract;
 import reactivefeign.spring.config.EnableReactiveFeignClients;
 import reactivefeign.webclient.WebReactiveFeign;

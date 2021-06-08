@@ -1,7 +1,7 @@
-package bmstu.dynamic.simulator.config;
+package ru.bmstu.adapt.config;
 
 
-import bmstu.dynamic.simulator.config.mongo.MongoDbProperties;
+import ru.bmstu.adapt.config.mongo.MongoDbProperties;
 import com.mongodb.MongoClientSettings;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;

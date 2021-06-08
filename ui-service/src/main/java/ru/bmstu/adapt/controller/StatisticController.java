@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.controller;
+package ru.bmstu.adapt.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;

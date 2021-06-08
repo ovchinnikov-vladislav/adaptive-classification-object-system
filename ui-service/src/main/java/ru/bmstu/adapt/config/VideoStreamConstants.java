@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.config;
+package ru.bmstu.adapt.config;
 
 public class VideoStreamConstants {
     public static final String VIDEO = "/video";

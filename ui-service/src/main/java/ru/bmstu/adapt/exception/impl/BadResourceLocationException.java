@@ -1,11 +1,9 @@
-package bmstu.dynamic.simulator.exception.impl;
+package ru.bmstu.adapt.exception.impl;
 
-import bmstu.dynamic.simulator.exception.AbstractWebHandleableException;
+import ru.bmstu.adapt.exception.AbstractWebHandleableException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
-
-import java.io.IOException;
 
 /**
  * Exception thrown when the video location is inaccessible

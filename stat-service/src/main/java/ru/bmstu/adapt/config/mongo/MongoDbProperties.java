@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.config.mongo;
+package ru.bmstu.adapt.config.mongo;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

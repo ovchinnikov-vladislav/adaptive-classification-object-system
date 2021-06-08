@@ -1,6 +1,6 @@
-package bmstu.dynamic.simulator.config;
+package ru.bmstu.adapt.config;
 
-import bmstu.dynamic.simulator.exception.CustomErrorWebExceptionHandler;
+import ru.bmstu.adapt.exception.CustomErrorWebExceptionHandler;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

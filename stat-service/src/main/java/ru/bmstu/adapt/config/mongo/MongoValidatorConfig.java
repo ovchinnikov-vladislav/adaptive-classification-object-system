@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.config.mongo;
+package ru.bmstu.adapt.config.mongo;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

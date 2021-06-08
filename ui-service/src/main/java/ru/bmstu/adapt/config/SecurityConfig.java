@@ -1,4 +1,4 @@
-package bmstu.dynamic.simulator.config;
+package ru.bmstu.adapt.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,12 +30,14 @@ public class SecurityConfig {
     @Value("${spring.security.oauth2.resource-server.jwt.jwk-set-uri}")
     private String jwtUri;
 
+    private final ServicesProperties servicesProperties;
+
     @Autowired
     ReactiveClientRegistrationRepository clientRegistrationRepository;
 
     ServerLogoutSuccessHandler oidcLogoutSuccessHandler() {
         var successHandler = new OidcClientInitiatedServerLogoutSuccessHandler(clientRegistrationRepository);
-        successHandler.setPostLogoutRedirectUri(URI.create("http://localhost:8080/"));
+        successHandler.setPostLogoutRedirectUri(URI.create(servicesProperties.getExternalAuthUrl()));
         return successHandler;
     }
 
