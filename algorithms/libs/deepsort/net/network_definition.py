@@ -41,7 +41,7 @@ class Logits(Layer):
 
 
 def create_network(input_shape, num_classes=None, add_logits=True, weight_decay=1e-8):
-    nonlinearity = tf.nn.elu
+    nonlinearity = 'elu'
     conv_weight_init = TruncatedNormal(stddev=1e-3)
     conv_bias_init = tf.zeros_initializer()
     conv_regularizer = l2(weight_decay)
@@ -55,14 +55,16 @@ def create_network(input_shape, num_classes=None, add_logits=True, weight_decay=
                      bias_initializer=conv_bias_init,
                      kernel_regularizer=conv_regularizer)(network)
     network = BatchNormalization()(network)
-    network = nonlinearity(network)
+    if nonlinearity == 'elu':
+        network = tf.keras.layers.ELU()(network)
 
     network = Conv2D(32, (3, 3), strides=1, padding='same',
                      kernel_initializer=conv_weight_init,
                      bias_initializer=conv_bias_init,
                      kernel_regularizer=conv_regularizer)(network)
     network = BatchNormalization()(network)
-    network = nonlinearity(network)
+    if nonlinearity == 'elu':
+        network = tf.keras.layers.ELU()(network)
 
     network = MaxPooling2D((3, 3), (2, 2), padding='same')(network)
 
@@ -89,7 +91,8 @@ def create_network(input_shape, num_classes=None, add_logits=True, weight_decay=
                     kernel_initializer=fc_weight_init,
                     bias_initializer=fc_bias_init)(network)
     network = BatchNormalization()(network)
-    network = nonlinearity(network)
+    if nonlinearity == 'elu':
+        network = tf.keras.layers.ELU()(network)
 
     features = network
 

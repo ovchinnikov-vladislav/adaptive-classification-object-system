@@ -2,14 +2,15 @@ from tensorflow.keras.layers import BatchNormalization, Conv2D, Dropout
 import tensorflow as tf
 
 
-def create_link(incoming, network_builder, nonlinearity=tf.nn.elu,
+def create_link(incoming, network_builder, nonlinearity='elu',
                 weights_initializer=tf.keras.initializers.TruncatedNormal(stddev=1e-3),
                 regularizer=None, is_first=False):
     if is_first:
         network = incoming
     else:
         network = BatchNormalization()(incoming)
-        network = nonlinearity(network)
+        if nonlinearity == 'elu':
+            network = tf.keras.layers.ELU()(incoming)
 
     pre_block_network = incoming
     post_block_network = network_builder(network)
@@ -23,14 +24,14 @@ def create_link(incoming, network_builder, nonlinearity=tf.nn.elu,
         projection = Conv2D(outgoing_dim, 1, 2, padding='same', activation=None,
                             kernel_initializer=weights_initializer, bias_initializer=None,
                             kernel_regularizer=regularizer)(incoming)
-        network = projection + post_block_network
+        network = tf.keras.layers.Add()([projection, post_block_network])
     else:
-        network = incoming + post_block_network
+        network = tf.keras.layers.Add()([incoming, post_block_network])
 
     return network
 
 
-def create_inner_block(incoming, nonlinearity=tf.nn.elu,
+def create_inner_block(incoming, nonlinearity='elu',
                        weights_initializer=tf.keras.initializers.TruncatedNormal(stddev=1e-3),
                        bias_initializer=tf.zeros_initializer(), regularizer=None, increase_dim=False):
     n = incoming.shape[-1]
@@ -44,7 +45,8 @@ def create_inner_block(incoming, nonlinearity=tf.nn.elu,
                       bias_initializer=bias_initializer,
                       kernel_regularizer=regularizer)(incoming)
     incoming = BatchNormalization()(incoming)
-    incoming = nonlinearity(incoming)
+    if nonlinearity == 'elu':
+        incoming = tf.keras.layers.ELU()(incoming)
 
     incoming = Dropout(0.6)(incoming)
 
@@ -56,7 +58,7 @@ def create_inner_block(incoming, nonlinearity=tf.nn.elu,
     return incoming
 
 
-def residual_block(incoming, nonlinearity=tf.nn.elu,
+def residual_block(incoming, nonlinearity='elu',
                    weights_initializer=tf.keras.initializers.TruncatedNormal(stddev=1e-3),
                    bias_initializer=tf.zeros_initializer(), regularizer=None, increase_dim=False, is_first=False):
     def network_builder(x):
