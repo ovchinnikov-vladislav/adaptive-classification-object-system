@@ -45,19 +45,6 @@ def darknet_block(x, filters, blocks):
     return x
 
 
-def csp_block(x, residual_out, repeat, residual_bottleneck=False):
-    route = x
-    route = darknet_conv(route, residual_out, 1, activation="mish")
-    x = darknet_conv(x, residual_out, 1, activation="mish")
-    for i in range(repeat):
-        x = darknet_residual(x, residual_out // 2 if residual_bottleneck else residual_out,
-                             residual_out, activation="mish")
-    x = darknet_conv(x, residual_out, 1, activation="mish")
-
-    x = Concatenate()([x, route])
-    return x
-
-
 def darknet53(name=None, size=None, channels=3):
     x = inputs = Input([size, size, channels])
     x = darknet_conv(x, 32, 3)
@@ -85,6 +72,19 @@ def darknet53_tiny(name=None, channels=3):
     x = MaxPool2D(2, 1, 'same')(x)
     x = darknet_conv(x, 1024, 3)
     return tf.keras.Model(inputs, (x_8, x), name=name)
+
+
+def csp_block(x, residual_out, repeat, residual_bottleneck=False):
+    route = x
+    route = darknet_conv(route, residual_out, 1, activation="mish")
+    x = darknet_conv(x, residual_out, 1, activation="mish")
+    for i in range(repeat):
+        x = darknet_residual(x, residual_out // 2 if residual_bottleneck else residual_out,
+                             residual_out, activation="mish")
+    x = darknet_conv(x, residual_out, 1, activation="mish")
+
+    x = Concatenate()([x, route])
+    return x
 
 
 def cspdarknet53(name=None):

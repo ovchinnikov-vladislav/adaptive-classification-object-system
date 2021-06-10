@@ -15,7 +15,10 @@ import json
 STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 
-tracking_model = ObjectDetectionModel(classes=['person'], use_tracking=True)
+tracking_model = ObjectDetectionModel(
+    model='yolo4',
+    classes=[class_names.split('\n')[0] for class_names in open(config.coco_classes_en).readlines()],
+    use_tracking=True)
 video_model = VideoClassCapsNetModel()
 
 

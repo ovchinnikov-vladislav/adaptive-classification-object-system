@@ -550,7 +550,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, yolo_max_boxes=18, yolo_iou_threshold=0.5, yolo_score_threshold=0.5, num_classes=80):
+def yolo_nms(outputs, yolo_max_boxes=18, yolo_iou_threshold=0.5, yolo_score_threshold=0.1, num_classes=80):
     # boxes, conf, type
     b, c, t = [], [], []
 

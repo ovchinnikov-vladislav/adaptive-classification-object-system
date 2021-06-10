@@ -54,7 +54,7 @@ if __name__ == '__main__':
     dataset_val = tf.keras.preprocessing.image_dataset_from_directory(
         os.path.join(config.mars_datasets, 'bbox_test'), image_size=(128, 64))
 
-    model = net.create_network(inputs_shape=IMAGE_SHAPE, num_classes=mars.MAX_LABEL + 1, add_logits=False)
+    model = net.create_network(input_shape=IMAGE_SHAPE, num_classes=mars.MAX_LABEL + 1, add_logits=False)
     model.summary()
 
     losses = {
