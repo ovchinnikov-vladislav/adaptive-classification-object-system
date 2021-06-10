@@ -22,11 +22,13 @@ class Logits(Layer):
         self.w = self.add_weight(shape=[self.feature_dim, self.num_classes],
                                  dtype=tf.float32,
                                  initializer=TruncatedNormal(stddev=0.1),
-                                 trainable=True)
+                                 trainable=True,
+                                 name='w')
         self.scale = self.add_weight(shape=(),
                                      dtype=tf.float32,
                                      initializer=tf.constant_initializer(0.),
-                                     regularizer=l2(1e-1))
+                                     regularizer=l2(1e-1),
+                                     name='scale')
         self.scale = tf.nn.softplus(self.scale)
 
         self.built = True
