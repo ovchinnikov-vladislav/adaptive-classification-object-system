@@ -5,9 +5,9 @@ from matplotlib.colors import rgb_to_hsv, hsv_to_rgb
 import cv2
 import base64
 from io import BytesIO
-import colorsys
 from libs.detection.yolo.v3.layers import yolo_v3, yolo_v3_tiny
 from libs.detection.yolo.v4.layers import yolo_v4
+from libs.detection.caps.layers import yolo_caps
 import config
 from libs.deepsort import preprocessing, nn_matching
 from libs.deepsort.detection import Detection
@@ -52,9 +52,9 @@ class ObjectDetectionModel:
             classes = []
 
         self.class_names = classes
-        num_classes = len(self.class_names)
+        self.num_classes = len(self.class_names)
 
-        if num_classes == 0:
+        if self.num_classes == 0:
             raise Exception('num classes equals 0')
 
         self.size = size
@@ -62,20 +62,21 @@ class ObjectDetectionModel:
 
         if model == 'yolo3':
             anchors = get_anchors(config.yolo_v3_anchors)
-            self.object_detection_model = yolo_v3(anchors, size=size, channels=3, classes=num_classes)
+            self.object_detection_model = yolo_v3(anchors, size=size, channels=3, classes=self.num_classes)
         elif model == 'yolo3-person':
             anchors = get_anchors(config.yolo_v3_anchors)
-            self.object_detection_model = yolo_v3(anchors, size=size, channels=3, classes=num_classes)
+            self.object_detection_model = yolo_v3(anchors, size=size, channels=3, classes=self.num_classes)
         elif model == 'yolo4':
             anchors = get_anchors(config.yolo_v4_anchors)
-            self.object_detection_model = yolo_v4(anchors, size=size, channels=3, classes=num_classes)
+            self.object_detection_model = yolo_v4(anchors, size=size, channels=3, classes=self.num_classes)
         elif model == 'yolo3_tiny':
             anchors = get_anchors(config.yolo_v3_tiny_anchors)
-            self.object_detection_model = yolo_v3_tiny(anchors, size=size, channels=3, classes=num_classes)
+            self.object_detection_model = yolo_v3_tiny(anchors, size=size, channels=3, classes=self.num_classes)
         elif model == 'yolo2':
             raise Exception('undefined yolo2')
         elif model == 'yolo_caps':
-            raise Exception('undefined yolo_caps')
+            anchors = get_anchors(config.yolo_v3_anchors)
+            self.object_detection_model = yolo_caps(anchors, size=size, channels=3, classes=self.num_classes)
         else:
             raise Exception(f'undefined {model}')
 
@@ -83,7 +84,7 @@ class ObjectDetectionModel:
         self.object_detection_model.predict(np.zeros((1, size, size, 3)))
 
         if use_tracking:
-            max_cosine_distance = 0.5
+            max_cosine_distance = 0.7
             nn_budget = None
             self.nms_max_overlap = 1.0
             self.size = size
@@ -91,20 +92,10 @@ class ObjectDetectionModel:
             self.encoder = create_box_encoder(config.deepsort_model, batch_size=1)
             self.metric = nn_matching.NearestNeighborDistanceMetric('cosine', max_cosine_distance, nn_budget)
             self.tracker = Tracker(self.metric, num_classes=1)
-        else:
-            # Generate colors for drawing bounding boxes.
-            hsv_tuples = [(x / len(self.class_names), 1., 1.) for x in range(len(self.class_names))]
-            self.colors = list(map(lambda x: colorsys.hsv_to_rgb(*x), hsv_tuples))
-            self.colors = list(map(lambda x: (int(x[0] * 255), int(x[1] * 255), int(x[2] * 255)), self.colors))
-            np.random.seed(10101)
-            np.random.shuffle(self.colors)
-            np.random.seed(None)
 
     def clear_tracker(self):
         if self.use_tracking:
             self.tracker = Tracker(self.metric, num_classes=1)
-        else:
-            raise Exception('it is detection model')
 
     def detect_image(self, image):
         img = tf.expand_dims(image, 0)
@@ -112,11 +103,16 @@ class ObjectDetectionModel:
 
         boxes, scores, classes, nums = self.object_detection_model.predict(img)
 
+        cmap = plt.get_cmap('tab20b')
+        colors = [cmap(i)[:3] for i in np.linspace(0, 1, 20)]
+
+        img = np.array(image)
         if not self.use_tracking:
-            img = np.array(image)
             img, det_info = analyze_detection_outputs(img, (boxes, scores, classes, nums),
-                                                      self.class_names, self.colors)
+                                                      self.class_names, colors)
         else:
+            img, det_info = analyze_detection_outputs(img, (boxes, scores, classes, nums),
+                                                      self.class_names, colors, ignore_classes={'person'})
             names = []
             for i in range(len(classes)):
                 names.append(self.class_names[int(classes[i])])
@@ -126,23 +122,21 @@ class ObjectDetectionModel:
             detections = [Detection(bbox, score, class_name, int(class_id), feature)
                           for bbox, score, class_name, class_id, feature
                           in zip(converted_boxes, scores, names, classes, features)
-                          if class_name == 'человек' or class_name == 'person']
+                          if class_name == 'person']
 
             # run non-maxima suppression
-            boxes = np.array([d.tlwh for d in detections])
-            scores = np.array([d.confidence for d in detections])
-            classes = np.array([d.class_name for d in detections])
-            indices = preprocessing.non_max_suppression(boxes, classes, self.nms_max_overlap, scores)
-            detections = [detections[i] for i in indices]
+            boxes_for_tracking = np.array([d.tlwh for d in detections])
+            scores_for_tracking = np.array([d.confidence for d in detections])
+            classes_for_tracking = np.array([d.class_name for d in detections])
 
-            cmap = plt.get_cmap('tab20b')
-            colors = [cmap(i)[:3] for i in np.linspace(0, 1, 20)]
+            indices = preprocessing.non_max_suppression(boxes_for_tracking, classes_for_tracking, self.nms_max_overlap, scores_for_tracking)
+            detections = [detections[i] for i in indices]
 
             # call the tracker
             self.tracker.predict()
             self.tracker.update(detections)
 
-            img, det_info = analyze_tracks_outputs(image, self.tracker.tracks, colors)
+            img, det_info = analyze_tracks_outputs(img, self.tracker.tracks, colors)
 
         return img, det_info
 
@@ -439,21 +433,26 @@ def load_tfrecord_dataset(file_pattern, class_file, size=416, yolo_max_boxes=100
     return dataset.map(lambda x: parse_tfrecord(x, class_table, size, yolo_max_boxes=yolo_max_boxes))
 
 
-def analyze_detection_outputs(img, outputs, class_names, colors):
+def analyze_detection_outputs(img, outputs, class_names, colors, ignore_classes=None):
     boxes, scores, classes, nums = outputs
     wh = np.flip(img.shape[0:2])
     img = Image.fromarray(img)
     font = ImageFont.truetype(font=config.font_cv,
-                              size=np.floor(3e-2 * img.size[1] + 0.5).astype('int32'))
-    thickness = (img.size[0] + img.size[1]) // 300
+                              size=np.floor((3e-2 * img.size[1] + 0.5)).astype('int32'))
+    draw = ImageDraw.Draw(img)
+
+    thickness = 3
     object_detection = []
     for i in range(nums):
         predicted_class = class_names[int(classes[i])]
+        if ignore_classes is not None and predicted_class in ignore_classes:
+            continue
+
         box = boxes[i]
         score = scores[i]
 
         label = '{} {:.2f}'.format(predicted_class, score)
-        draw = ImageDraw.Draw(img)
+
         label_size = draw.textsize(label, font)
 
         x1, y1 = tuple((np.array(box[0:2]) * wh).astype(np.int32))
@@ -466,12 +465,12 @@ def analyze_detection_outputs(img, outputs, class_names, colors):
 
         object_detection.append(ObjectDetection(class_names[int(classes[i])], (x1, y1, x2, y2), scores[i]))
         # My kingdom for a good redistributable image drawing library.
-        color = colors[int(classes[i])]
+        color = colors[(int(classes[i]) + 13) % len(colors)]
+        color = [int(i * 255) for i in color]
         for j in range(thickness):
-            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=color)
-        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=color)
-        draw.text(text_origin, label, fill=(0, 0, 0), font=font)
-        del draw
+            draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=tuple(color))
+        draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=tuple(color))
+        draw.text(text_origin, label, fill=(255, 255, 255), font=font)
 
     return np.asarray(img), object_detection
 
@@ -481,10 +480,10 @@ def analyze_tracks_outputs(img, tracks, colors):
     before_img = Image.fromarray(before_img)
     img = Image.fromarray(img)
     font = ImageFont.truetype(font=config.font_cv,
-                              size=np.floor((3e-2 * img.size[1] + 0.5) / 2).astype('int32'))
+                              size=np.floor((3e-2 * img.size[1] + 0.5)).astype('int32'))
     draw = ImageDraw.Draw(img)
 
-    thickness = 1
+    thickness = 3
     object_detection = []
     for track in tracks:
         if not track.is_confirmed() or track.time_since_update > 1:
@@ -550,7 +549,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, yolo_max_boxes=100, yolo_iou_threshold=0.5, yolo_score_threshold=0.5, num_classes=80):
+def yolo_nms(outputs, yolo_max_boxes=250, yolo_iou_threshold=0.5, yolo_score_threshold=0.4, num_classes=80):
     # boxes, conf, type
     b, c, t = [], [], []
 

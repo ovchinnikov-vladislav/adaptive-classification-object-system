@@ -16,15 +16,14 @@ STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 
 tracking_model = ObjectDetectionModel(
-    model='yolo4',
-    classes=[class_names.split('\n')[0] for class_names in open(config.coco_classes_en).readlines()],
+    model='yolo3',
+    classes=['person', 'face'],
     use_tracking=True)
 video_model = VideoClassCapsNetModel()
 
 
 def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
     i = 1
-    objects_frame = dict()
     while True:
         frame, det_info = cam.get_frame()
 
@@ -44,41 +43,6 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
                             'iteration': i, 'image': obj.get_img()
                         }
                 }
-
-                # imgdata = base64.b64decode(obj.get_img())
-                # decoded = np.frombuffer(imgdata, np.uint8)
-                # decoded = cv2.imdecode(decoded, cv2.IMREAD_COLOR)
-                #
-                # gray = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
-                # _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
-                # contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                # cnt = contours[0]
-                # x, y, w, h = cv2.boundingRect(cnt)
-                # decoded = decoded[y:y + h, x:x + w]
-                #
-                # decoded = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
-                # decoded = cv2.resize(decoded, (240, 320))
-                #
-                # frames = objects_frame.get(obj.get_num(), [])
-                # frames.append(decoded)
-                # frames_numpy = np.stack(frames, axis=0)
-                #
-                # if frames_numpy.shape[0] < 25:
-                #     objects_frame[obj.get_num()] = frames
-                # else:
-                #     num_frames, height, width, _ = frames_numpy.shape
-                #
-                #     video_io.vwrite('video.avi', frames_numpy)
-                #     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                #     video = cv2.VideoWriter('video.avi', fourcc, 1, (width, height))
-                #
-                #     for f in np.split(frames_numpy, num_frames, axis=0):
-                #         f = np.squeeze(f)
-                #         video.write(f)
-                #
-                #     video.release()
-                #     print(video_model.predict(frames_numpy))
-                #     objects_frame[obj.get_num()] = []
 
                 json_dumps = json.dumps(json_str)
                 # rmq_channel.basic_publish(exchange=STAT_EXCHANGE_NAME,
@@ -106,3 +70,44 @@ def get_video_with_tracking_objects(video_id, user_id, tracking_process_id, type
         raise Exception('error detection objects')
     return Response(get_video_frame_with_tracking(camera, user_id, tracking_process_id),
                     mimetype='multipart/x-mixed-replace;boundary=frame')
+
+
+class ThreadVideoBufferObject:
+    def __init__(self):
+        self.objects_frame = dict()
+
+    def add_buffer(self, obj):
+        imgdata = base64.b64decode(obj.get_img())
+        decoded = np.frombuffer(imgdata, np.uint8)
+        decoded = cv2.imdecode(decoded, cv2.IMREAD_COLOR)
+
+        gray = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
+        _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnt = contours[0]
+        x, y, w, h = cv2.boundingRect(cnt)
+        decoded = decoded[y:y + h, x:x + w]
+
+        decoded = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
+        decoded = cv2.resize(decoded, (240, 320))
+
+        frames = self.objects_frame.get(obj.get_num(), [])
+        frames.append(decoded)
+        frames_numpy = np.stack(frames, axis=0)
+
+        if frames_numpy.shape[0] < 25:
+            self.objects_frame[obj.get_num()] = frames
+        else:
+            num_frames, height, width, _ = frames_numpy.shape
+
+            video_io.vwrite('video.avi', frames_numpy)
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            video = cv2.VideoWriter('video.avi', fourcc, 1, (width, height))
+
+            for f in np.split(frames_numpy, num_frames, axis=0):
+                f = np.squeeze(f)
+                video.write(f)
+
+            video.release()
+            print(video_model.predict(frames_numpy))
+            self.objects_frame[obj.get_num()] = []
