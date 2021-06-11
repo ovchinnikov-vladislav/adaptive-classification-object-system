@@ -429,14 +429,14 @@ def parse_tfrecord(tfrecord, class_table, size, yolo_max_boxes=100):
     return x_train, y_train
 
 
-def load_tfrecord_dataset(file_pattern, class_file, size=416):
+def load_tfrecord_dataset(file_pattern, class_file, size=416, yolo_max_boxes=100):
     line_number = -1  # TODO: use tf.lookup.TextFileIndex.line_number
     class_table = tf.lookup.StaticHashTable(tf.lookup.TextFileInitializer(
         class_file, tf.string, 0, tf.int64, line_number, delimiter="\n"), -1)
 
     files = tf.data.Dataset.list_files(file_pattern)
     dataset = files.flat_map(tf.data.TFRecordDataset)
-    return dataset.map(lambda x: parse_tfrecord(x, class_table, size))
+    return dataset.map(lambda x: parse_tfrecord(x, class_table, size, yolo_max_boxes=yolo_max_boxes))
 
 
 def analyze_detection_outputs(img, outputs, class_names, colors):
