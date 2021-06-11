@@ -19,7 +19,7 @@ def yolo_v4(anchors, size=None, channels=3, classes=80, training=False):
 
     x = inputs = Input([size, size, channels], name='input')
 
-    route0, route1, route2 = cspdarknet53(name='yolo_darknet')(x)
+    route0, route1, route2 = cspdarknet53(name='yolo_darknet', size=size, channels=channels)(x)
 
     route_input = route2
     x = darknet_conv(route2, 256, 1)
