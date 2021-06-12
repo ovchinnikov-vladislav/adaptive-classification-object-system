@@ -46,7 +46,7 @@ def yolo_output(x_in, filters, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
     x = PrimaryCapsule2D(matrix_dim=(4, 4), kernel_size=1, channels=filters // 16, strides=1, padding='valid', name='primary_caps')(x)
     poses, activations = ConvolutionalCapsule2D(channels=filters // 16, kernel_size=(3, 3), strides=(1, 1), padding='same', name='caps_conv_1')(x)
-    x = Lambda(lambda inp: tf.reshape(inp, (-1, inp.shape[1], inp.shape[2], inp.shape[3] * inp.shape[4])))(activations)
+    x = Lambda(lambda inp: tf.reshape(inp, (-1, inp.shape[1], inp.shape[2], inp.shape[3] * inp.shape[4])))(poses)
     x = darknet_conv(x, anchors * (classes + 5), 1, batch_norm=False)
     x = Lambda(lambda inp: tf.reshape(inp, (-1, x_in.shape[1], x_in.shape[2], anchors, classes + 5)))(x)
     model = tf.keras.Model(inputs, x, name=name)
