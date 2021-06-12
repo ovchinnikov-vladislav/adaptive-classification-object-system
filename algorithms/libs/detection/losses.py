@@ -137,7 +137,7 @@ def _smooth_labels(y_true, label_smoothing):
     return y_true * (1.0 - label_smoothing) + 0.5 * label_smoothing
 
 
-def yolo_loss(anchors, classes=80, size=416, ignore_thresh=0.5, label_smoothing=0, use_focal_loss=False,
+def yolo_loss(anchors, classes=80, ignore_thresh=0.5, label_smoothing=0, use_focal_loss=False,
               use_focal_obj_loss=False, use_softmax_loss=False, use_giou_loss=False, use_diou_loss=False):
     def calc_yolo_loss(y_true, y_pred):
         # 1. transform all pred outputs
@@ -153,7 +153,7 @@ def yolo_loss(anchors, classes=80, size=416, ignore_thresh=0.5, label_smoothing=
         true_wh = true_box[..., 2:4] - true_box[..., 0:2]
 
         # give higher weights to small boxes
-        box_loss_scale = 2 - true_wh[..., 0] * true_wh[..., 1] / (size ** 2)
+        box_loss_scale = 2 - true_wh[..., 0] * true_wh[..., 1]
 
         # 3. inverting the pred box equations
         grid_size = tf.shape(y_true)[1]
