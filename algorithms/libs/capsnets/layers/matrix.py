@@ -627,7 +627,7 @@ def em_routing(v, a_i, beta_v, beta_a, n_iterations=3):
         return r_mean, r_stdsqr, r_act_j, tf.add(counter, 1)
 
     [mean, _, act_j, _] = tf.while_loop(lambda r_mean, r_stdsqr, r_act_j, counter: tf.less(counter, n_iterations),
-                                        route, [m, s, a_j, 1.0])
+                                        route, [m, s, a_j, 1.0], maximum_iterations=n_iterations)
 
     return tf.reshape(mean, (batch_size, n_caps_j, mat_len)), tf.reshape(act_j, (batch_size, n_caps_j, 1))
 
