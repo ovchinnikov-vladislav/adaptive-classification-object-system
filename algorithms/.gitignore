@@ -25,6 +25,7 @@ log.*
 *.h5
 *.dat
 yolov*
+yolo_caps*
 *.weights
 checkpoint*
 *.model

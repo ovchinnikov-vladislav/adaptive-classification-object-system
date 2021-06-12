@@ -2,7 +2,7 @@ import os
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-object_detection_weights = os.path.join(path, 'resources', 'data', 'yolov3.tf')
+object_detection_weights = os.path.join(path, 'resources', 'data', 'yolo_caps_train_6.tf')
 
 yolo_v3_anchors = os.path.join(path, 'resources', 'data', 'yolo3_anchors.txt')
 yolo_v3_tiny_anchors = os.path.join(path, 'resources', 'data', 'yolo3_tiny_anchors.txt')
