@@ -10,16 +10,15 @@ from skvideo import io as video_io
 import pika
 import config
 import json
-
+from threading import Thread
 
 STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 
 tracking_model = ObjectDetectionModel(
-    model='yolo3',
+    model='yolo_caps',
     classes=['person', 'face'],
     use_tracking=True)
-video_model = VideoClassCapsNetModel()
 
 
 def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
@@ -74,9 +73,14 @@ def get_video_with_tracking_objects(video_id, user_id, tracking_process_id, type
 
 class ThreadVideoBufferObject:
     def __init__(self):
-        self.objects_frame = dict()
+        self.objects_frames = dict()
+        self.objects_classes = dict()
+        self.video_model = VideoClassCapsNetModel()
+        self.thread = Thread(target=self.__classification, args=())
+        self.thread.daemon = True
+        self.thread.start()
 
-    def add_buffer(self, obj):
+    def add_frame(self, obj):
         imgdata = base64.b64decode(obj.get_img())
         decoded = np.frombuffer(imgdata, np.uint8)
         decoded = cv2.imdecode(decoded, cv2.IMREAD_COLOR)
@@ -91,23 +95,28 @@ class ThreadVideoBufferObject:
         decoded = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
         decoded = cv2.resize(decoded, (240, 320))
 
-        frames = self.objects_frame.get(obj.get_num(), [])
+        frames = self.objects_frames.get(obj.get_num(), [])
         frames.append(decoded)
-        frames_numpy = np.stack(frames, axis=0)
 
-        if frames_numpy.shape[0] < 25:
-            self.objects_frame[obj.get_num()] = frames
-        else:
-            num_frames, height, width, _ = frames_numpy.shape
+    def __classification(self):
+        while True:
+            for key, value in self.objects_frames:
+                if len(value) >= 8:
+                    frames_numpy = np.stack(value, axis=0)
+                    num_frames, height, width, _ = frames_numpy.shape
 
-            video_io.vwrite('video.avi', frames_numpy)
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            video = cv2.VideoWriter('video.avi', fourcc, 1, (width, height))
+                    video_io.vwrite('video.avi', frames_numpy)
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    video = cv2.VideoWriter('video.avi', fourcc, 1, (width, height))
 
-            for f in np.split(frames_numpy, num_frames, axis=0):
-                f = np.squeeze(f)
-                video.write(f)
+                    for f in np.split(frames_numpy, num_frames, axis=0):
+                        f = np.squeeze(f)
+                        video.write(f)
 
-            video.release()
-            print(video_model.predict(frames_numpy))
-            self.objects_frame[obj.get_num()] = []
+                    video.release()
+                    result = self.video_model.predict(frames_numpy)
+                    self.objects_classes[key] = result
+                    self.objects_frames[key] = []
+
+    def get_class(self, obj):
+        return self.objects_classes[obj.get_num()]

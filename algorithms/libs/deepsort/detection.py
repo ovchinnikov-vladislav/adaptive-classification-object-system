@@ -59,3 +59,7 @@ class Detection(object):
         ret[:2] += ret[2:] / 2
         ret[2] /= ret[3]
         return ret
+
+    def __str__(self):
+        return f'detection [{self.get_class()}, {self.get_class_id()}, {self.get_confidence()}, ' \
+               f'{self.to_tlbr()}, {self.to_xyah()}]'

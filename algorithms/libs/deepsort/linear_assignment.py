@@ -7,9 +7,7 @@ from . import kalman_filter
 INFTY_COST = 1e+5
 
 
-def min_cost_matching(
-        distance_metric, max_distance, tracks, detections, track_indices=None,
-        detection_indices=None):
+def min_cost_matching(distance_metric, max_distance, tracks, detections, track_indices=None, detection_indices=None):
     """Solve linear assignment problem.
 
     Parameters
@@ -74,9 +72,7 @@ def min_cost_matching(
     return matches, unmatched_tracks, unmatched_detections
 
 
-def matching_cascade(
-        distance_metric, max_distance, cascade_depth, tracks, detections,
-        track_indices=None, detection_indices=None):
+def matching_cascade(distance_metric, max_distance, cascade_depth, tracks, detections, track_indices=None, detection_indices=None):
     """Run matching cascade.
 
     Parameters
@@ -131,8 +127,7 @@ def matching_cascade(
         if len(track_indices_l) == 0:  # Nothing to match at this level
             continue
 
-        matches_l, _, unmatched_detections = \
-            min_cost_matching(
+        matches_l, _, unmatched_detections = min_cost_matching(
                 distance_metric, max_distance, tracks, detections,
                 track_indices_l, unmatched_detections)
         matches += matches_l

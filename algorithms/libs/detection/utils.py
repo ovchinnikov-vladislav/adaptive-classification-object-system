@@ -84,9 +84,8 @@ class ObjectDetectionModel:
         self.object_detection_model.predict(np.zeros((1, size, size, 3)))
 
         if use_tracking:
-            max_cosine_distance = 0.7
+            max_cosine_distance = 0.3
             nn_budget = None
-            self.nms_max_overlap = 1.0
             self.size = size
 
             self.encoder = create_box_encoder(config.deepsort_model, batch_size=1)
@@ -125,12 +124,12 @@ class ObjectDetectionModel:
                           if class_name == 'person']
 
             # run non-maxima suppression
-            boxes_for_tracking = np.array([d.tlwh for d in detections])
-            scores_for_tracking = np.array([d.confidence for d in detections])
-            classes_for_tracking = np.array([d.class_name for d in detections])
-
-            indices = preprocessing.non_max_suppression(boxes_for_tracking, classes_for_tracking, self.nms_max_overlap, scores_for_tracking)
-            detections = [detections[i] for i in indices]
+            # boxes_for_tracking = np.array([d.tlwh for d in detections])
+            # scores_for_tracking = np.array([d.confidence for d in detections])
+            # classes_for_tracking = np.array([d.class_name for d in detections])
+            #
+            # indices = preprocessing.non_max_suppression(boxes_for_tracking, classes_for_tracking, self.nms_max_overlap, scores_for_tracking)
+            # detections = [detections[i] for i in indices]
 
             # call the tracker
             self.tracker.predict()
@@ -549,7 +548,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, yolo_max_boxes=250, yolo_iou_threshold=0.5, yolo_score_threshold=0.4, num_classes=80):
+def yolo_nms(outputs, yolo_max_boxes=250, yolo_iou_threshold=0.1, yolo_score_threshold=0.1, num_classes=80):
     # boxes, conf, type
     b, c, t = [], [], []
 
