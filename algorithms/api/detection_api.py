@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from .service.ml_service import get_video_with_tracking_objects
+from .service.detection_service import get_video_with_tracking_objects
 
 detection_api = Blueprint('detection_api', __name__)
 

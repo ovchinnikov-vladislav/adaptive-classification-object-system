@@ -10,36 +10,13 @@ import numpy as np
 import base64
 import time
 from threading import Thread
+import requests
 
 STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 
 
 tracking_model = ObjectDetectionModel(model='yolo_caps', classes=['person', 'face'], use_tracking=True)
-video_model = VideoClassCapsNetModel()
-# tracking_model = None
-
-def event_classification(objects_frames, objects_classes):
-    model = VideoClassCapsNetModel()
-    while True:
-        for key in objects_frames.keys():
-            value = objects_frames.get(key)
-            if len(value) >= 20:
-                frames_numpy = np.stack(value, axis=0)
-                num_frames, height, width, _ = frames_numpy.shape
-
-                # video_io.vwrite('video.avi', frames_numpy)
-                # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                # video = cv2.VideoWriter('video.avi', fourcc, 1, (width, height))
-                #
-                # for f in np.split(frames_numpy, num_frames, axis=0):
-                #     f = np.squeeze(f)
-                #     video.write(f)
-                #
-                # video.release()
-                result = model.predict(frames_numpy)
-                objects_classes[key] = result
-        time.sleep(1 / 60)
 
 
 def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
@@ -78,15 +55,10 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
                     frames.append(decoded)
                     objects_frames[obj.get_num()] = frames
 
-                    if config.video_classification_input_queue.empty() and len(frames) == 8:
-                        config.video_classification_input_queue.put(objects_frames)
-                    if not config.video_classification_output_queue.empty():
-                        objects_classes = config.video_classification_output_queue.get()
-
-                    if objects_classes.get(obj.get_num(), None) is not None:
-                        # print(objects_classes.get(obj.get_num(), None))
-                        objects_classes[obj.get_num()] = None
-                        objects_frames[obj.get_num()] = []
+                    if len(objects_frames[obj.get_num]) == 8:
+                        video = np.stack(frames, axis=0)
+                        r = requests.post('http://127.0.0.1:5000/video_classification', json={"video": json.dumps(video.tolist())})
+                        print(r)
 
                     # if len(objects_frames[obj.get_num()]) > 25:
                     #     video = np.stack(frames, axis=0)
