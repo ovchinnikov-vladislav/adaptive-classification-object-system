@@ -96,7 +96,9 @@ class VideoClassCapsNetModel:
         digit_preds = tf.reshape(pred_caps[1], (-1, num_classes))
 
         self.model = tf.keras.Model(inputs, digit_preds)
-        self.model.load_weights(config.ucf24_caps_model)
+        self.model.load_weights(config.ucf24_caps_model).expect_partial()
+        self.model.make_predict_function()
+        self.model.predict(np.zeros((1, *shape)))
 
     def predict(self, video):
         n_frames = video.shape[0]
@@ -145,6 +147,5 @@ class VideoClassCapsNetModel:
         predictions = np.concatenate(predictions, axis=0)
         predictions = predictions.reshape((-1, 24))
         fin_pred = np.mean(predictions, axis=0)
-        print(fin_pred)
 
         return self.class_names[int(np.argmax(fin_pred))]

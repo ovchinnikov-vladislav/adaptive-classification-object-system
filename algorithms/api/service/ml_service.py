@@ -1,28 +1,53 @@
 from flask import Response
 import logging
+from api.model.video_camera import YoutubeCamera, VideoCamera
+import json
+import config
 from libs.detection.utils import ObjectDetectionModel
 from libs.capsnets.utils import VideoClassCapsNetModel
-from api.model.video_camera import YoutubeCamera, VideoCamera
-import base64
 import cv2
 import numpy as np
-from skvideo import io as video_io
-import pika
-import config
-import json
+import base64
+import time
 from threading import Thread
 
 STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 
-tracking_model = ObjectDetectionModel(
-    model='yolo_caps',
-    classes=['person', 'face'],
-    use_tracking=True)
+
+tracking_model = ObjectDetectionModel(model='yolo_caps', classes=['person', 'face'], use_tracking=True)
+# tracking_model = None
+
+def event_classification(objects_frames, objects_classes):
+    model = VideoClassCapsNetModel()
+    while True:
+        for key in objects_frames.keys():
+            value = objects_frames.get(key)
+            if len(value) >= 20:
+                frames_numpy = np.stack(value, axis=0)
+                num_frames, height, width, _ = frames_numpy.shape
+
+                # video_io.vwrite('video.avi', frames_numpy)
+                # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                # video = cv2.VideoWriter('video.avi', fourcc, 1, (width, height))
+                #
+                # for f in np.split(frames_numpy, num_frames, axis=0):
+                #     f = np.squeeze(f)
+                #     video.write(f)
+                #
+                # video.release()
+                result = model.predict(frames_numpy)
+                objects_classes[key] = result
+        time.sleep(1 / 60)
 
 
 def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
     i = 1
+
+    objects_frames = dict()
+
+    # video_event_classification = Thread(target=event_classification, args=(objects_frames, objects_classes))
+    # video_event_classification.start()
     while True:
         frame, det_info = cam.get_frame()
 
@@ -32,21 +57,46 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
             # rmq_channel = rmq_connection.channel()
 
             for obj in det_info:
-                json_str = {
-                    'type': 'OBJECT_DETECTION',
-                    'attributes':
-                        {
-                            'clazz': obj.get_class(), 'box': obj.get_box(),
-                            'score': obj.get_score(), 'numObject': obj.get_num(),
-                            'userId': user_id, 'detectionProcessId': tracking_process_id,
-                            'iteration': i, 'image': obj.get_img()
-                        }
-                }
+                if obj.get_class() == 'person':
+                    imgdata = base64.b64decode(obj.get_img())
+                    decoded = np.frombuffer(imgdata, np.uint8)
+                    decoded = cv2.imdecode(decoded, cv2.IMREAD_COLOR)
 
-                json_dumps = json.dumps(json_str)
-                # rmq_channel.basic_publish(exchange=STAT_EXCHANGE_NAME,
-                #                           routing_key=STAT_FANOUT_QUEUE_NAME,
-                #                           body=json_dumps.encode('utf-8'))
+                    gray = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
+                    _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
+                    contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    cnt = contours[0]
+                    x, y, w, h = cv2.boundingRect(cnt)
+                    decoded = decoded[y:y + h, x:x + w]
+
+                    decoded = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
+                    decoded = cv2.resize(decoded, (240, 320))
+
+                    frames = objects_frames.get(obj.get_num(), [])
+                    frames.append(decoded)
+                    objects_frames[obj.get_num()] = frames
+
+                    config.video_classification_input_queue.put(objects_frames)
+                    if not config.video_classification_output_queue.empty():
+                        objects_classes = config.video_classification_output_queue.get()
+                        if objects_classes.get(obj.get_num(), None) is not None:
+                            print(objects_classes.get(obj.get_num(), None))
+                    #
+                    # json_str = {
+                    #     'type': 'OBJECT_DETECTION',
+                    #     'attributes':
+                    #         {
+                    #             'clazz': obj.get_class(), 'box': obj.get_box(),
+                    #             'score': obj.get_score(), 'numObject': obj.get_num(),
+                    #             'userId': user_id, 'detectionProcessId': tracking_process_id,
+                    #             'iteration': i, 'image': obj.get_img()
+                    #         }
+                    # }
+                    #
+                    # json_dumps = json.dumps(json_str)
+                    # rmq_channel.basic_publish(exchange=STAT_EXCHANGE_NAME,
+                    #                           routing_key=STAT_FANOUT_QUEUE_NAME,
+                    #                           body=json_dumps.encode('utf-8'))
             i += 1
 
             # rmq_connection.close()
@@ -69,54 +119,3 @@ def get_video_with_tracking_objects(video_id, user_id, tracking_process_id, type
         raise Exception('error detection objects')
     return Response(get_video_frame_with_tracking(camera, user_id, tracking_process_id),
                     mimetype='multipart/x-mixed-replace;boundary=frame')
-
-
-class ThreadVideoBufferObject:
-    def __init__(self):
-        self.objects_frames = dict()
-        self.objects_classes = dict()
-        self.video_model = VideoClassCapsNetModel()
-        self.thread = Thread(target=self.__classification, args=())
-        self.thread.daemon = True
-        self.thread.start()
-
-    def add_frame(self, obj):
-        imgdata = base64.b64decode(obj.get_img())
-        decoded = np.frombuffer(imgdata, np.uint8)
-        decoded = cv2.imdecode(decoded, cv2.IMREAD_COLOR)
-
-        gray = cv2.cvtColor(decoded, cv2.COLOR_BGR2GRAY)
-        _, thresh = cv2.threshold(gray, 1, 255, cv2.THRESH_BINARY)
-        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        cnt = contours[0]
-        x, y, w, h = cv2.boundingRect(cnt)
-        decoded = decoded[y:y + h, x:x + w]
-
-        decoded = cv2.cvtColor(decoded, cv2.COLOR_BGR2RGB)
-        decoded = cv2.resize(decoded, (240, 320))
-
-        frames = self.objects_frames.get(obj.get_num(), [])
-        frames.append(decoded)
-
-    def __classification(self):
-        while True:
-            for key, value in self.objects_frames:
-                if len(value) >= 8:
-                    frames_numpy = np.stack(value, axis=0)
-                    num_frames, height, width, _ = frames_numpy.shape
-
-                    video_io.vwrite('video.avi', frames_numpy)
-                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-                    video = cv2.VideoWriter('video.avi', fourcc, 1, (width, height))
-
-                    for f in np.split(frames_numpy, num_frames, axis=0):
-                        f = np.squeeze(f)
-                        video.write(f)
-
-                    video.release()
-                    result = self.video_model.predict(frames_numpy)
-                    self.objects_classes[key] = result
-                    self.objects_frames[key] = []
-
-    def get_class(self, obj):
-        return self.objects_classes[obj.get_num()]

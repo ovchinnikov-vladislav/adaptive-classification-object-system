@@ -81,10 +81,12 @@ class ObjectDetectionModel:
             raise Exception(f'undefined {model}')
 
         self.object_detection_model.load_weights(weights).expect_partial()
+        self.object_detection_model.make_predict_function()
+        freeze_all(self.object_detection_model)
         self.object_detection_model.predict(np.zeros((1, size, size, 3)))
 
         if use_tracking:
-            max_cosine_distance = 0.3
+            max_cosine_distance = 0.5
             nn_budget = None
             self.size = size
 
@@ -96,11 +98,33 @@ class ObjectDetectionModel:
         if self.use_tracking:
             self.tracker = Tracker(self.metric, num_classes=1)
 
-    def detect_image(self, image):
+    def predict_for_detection(self, image):
         img = tf.expand_dims(image, 0)
         img = transform_images(img, self.size)
 
         boxes, scores, classes, nums = self.object_detection_model.predict(img)
+        return boxes, scores, classes, nums
+
+    def predict_for_tracking(self, image):
+        boxes, scores, classes, nums = self.predict_for_detection(image)
+        names = []
+        for i in range(len(classes)):
+            names.append(self.class_names[int(classes[i])])
+        names = np.array(names)
+        converted_boxes = convert_boxes(image, boxes)
+        features = self.encoder(image, converted_boxes)
+        detections = [Detection(bbox, score, class_name, int(class_id), feature)
+                      for bbox, score, class_name, class_id, feature
+                      in zip(converted_boxes, scores, names, classes, features)
+                      if class_name == 'person']
+
+        # call the tracker
+        self.tracker.predict()
+        self.tracker.update(detections)
+        return self.tracker.tracks, boxes, scores, classes, nums
+
+    def detect_image(self, image):
+        boxes, scores, classes, nums = self.predict_for_detection(image)
 
         cmap = plt.get_cmap('tab20b')
         colors = [cmap(i)[:3] for i in np.linspace(0, 1, 20)]
@@ -470,7 +494,7 @@ def analyze_detection_outputs(img, outputs, class_names, colors, ignore_classes=
             draw.rectangle([x1 + j, y1 + j, x2 - j, y2 - j], outline=tuple(color))
         draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=tuple(color))
         draw.text(text_origin, label, fill=(255, 255, 255), font=font)
-
+    del draw
     return np.asarray(img), object_detection
 
 
@@ -548,7 +572,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, yolo_max_boxes=250, yolo_iou_threshold=0.5, yolo_score_threshold=0.5, num_classes=80):
+def yolo_nms(outputs, yolo_max_boxes=250, yolo_iou_threshold=0.3, yolo_score_threshold=0.3, num_classes=80):
     # boxes, conf, type
     b, c, t = [], [], []
 
