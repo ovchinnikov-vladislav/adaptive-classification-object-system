@@ -16,6 +16,7 @@ STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 
 
 tracking_model = ObjectDetectionModel(model='yolo_caps', classes=['person', 'face'], use_tracking=True)
+video_model = VideoClassCapsNetModel()
 # tracking_model = None
 
 def event_classification(objects_frames, objects_classes):
@@ -45,6 +46,7 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
     i = 1
 
     objects_frames = dict()
+    object_classes = dict()
 
     # video_event_classification = Thread(target=event_classification, args=(objects_frames, objects_classes))
     # video_event_classification.start()
@@ -76,11 +78,20 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
                     frames.append(decoded)
                     objects_frames[obj.get_num()] = frames
 
-                    config.video_classification_input_queue.put(objects_frames)
-                    if not config.video_classification_output_queue.empty():
-                        objects_classes = config.video_classification_output_queue.get()
-                        if objects_classes.get(obj.get_num(), None) is not None:
-                            print(objects_classes.get(obj.get_num(), None))
+                    if len(objects_frames[obj.get_num()]) > 25:
+                        video = np.stack(frames, axis=0)
+                        event_class = video_model.predict(video)
+                        object_classes[obj.get_num()] = event_class
+                        objects_frames[obj.get_num()] = frames
+
+                    if object_classes.get(obj.get_num(), None) is not None:
+                        print(object_classes.get(obj.get_num(), None))
+
+                    # config.video_classification_input_queue.put(objects_frames)
+                    # if not config.video_classification_output_queue.empty():
+                    #     objects_classes = config.video_classification_output_queue.get()
+                    #     if objects_classes.get(obj.get_num(), None) is not None:
+                    #         print(objects_classes.get(obj.get_num(), None))
                     #
                     # json_str = {
                     #     'type': 'OBJECT_DETECTION',
