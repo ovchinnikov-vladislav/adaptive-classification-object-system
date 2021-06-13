@@ -100,7 +100,41 @@ class VideoClassCapsNetModel:
         self.model.make_predict_function()
         self.model.predict(np.zeros((1, *shape)))
 
-    def predict(self, video):
+    def predict_short(self, video):
+        n_frames = video.shape[0]
+        crop_size = (112, 112)
+
+        # assumes a given aspect ratio of (240, 320). If given a cropped video, then no resizing occurs
+        if video.shape[1] != 112 and video.shape[2] != 112:
+            h, w = 120, 160
+
+            video_res = np.zeros((n_frames, 120, 160, 3))
+
+            for f in range(n_frames):
+                video_res[f] = imresize(video[f], (120, 160))
+        else:
+            h, w = 112, 112
+            video_res = video
+
+        # crops video to 112x112
+        margin_h = h - crop_size[0]
+        h_crop_start = int(margin_h / 2)
+        margin_w = w - crop_size[1]
+        w_crop_start = int(margin_w / 2)
+        video_cropped = video_res[:, h_crop_start:h_crop_start + crop_size[0], w_crop_start:w_crop_start + crop_size[1], :]
+        video_cropped = video_cropped / 255.
+
+        prediction = self.model.predict(np.expand_dims(video_cropped, axis=0))
+
+        predictions = prediction.reshape((-1, 24))
+        fin_pred = np.mean(predictions, axis=0)
+
+        num = int(np.argmax(fin_pred))
+        confidence = fin_pred[num]
+        print(self.class_names[num], confidence)
+        return self.class_names[num]
+
+    def predict_long(self, video):
         n_frames = video.shape[0]
         crop_size = (112, 112)
 

@@ -15,19 +15,20 @@ def get_available_devices():
 
 def predictions_tracks(queue_input, queue_output):
     model = VideoClassCapsNetModel()
+    print(model.predict_short(np.random.rand(8, 112, 112, 3)))
+    print('init video model')
     while True:
         if not queue_input.empty():
             object_frames = queue_input.get()
             object_classes = dict()
             for key in object_frames.keys():
                 value = object_frames[key]
-                if len(value) > 25:
-                    video = np.stack(value, axis=0)
-                    event_class = model.predict(video)
-                    object_classes[key] = event_class
-                    if not queue_output.empty():
-                        queue_output.get()
-                    queue_output.put(object_classes)
+                video = np.stack(value, axis=0)
+                event_class = model.predict_short(video)
+                object_classes[key] = event_class
+                if not queue_output.empty():
+                    queue_output.get()
+                queue_output.put(object_classes)
 
 
 if __name__ == '__main__':
@@ -38,13 +39,13 @@ if __name__ == '__main__':
 
     from api import ml_api
 
-    # config.video_classification_input_queue = Queue()
-    # config.video_classification_output_queue = Queue()
-    #
-    # video_classification_process = Process(target=predictions_tracks,
-    #                                        args=(config.video_classification_input_queue,
-    #                                              config.video_classification_output_queue))
-    # video_classification_process.start()
+    config.video_classification_input_queue = Queue()
+    config.video_classification_output_queue = Queue()
+
+    video_classification_process = Process(target=predictions_tracks,
+                                           args=(config.video_classification_input_queue,
+                                                 config.video_classification_output_queue))
+    video_classification_process.start()
 
     app = Flask(__name__)
     app.register_blueprint(ml_api.detection_api)
