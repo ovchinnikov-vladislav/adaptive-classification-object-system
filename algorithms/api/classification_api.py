@@ -9,5 +9,6 @@ classification_api = Blueprint('classification_api', __name__)
 def video_classification():
     data = request.json
     arr = np.array(data['video'])
+    print(arr.shape)
 
     return classification_video(arr)

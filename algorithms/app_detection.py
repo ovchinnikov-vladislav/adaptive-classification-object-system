@@ -23,9 +23,9 @@ def video_classification(queue_input, queue_output):
                 frames = objects[key]
                 if len(frames) == 8:
                     video = np.stack(frames, axis=0)
-                    r = requests.post('http://127.0.0.1:5000/video_classification', json={"video": json.dumps(video.tolist())})
+                    r = requests.post(config.video_classification_addr, json={"video": json.dumps(video.tolist())})
                     outputs[key] = r
-                    queue_output.put(outputs)
+            queue_output.put(outputs)
 
 
 if __name__ == '__main__':
