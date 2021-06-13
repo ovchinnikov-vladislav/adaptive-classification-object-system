@@ -55,19 +55,14 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
                     frames.append(decoded)
                     objects_frames[obj.get_num()] = frames
 
-                    if len(objects_frames[obj.get_num]) == 8:
-                        video = np.stack(frames, axis=0)
-                        r = requests.post('http://127.0.0.1:5000/video_classification', json={"video": json.dumps(video.tolist())})
-                        print(r)
+                    if config.video_classification_input_queue.empty():
+                        config.video_classification_input_queue.put(objects_frames)
 
-                    # if len(objects_frames[obj.get_num()]) > 25:
-                    #     video = np.stack(frames, axis=0)
-                    #     event_class = video_model.predict(video)
-                    #     object_classes[obj.get_num()] = event_class
-                    #     objects_frames[obj.get_num()] = frames
-                    #
-                    # if object_classes.get(obj.get_num(), None) is not None:
-                    #     print(object_classes.get(obj.get_num(), None))
+                    if not config.video_classification_output_queue.empty():
+                        objects_classes = config.video_classification_output_queue.get()
+
+                    if objects_classes.get(obj.get_num(), None) is not None:
+                        print(objects_classes.get(obj.get_num()))
 
                     #
                     # json_str = {

@@ -19,6 +19,6 @@ if __name__ == '__main__':
 
     app = Flask(__name__)
     app.register_blueprint(classification_api.classification_api)
-
-    app.run(port=5001)
     run_with_ngrok(app)
+
+    app.run()
