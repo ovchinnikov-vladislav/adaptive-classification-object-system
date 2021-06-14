@@ -14,8 +14,8 @@ def get_available_devices():
 
 def video_classification(queue_input, queue_output):
     import requests
-    import json
-    import base64
+    import io
+    import flask
     while True:
         if not queue_input.empty():
             objects = queue_input.get()
@@ -24,8 +24,12 @@ def video_classification(queue_input, queue_output):
                 frames = objects[key]
                 if len(frames) == 8:
                     video = np.stack(frames, axis=0)
-                    json = json.dumps({"video": base64.b64encode(video).decode('utf-8')})
-                    r = requests.post(config.video_classification_addr, json=json)
+
+                    buf = io.BytesIO()
+                    np.savez_compressed(buf, video)
+                    buf.seek(0)
+
+                    r = requests.post(config.video_classification_addr, files={'file': buf})
                     outputs[key] = r
             queue_output.put(outputs)
 
