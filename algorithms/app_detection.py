@@ -16,27 +16,33 @@ def video_classification(queue_input, queue_output):
     import requests
     import io
     import flask
+    import json
     while True:
-        if not queue_input.empty():
-            objects = queue_input.get()
-            videos = []
-            keys = []
-            for key in objects.keys():
-                frames = objects[key]
-                if len(frames) == 8:
-                    video = np.stack(frames, axis=0)
-                    videos.append(video)
-                    keys.append(key)
+        try:
+            if not queue_input.empty():
+                objects = queue_input.get()
+                videos = []
+                keys = []
+                for key in objects.keys():
+                    frames = objects[key]
+                    if len(frames) == 8:
+                        video = np.stack(frames, axis=0)
+                        videos.append(video)
+                        keys.append(key)
 
-            buf = io.BytesIO()
-            np.savez_compressed(buf, videos, keys)
-            buf.seek(0)
+                if len(videos) > 0 and len(keys) > 0:
+                    buf = io.BytesIO()
+                    np.savez_compressed(buf, *videos)
+                    buf.seek(0)
 
-            r = requests.post(config.video_classification_addr, files={'file': buf})
-            outputs = dict()
-            for result in r:
-                outputs[result] = r.text
-                queue_output.put(outputs)
+                    r = requests.post(config.video_classification_addr, files={'file': buf})
+                    j = json.loads(r.text)
+                    outputs = dict()
+                    for key, data in j.items():
+                        outputs[keys[key]] = data
+                        queue_output.put(outputs)
+        except Exception as e:
+            print(e)
 
 
 if __name__ == '__main__':

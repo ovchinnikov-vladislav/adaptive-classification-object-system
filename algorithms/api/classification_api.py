@@ -9,6 +9,5 @@ classification_api = Blueprint('classification_api', __name__)
 def video_classification():
     file = request.files['file']
     npzfile = np.load(file)
-    print(npzfile.files)
 
     return videos_classification(npzfile)

@@ -5,7 +5,9 @@ video_model = VideoClassCapsNetModel()
 
 def videos_classification(npzfile):
     result = dict()
+    i = 0
     for key in npzfile.files:
-        result[key] = video_model.predict_short(npzfile[key])
+        result[i] = video_model.predict_short(npzfile[key])
+        i += 1
 
     return result
