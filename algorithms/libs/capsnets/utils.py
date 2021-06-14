@@ -69,7 +69,7 @@ def own_batch_dot(x, y, axes=None):
 class VideoClassCapsNetModel:
     def __init__(self):
         self.class_names = [c.strip() for c in open(config.event_classes_ru, 'r', encoding='utf8').readlines()]
-        num_classes = len(self.class_names)
+        self.num_classes = len(self.class_names)
 
         shape = (8, 112, 112, 3)
 
@@ -90,10 +90,10 @@ class VideoClassCapsNetModel:
                                      name='prim_caps')(conv6)
         sec_caps = ConvolutionalCapsule3D(channels=32, kernel_size=[3, 5, 5], strides=[1, 2, 2], padding='valid',
                                           route_mean=True, name='sec_caps')(prim_caps)
-        pred_caps = ClassCapsule(n_caps_j=num_classes, subset_routing=-1, route_min=0.0, name='pred_caps',
+        pred_caps = ClassCapsule(n_caps_j=self.num_classes, subset_routing=-1, route_min=0.0, name='pred_caps',
                                  coord_add=True,
                                  ch_same_w=True)(sec_caps)
-        digit_preds = tf.reshape(pred_caps[1], (-1, num_classes))
+        digit_preds = tf.reshape(pred_caps[1], (-1, self.num_classes))
 
         self.model = tf.keras.Model(inputs, digit_preds)
         self.model.load_weights(config.video_model).expect_partial()
@@ -124,9 +124,7 @@ class VideoClassCapsNetModel:
         video_cropped = video_res[:, h_crop_start:h_crop_start + crop_size[0], w_crop_start:w_crop_start + crop_size[1], :]
         video_cropped = video_cropped / 255.
 
-        prediction = self.model.predict(np.expand_dims(video_cropped, axis=0))
-
-        predictions = prediction.reshape((-1, 24))
+        predictions = self.model.predict(np.expand_dims(video_cropped, axis=0))
         fin_pred = np.mean(predictions, axis=0)
 
         num = int(np.argmax(fin_pred))
@@ -179,7 +177,7 @@ class VideoClassCapsNetModel:
             predictions.append(pred)
 
         predictions = np.concatenate(predictions, axis=0)
-        predictions = predictions.reshape((-1, 24))
+        predictions = predictions.reshape((-1, self.num_classes))
         fin_pred = np.mean(predictions, axis=0)
 
         return self.class_names[int(np.argmax(fin_pred))]

@@ -21,7 +21,7 @@ font_cv = os.path.join(path, 'resources', 'font', 'FiraMono-Medium.otf')
 
 rabbitmq_addr = os.getenv('RABBITMQ_ADDR', 'amqp://guest:guest@localhost:5672/')
 
-video_classification_addr = os.getenv('VIDEO_CLASSIFICATION_ADDR', 'http://e1277fc7e1ac.ngrok.io/video_classification')
+video_classification_addr = os.getenv('VIDEO_CLASSIFICATION_ADDR', 'http://692b0cd29778.ngrok.io/video_classification')
 
 video_classification_input_queue = None
 video_classification_output_queue = None
