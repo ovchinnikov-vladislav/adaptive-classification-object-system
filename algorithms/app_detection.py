@@ -15,15 +15,16 @@ def get_available_devices():
 def video_classification(queue_input, queue_output):
     import requests
     import json
+    import base64
     while True:
         if not queue_input.empty():
             objects = queue_input.get()
             outputs = dict()
             for key in objects.keys():
                 frames = objects[key]
-                if len(frames) == 1:
+                if len(frames) == 8:
                     video = np.stack(frames, axis=0)
-                    r = requests.post(config.video_classification_addr, json={"video": video.tostring()})
+                    r = requests.post(config.video_classification_addr, json={"video": base64.b64encode(video).decode('utf-8')})
                     outputs[key] = r
             queue_output.put(outputs)
 
