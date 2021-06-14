@@ -86,7 +86,8 @@ class ObjectDetectionModel:
         self.object_detection_model.predict(np.zeros((1, size, size, 3)))
 
         if use_tracking:
-            max_cosine_distance = 0.5
+            max_cosine_distance = 0.7
+            self.nms_max_overlap = 1.0
             nn_budget = None
             self.size = size
 
@@ -148,12 +149,12 @@ class ObjectDetectionModel:
                           if class_name == 'person']
 
             # run non-maxima suppression
-            # boxes_for_tracking = np.array([d.tlwh for d in detections])
-            # scores_for_tracking = np.array([d.confidence for d in detections])
-            # classes_for_tracking = np.array([d.class_name for d in detections])
-            #
-            # indices = preprocessing.non_max_suppression(boxes_for_tracking, classes_for_tracking, self.nms_max_overlap, scores_for_tracking)
-            # detections = [detections[i] for i in indices]
+            boxes_for_tracking = np.array([d.tlwh for d in detections])
+            scores_for_tracking = np.array([d.confidence for d in detections])
+            classes_for_tracking = np.array([d.class_name for d in detections])
+
+            indices = preprocessing.non_max_suppression(boxes_for_tracking, classes_for_tracking, self.nms_max_overlap, scores_for_tracking)
+            detections = [detections[i] for i in indices]
 
             # call the tracker
             self.tracker.predict()
@@ -526,7 +527,7 @@ def analyze_tracks_outputs(img, tracks, colors):
         else:
             text_origin = np.array([x1, y1 + 5])
 
-        img_crop = before_img.crop((int(x1), int(y1), int(x2), int(y2)))
+        img_crop = before_img.crop((int(x1) - 15, int(y1) - 15, int(x2) + 15, int(y2) + 15))
 
         buffered = BytesIO()
         img_crop.save(buffered, format="JPEG")

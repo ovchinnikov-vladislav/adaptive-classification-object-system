@@ -11,7 +11,8 @@ STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 
 
-tracking_model = ObjectDetectionModel(model='yolo3', classes=['person', 'face'], use_tracking=True)
+# tracking_model = ObjectDetectionModel(model='yolo3', classes=['person', 'face'], use_tracking=True)
+tracking_model = ObjectDetectionModel(model='yolo3', classes=[class_name.split('\n')[0] for class_name in open(config.coco_classes_en)], use_tracking=True)
 
 
 def get_video_frame_with_tracking(cam, user_id, tracking_process_id):

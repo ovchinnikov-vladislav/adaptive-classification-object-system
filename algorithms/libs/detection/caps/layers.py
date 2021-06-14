@@ -42,15 +42,26 @@ def yolo_conv_tiny(x_in, filters, name=None):
     return Model(inputs, x, name=name)(x_in)
 
 
+def build_mask(poses, x, classes, dim):
+    x = tf.one_hot(x, depth=classes)
+    x = tf.tile(tf.reshape(x, (-1, classes, 1)), multiples=[1, 1, dim])
+    x = poses * tf.cast(x, dtype=tf.float32)
+    x = tf.reshape(x, (-1, classes * dim))
+
+
+
 def yolo_output(x_in, filters, anchors, classes, name=None):
     x = inputs = Input(x_in.shape[1:])
-    x = PrimaryCapsule2D(matrix_dim=(4, 4), kernel_size=1, channels=filters // 16, strides=1, padding='valid', name='primary_caps')(x)
+    x = PrimaryCapsule2D(matrix_dim=(anchors, classes + 5), kernel_size=1, channels=filters // 16, strides=1, padding='valid', name='primary_caps')(x)
     x = ConvolutionalCapsule2D(channels=filters // 16, kernel_size=(3, 3),
                                strides=(1, 1), padding='same', name='caps_conv_1')(x)
-    x = Lambda(lambda inp: tf.reshape(inp, (-1, inp.shape[1], inp.shape[2], inp.shape[3] * inp.shape[4])))(x[0])
-    x = darknet_conv(x, anchors * (classes + 5), 1, batch_norm=False)
-    x = Lambda(lambda inp: tf.reshape(inp, (-1, x_in.shape[1], x_in.shape[2], anchors, classes + 5)))(x)
-    return tf.keras.Model(inputs, x, name=name)(x_in)
+    x = ClassCapsule(n_caps_j=x_in.shape[1] * x_in.shape[2])(x)
+    # x = Lambda(lambda inp: tf.reshape(inp, (-1, inp.shape[1], inp.shape[2], inp.shape[3] * inp.shape[4])))(x[0])
+    # x = darknet_conv(x, anchors * (classes + 5), 1, batch_norm=False)
+    x = Lambda(lambda inp: tf.reshape(inp, (-1, x_in.shape[1], x_in.shape[2], anchors, classes + 5)))(x[0])
+    model = tf.keras.Model(inputs, x, name=name)
+    model.summary(line_length=250)
+    return model(x_in)
 
 
 def yolo_caps(anchors, size, channels, classes, training=False):
