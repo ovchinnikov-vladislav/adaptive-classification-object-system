@@ -130,7 +130,7 @@ class VideoClassCapsNetModel:
         num = int(np.argmax(fin_pred))
         confidence = fin_pred[num]
         print(self.class_names[num], confidence)
-        return self.class_names[num]
+        return self.class_names[num], confidence
 
     def predict_long(self, video):
         n_frames = video.shape[0]

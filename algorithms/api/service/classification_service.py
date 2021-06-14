@@ -9,10 +9,12 @@ def videos_classification(npzfile):
     result = dict()
     i = 0
     for key in npzfile.files:
+        class_name, confidence = video_model.predict_short(npzfile[key])
         result[i] = json.dumps(
             {
                 "datetime": str(datetime.now()),
-                "class": video_model.predict_short(npzfile[key])
+                "class": class_name,
+                "confidence": confidence
             })
         i += 1
 
