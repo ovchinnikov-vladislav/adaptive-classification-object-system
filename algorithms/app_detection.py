@@ -24,7 +24,8 @@ def video_classification(queue_input, queue_output):
                 frames = objects[key]
                 if len(frames) == 8:
                     video = np.stack(frames, axis=0)
-                    r = requests.post(config.video_classification_addr, json={"video": base64.b64encode(video).decode('utf-8')})
+                    json = json.dumps({"video": base64.b64encode(video).decode('utf-8')})
+                    r = requests.post(config.video_classification_addr, json=json)
                     outputs[key] = r
             queue_output.put(outputs)
 
