@@ -12,7 +12,7 @@ def videos_classification(npzfile):
         result[i] = json.dumps(
             {
                 "datetime": str(datetime.now()),
-                "class_name": video_model.predict_short(npzfile[key])
+                "class": video_model.predict_short(npzfile[key])
             })
         i += 1
 

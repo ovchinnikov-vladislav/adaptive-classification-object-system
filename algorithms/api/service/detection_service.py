@@ -8,9 +8,7 @@ from libs.capsnets.utils import VideoClassCapsNetModel
 import cv2
 import numpy as np
 import base64
-import time
 from multiprocessing import Process, Queue
-import requests
 
 STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
@@ -45,7 +43,7 @@ def video_classification(queue_input, queue_output):
                     j = json.loads(r.text)
                     outputs = dict()
                     for key, data in j.items():
-                        outputs[keys[int(key)]] = data
+                        outputs[keys[int(key)]] = data['datetime'] + ' ' + data['class']
                         queue_output.put(outputs)
         except Exception as e:
             print(e)
