@@ -19,19 +19,24 @@ def video_classification(queue_input, queue_output):
     while True:
         if not queue_input.empty():
             objects = queue_input.get()
-            outputs = dict()
+            videos = []
+            keys = []
             for key in objects.keys():
                 frames = objects[key]
                 if len(frames) == 8:
                     video = np.stack(frames, axis=0)
+                    videos.append(video)
+                    keys.append(key)
 
-                    buf = io.BytesIO()
-                    np.savez_compressed(buf, video)
-                    buf.seek(0)
+            buf = io.BytesIO()
+            np.savez_compressed(buf, videos, keys)
+            buf.seek(0)
 
-                    r = requests.post(config.video_classification_addr, files={'file': buf})
-                    outputs[key] = r
-            queue_output.put(outputs)
+            r = requests.post(config.video_classification_addr, files={'file': buf})
+            outputs = dict()
+            for result in r:
+                outputs[result] = r.text
+                queue_output.put(outputs)
 
 
 if __name__ == '__main__':

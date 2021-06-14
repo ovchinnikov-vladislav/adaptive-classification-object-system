@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 import numpy as np
-from .service.classification_service import classification_video
+from .service.classification_service import videos_classification
 
 classification_api = Blueprint('classification_api', __name__)
 
@@ -9,4 +9,6 @@ classification_api = Blueprint('classification_api', __name__)
 def video_classification():
     file = request.files['file']
     npzfile = np.load(file)
-    return classification_video(npzfile['arr_0'])
+    print(npzfile.files)
+
+    return videos_classification(npzfile)

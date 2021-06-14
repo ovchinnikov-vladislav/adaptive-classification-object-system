@@ -55,6 +55,9 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
                     frames.append(decoded)
                     objects_frames[obj.get_num()] = frames
 
+                    if len(objects_frames[obj.get_num()]) > 8:
+                        objects_frames[obj.get_num()] = []
+
                     if config.video_classification_input_queue.empty():
                         config.video_classification_input_queue.put(objects_frames)
 
