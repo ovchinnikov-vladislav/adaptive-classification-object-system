@@ -68,7 +68,7 @@ def own_batch_dot(x, y, axes=None):
 
 class VideoClassCapsNetModel:
     def __init__(self):
-        self.class_names = [c.strip() for c in open(config.ucf24_classes_ru, 'r', encoding='utf8').readlines()]
+        self.class_names = [c.strip() for c in open(config.event_classes_ru, 'r', encoding='utf8').readlines()]
         num_classes = len(self.class_names)
 
         shape = (8, 112, 112, 3)
@@ -96,7 +96,7 @@ class VideoClassCapsNetModel:
         digit_preds = tf.reshape(pred_caps[1], (-1, num_classes))
 
         self.model = tf.keras.Model(inputs, digit_preds)
-        self.model.load_weights(config.ucf24_caps_model).expect_partial()
+        self.model.load_weights(config.video_model).expect_partial()
         self.model.make_predict_function()
         self.model.predict(np.zeros((1, *shape)))
 

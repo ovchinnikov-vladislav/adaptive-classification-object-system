@@ -16,7 +16,7 @@ STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 
 
-tracking_model = ObjectDetectionModel(model='yolo_caps', classes=['person', 'face'], use_tracking=True)
+tracking_model = ObjectDetectionModel(model='yolo3', classes=['person', 'face'], use_tracking=True)
 
 
 def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
@@ -55,17 +55,17 @@ def get_video_frame_with_tracking(cam, user_id, tracking_process_id):
                     frames.append(decoded)
                     objects_frames[obj.get_num()] = frames
 
-                    if len(objects_frames[obj.get_num()]) > 8:
-                        objects_frames[obj.get_num()] = []
-
                     if config.video_classification_input_queue.empty():
                         config.video_classification_input_queue.put(objects_frames)
 
                     if not config.video_classification_output_queue.empty():
                         objects_classes = config.video_classification_output_queue.get()
 
-                    if objects_classes.get(obj.get_num(), None) is not None:
+                    if objects_classes.get(obj.get_num(), None) is not None \
+                            and len(objects_frames[obj.get_num()]) > 8:
                         print(objects_classes.get(obj.get_num()))
+                        objects_frames[obj.get_num()] = []
+                        objects_classes[obj.get_num()] = None
 
                     #
                     # json_str = {

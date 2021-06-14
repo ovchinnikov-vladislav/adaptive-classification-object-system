@@ -29,7 +29,7 @@ yolo_caps*
 *.weights
 checkpoint*
 *.model
-ucf24-caps*
+video-caps*
 resources/other/
 resources/data/wider_face/
 resources/data/mnist_detection/

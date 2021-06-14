@@ -15,7 +15,6 @@ def get_available_devices():
 def video_classification(queue_input, queue_output):
     import requests
     import io
-    import flask
     import json
     while True:
         try:
@@ -39,7 +38,7 @@ def video_classification(queue_input, queue_output):
                     j = json.loads(r.text)
                     outputs = dict()
                     for key, data in j.items():
-                        outputs[keys[key]] = data
+                        outputs[keys[int(key)]] = data
                         queue_output.put(outputs)
         except Exception as e:
             print(e)

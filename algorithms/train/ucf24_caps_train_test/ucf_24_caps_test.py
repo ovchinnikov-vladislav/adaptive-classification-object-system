@@ -9,7 +9,7 @@ if __name__ == '__main__':
     from skvideo.io import vread
     from scipy.misc import imresize
 
-    class_names = [c.strip() for c in open(config.ucf24_classes_ru, 'r', encoding='utf8').readlines()]
+    class_names = [c.strip() for c in open(config.event_classes_ru, 'r', encoding='utf8').readlines()]
     num_classes = len(class_names)
 
     shape = (8, 112, 112, 3)
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     digit_preds = tf.reshape(pred_caps[1], (-1, num_classes))
 
     model = tf.keras.Model(inputs, digit_preds)
-    model.load_weights(config.ucf24_caps_model)
+    model.load_weights(config.video_model)
 
     video = vread('D:/tensorflow_datasets/UCF-101/UCF-101/HorseRiding/v_HorseRiding_g02_c05.avi')
 
