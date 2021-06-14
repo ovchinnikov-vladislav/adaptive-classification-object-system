@@ -8,7 +8,7 @@ classification_api = Blueprint('classification_api', __name__)
 @classification_api.route('/video_classification', methods=['POST'])
 def video_classification():
     data = request.json
-    arr = np.array(data['video'])
-    print(data['video'])
+    arr = np.asarray(data['video'])
+    print(arr.shape)
 
     return classification_video(arr)
