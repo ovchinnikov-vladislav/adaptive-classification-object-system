@@ -14,7 +14,7 @@ def videos_classification(npzfile):
             {
                 "datetime": str(datetime.now()),
                 "class": class_name,
-                "confidence": confidence
+                "confidence": confidence.astype(float)
             })
         i += 1
 
