@@ -169,7 +169,8 @@ def freeze_to(model, num_layer, frozen=True):
     model.trainable = True
     if isinstance(model, tf.keras.Model):
         for i in model.layers[:num_layer]:
-
+            if isinstance(i, tf.keras.layers.BatchNormalization):
+                continue
             freeze_all(i, frozen)
 
 
