@@ -45,7 +45,7 @@ def darknet_block(x, filters, blocks):
     return x
 
 
-def darknet53(name=None, size=None, training=True, channels=3):
+def darknet53(name=None, size=None, channels=3):
     x = inputs = Input([size, size, channels])
     x = darknet_conv(x, 32, 3)
     x = darknet_block(x, 64, 1)
@@ -53,7 +53,7 @@ def darknet53(name=None, size=None, training=True, channels=3):
     x = x_36 = darknet_block(x, 256, 8)  # skip connection
     x = x_61 = darknet_block(x, 512, 8)
     x = darknet_block(x, 1024, 4)
-    return tf.keras.Model(inputs, (x_36, x_61, x), training=training, name=name)
+    return tf.keras.Model(inputs, (x_36, x_61, x), name=name)
 
 
 def darknet53_tiny(name=None, channels=3):
