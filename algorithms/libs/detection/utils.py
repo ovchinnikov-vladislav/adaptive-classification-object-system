@@ -165,13 +165,11 @@ class ObjectDetectionModel:
         return img, det_info
 
 
-def freeze_to(model, num_layer, frozen=True, frozen_bn=False):
+def freeze_to(model, num_layer, frozen=True):
     model.trainable = True
     if isinstance(model, tf.keras.Model):
         for i in model.layers[:num_layer]:
-            if not frozen_bn and isinstance(i, tf.keras.layers.BatchNormalization):
-                continue
-            print(i)
+
             freeze_all(i, frozen)
 
 
