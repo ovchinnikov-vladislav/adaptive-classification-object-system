@@ -100,3 +100,15 @@ def yolo_v3_tiny(anchors, size, channels, classes, training=False):
     boxes_1 = Lambda(lambda inp: yolo_boxes(inp, anchors[masks[1]], classes), name='yolo_boxes_1')(output_1)
     outputs = Lambda(lambda inp: yolo_nms(inp, num_classes=classes), name='yolo_nms')((boxes_0[:3], boxes_1[:3]))
     return Model(inputs, outputs, name='yolo3_tiny')
+
+
+if __name__ == '__main__':
+    from libs.detection.utils import get_anchors
+    import config
+    anchors = get_anchors(config.yolo_v3_anchors)
+
+    model = yolo_v3(anchors, 416, 3, 2, False)
+    from libs.detection.utils import freeze_to
+
+    freeze_to(model.get_layer('yolo_darknet'), 75)
+    # model.summary(line_length=250)

@@ -11,30 +11,35 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/detection-objects")
+@RequestMapping("/stat")
 @RequiredArgsConstructor
-public class DetectionObjectController {
+public class StatClassificationController {
 
     private final DetectionObjectService service;
 
-    @PostMapping("/{user_id}/{detection_process_id}")
+    @PostMapping("/users/{user_id}/process/{process_id}")
     public void save(@PathVariable("user_id") String userId,
-                     @PathVariable("detection_process_id") String detectionProcessId,
+                     @PathVariable("process_id") String processId,
                      @RequestBody DetectionObjectRequest request) {
-        service.save(userId, detectionProcessId, request);
+        service.save(userId, processId, request);
     }
 
-    @GetMapping("/{user_id}/{detection_process_id}")
+    @GetMapping("/users/{user_id}/process/{process_id}")
     public List<DetectionObject> findByUserIdAndDetectionProcessId(@PathVariable("user_id") String userId,
-                                                                   @PathVariable("detection_process_id") String detectionProcessId) {
+                                                                   @PathVariable("process_id") String detectionProcessId) {
         return service.findByUserIdAndDetectionProcessId(userId, detectionProcessId);
     }
 
-    @GetMapping("/{user_id}/{detection_process_id}/{num_object}")
+    @GetMapping("/users/{user_id}/process/{process_id}/object/{num_object}")
     public List<DetectionObject> findByUserIdAndDetectionProcessId(@PathVariable("user_id") String userId,
-                                                                   @PathVariable("detection_process_id") String detectionProcessId,
+                                                                   @PathVariable("process_id") String detectionProcessId,
                                                                    @PathVariable("num_object") Integer numObject) {
         return service.findByUserIdAndDetectionProcessIdAndNumObject(userId, detectionProcessId, numObject);
+    }
+
+    @GetMapping("/statistic-by-detection/users/{user-id}/")
+    public List<DetectionObject> statisticByDetection() {
+        return null;
     }
 
 }

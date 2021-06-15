@@ -2,8 +2,8 @@ import os
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-# object_detection_weights = os.path.join(path, 'resources', 'data', 'yolov3.tf')
-object_detection_weights = os.path.join('D:/MasterDissertation/models', 'yolov3.tf')
+object_detection_weights = os.path.join(path, 'resources', 'data', 'yolov3.tf')
+# object_detection_weights = os.path.join('D:/MasterDissertation/models', 'yolov3.tf')
 
 yolo_v3_anchors = os.path.join(path, 'resources', 'data', 'yolo3_anchors.txt')
 yolo_v3_tiny_anchors = os.path.join(path, 'resources', 'data', 'yolo3_tiny_anchors.txt')
@@ -22,7 +22,4 @@ font_cv = os.path.join(path, 'resources', 'font', 'FiraMono-Medium.otf')
 
 rabbitmq_addr = os.getenv('RABBITMQ_ADDR', 'amqp://guest:guest@localhost:5672/')
 
-video_classification_addr = os.getenv('VIDEO_CLASSIFICATION_ADDR', 'http://0090726f31fd.ngrok.io/video_classification')
-
-video_classification_input_queue = None
-video_classification_output_queue = None
+video_classification_addr = os.getenv('VIDEO_CLASSIFICATION_ADDR', 'http://714481d206d5.ngrok.io/video_classification')

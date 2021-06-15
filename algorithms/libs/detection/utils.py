@@ -136,7 +136,7 @@ class ObjectDetectionModel:
                                                       self.class_names, colors)
         else:
             img, det_info = analyze_detection_outputs(img, (boxes, scores, classes, nums),
-                                                      self.class_names, colors, ignore_classes={'person'})
+                                                      self.class_names, colors, ignore_classes=set(self.class_names))
             names = []
             for i in range(len(classes)):
                 names.append(self.class_names[int(classes[i])])
@@ -163,6 +163,16 @@ class ObjectDetectionModel:
             img, det_info = analyze_tracks_outputs(img, self.tracker.tracks, colors)
 
         return img, det_info
+
+
+def freeze_to(model, num_layer, frozen=True, frozen_bn=False):
+    model.trainable = True
+    if isinstance(model, tf.keras.Model):
+        for i in model.layers[:num_layer]:
+            if not frozen_bn and isinstance(i, tf.keras.layers.BatchNormalization):
+                continue
+            print(i)
+            freeze_all(i, frozen)
 
 
 def freeze_all(model, frozen=True):
