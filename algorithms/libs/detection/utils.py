@@ -178,6 +178,8 @@ def freeze_all(model, frozen=True):
     model.trainable = not frozen
     if isinstance(model, tf.keras.Model):
         for i in model.layers:
+            if isinstance(i, tf.keras.layers.BatchNormalization):
+                continue
             freeze_all(i, frozen)
 
 
