@@ -170,6 +170,7 @@ def freeze_to(model, num_layer, frozen=True):
     if isinstance(model, tf.keras.Model):
         for i in model.layers[:num_layer]:
             freeze_all(i, frozen)
+            print(i)
         for i in model.layers[num_layer:]:
             if isinstance(i, tf.keras.layers.BatchNormalization):
                 freeze_all(i, frozen)
@@ -583,7 +584,7 @@ def yolo_boxes(pred, anchors, classes):
     return bbox, objectness, class_probs, pred_box
 
 
-def yolo_nms(outputs, yolo_max_boxes=250, yolo_iou_threshold=0.5, yolo_score_threshold=0.5, num_classes=80):
+def yolo_nms(outputs, yolo_max_boxes=30, yolo_iou_threshold=0.5, yolo_score_threshold=0.5, num_classes=80):
     # boxes, conf, type
     b, c, t = [], [], []
 
