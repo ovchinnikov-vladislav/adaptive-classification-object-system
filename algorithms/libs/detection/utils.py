@@ -14,6 +14,7 @@ from libs.deepsort.detection import Detection
 from libs.deepsort.tracker import Tracker
 from libs.deepsort.box_encoder import create_box_encoder
 import matplotlib.pyplot as plt
+import time
 
 
 class ObjectDetection:
@@ -61,9 +62,6 @@ class ObjectDetectionModel:
         self.use_tracking = use_tracking
 
         if model == 'yolo3':
-            anchors = get_anchors(config.yolo_v3_anchors)
-            self.object_detection_model = yolo_v3(anchors, size=size, channels=3, classes=self.num_classes)
-        elif model == 'yolo3-person':
             anchors = get_anchors(config.yolo_v3_anchors)
             self.object_detection_model = yolo_v3(anchors, size=size, channels=3, classes=self.num_classes)
         elif model == 'yolo4':
@@ -125,7 +123,10 @@ class ObjectDetectionModel:
         return self.tracker.tracks, boxes, scores, classes, nums
 
     def detect_image(self, image):
+        t1 = time.time()
         boxes, scores, classes, nums = self.predict_for_detection(image)
+        t2 = time.time()
+        print(f'time detection: {t2 * 1000 - t1 * 1000} ms')
 
         cmap = plt.get_cmap('tab20b')
         colors = [cmap(i)[:3] for i in np.linspace(0, 1, 20)]
@@ -135,8 +136,9 @@ class ObjectDetectionModel:
             img, det_info = analyze_detection_outputs(img, (boxes, scores, classes, nums),
                                                       self.class_names, colors)
         else:
-            img, det_info = analyze_detection_outputs(img, (boxes, scores, classes, nums),
-                                                      self.class_names, colors, ignore_classes=set(self.class_names))
+            # img, det_info = analyze_detection_outputs(img, (boxes, scores, classes, nums),
+            #                                           self.class_names, colors, ignore_classes=set(self.class_names))
+            t1 = time.time()
             names = []
             for i in range(len(classes)):
                 names.append(self.class_names[int(classes[i])])
@@ -159,6 +161,8 @@ class ObjectDetectionModel:
             # call the tracker
             self.tracker.predict()
             self.tracker.update(detections)
+            t2 = time.time()
+            print(f'time tracking: {t2 * 1000 - t1 * 1000} ms')
 
             img, det_info = analyze_tracks_outputs(img, self.tracker.tracks, colors)
 
