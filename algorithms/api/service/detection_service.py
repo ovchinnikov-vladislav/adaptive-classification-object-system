@@ -13,13 +13,13 @@ from threading import Thread
 import io
 import requests
 
-logging.basicConfig()
-logging.root.setLevel(logging.NOTSET)
+# logging.basicConfig()
+# logging.root.setLevel(logging.NOTSET)
 
 STAT_FANOUT_QUEUE_NAME = "stat.fanout.queue"
 STAT_EXCHANGE_NAME = "stat.fanout.exchange"
 
-tracking_model = ObjectDetectionModel(model='yolo3', classes=['person', 'face'], use_tracking=True)
+tracking_model = ObjectDetectionModel(model='yolo3', classes=[clazz.split('\n')[0] for clazz in open(config.coco_classes_en)], use_tracking=True)
 
 
 def rabbitmq_thread(rabbitmq_queue):
