@@ -115,7 +115,7 @@ class ObjectDetectionModel:
         detections = [Detection(bbox, score, class_name, int(class_id), feature)
                       for bbox, score, class_name, class_id, feature
                       in zip(converted_boxes, scores, names, classes, features)
-                      if class_name == 'person']
+                      if class_name == 'person' or class_name == 'человек']
 
         # call the tracker
         self.tracker.predict()
@@ -148,7 +148,7 @@ class ObjectDetectionModel:
             detections = [Detection(bbox, score, class_name, int(class_id), feature)
                           for bbox, score, class_name, class_id, feature
                           in zip(converted_boxes, scores, names, classes, features)
-                          if class_name == 'person']
+                          if class_name == 'person' or class_name == 'человек']
 
             # run non-maxima suppression
             boxes_for_tracking = np.array([d.tlwh for d in detections])
